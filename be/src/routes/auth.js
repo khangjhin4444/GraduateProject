@@ -21,7 +21,9 @@ router.post("/register", async (req, res) => {
     const existingUser =
       await sql`SELECT * FROM "user" WHERE "Username" = ${username}`;
     if (existingUser.length > 0)
-      return res.status(400).json({ message: "Username existed!" });
+      return res
+        .status(409)
+        .json({ success: false, message: "Username existed!" });
 
     // 2. Băm mật khẩu (ĐÂY LÀ NƠI BCRYPT HOẠT ĐỘNG)
     const salt = await bcrypt.genSalt(10);
@@ -32,10 +34,10 @@ router.post("/register", async (req, res) => {
       INSERT INTO "user" ("Name", "Phone", "Address", "Username", "Password") 
       VALUES (${fullName}, ${phone}, ${address}, ${username}, ${hashedPassword})
     `;
-    res.status(200).json({ success: true, message: "Đăng ký thành công" });
+    res.status(200).json({ success: true, message: "Register Success!" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 });
 
