@@ -16,7 +16,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import TacoImg from "@/assets/taco-bg.webp";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import useRegister from "@/hooks/useRegister";
@@ -25,11 +24,16 @@ import { isAxiosError } from "axios";
 
 const RegisterSchema = z
   .object({
-    username: z.string().min(5),
+    username: z.string().min(5, {
+      message: "Username must contains at least 8 characters",
+    }),
     password: z
       .string()
       .min(8, {
         message: "Password must contains at least 8 characters",
+      })
+      .max(20, {
+        message: "Password must be equal or less than 20 characters",
       })
       .refine(
         (val) => {
