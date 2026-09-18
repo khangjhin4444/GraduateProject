@@ -1,15 +1,21 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 interface profileState {
+  id: number;
+  cartQuantity: number;
   fullName: string;
-  address: string;
   phoneNumber: string;
+  address: string;
+  role: "admin" | "user";
 }
 
 const initialState: profileState = {
+  id: 0,
+  cartQuantity: 0,
   fullName: "",
   address: "",
   phoneNumber: "",
+  role: "user",
 };
 
 const profileSlice = createSlice({
