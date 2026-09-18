@@ -5,7 +5,7 @@ import axios, {
 } from "axios";
 import { type ZodSchema } from "zod";
 import * as z from "zod";
-const BASE_URL = "http://localhost:3001";
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 declare module "axios" {
   export interface AxiosRequestConfig {
@@ -29,6 +29,15 @@ privateApi.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  },
+);
+
+publicApi.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
     return config;
   },
   (error: AxiosError) => {
