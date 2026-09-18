@@ -1,14 +1,10 @@
 import { refreshAuth } from "@/lib/authRefresh";
-import { useAppDispatch } from "@/state/hooks";
-import { deleteInfo } from "@/state/profile/profileSlice";
 import { store } from "@/state/store";
-import { deleteToken, setToken } from "@/state/token/tokenSlice";
 import axios, {
   type AxiosResponse,
   type AxiosError,
   type InternalAxiosRequestConfig,
 } from "axios";
-import { redirect } from "react-router";
 import { type ZodSchema } from "zod";
 import * as z from "zod";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -36,7 +32,7 @@ export const authApi = axios.create({
 
 privateApi.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem("accessToken");
+    const token = store.getState().token.accessToken;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
