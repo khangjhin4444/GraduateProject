@@ -24,6 +24,7 @@ import useLogin from "@/hooks/useLogin";
 import type { LoginErrorResponse } from "@/feature/auth/schema/auth.schema";
 import { useAppDispatch } from "@/state/hooks";
 import { setToken } from "@/state/token/tokenSlice";
+import { setInfo } from "@/state/profile/profileSlice";
 
 const LoginSchema = z.object({
   username: z.string().min(1, { message: "Please Enter Username" }),
@@ -49,6 +50,16 @@ export default function Page() {
     try {
       const response = await loginMutation.mutateAsync(data);
       dispatch(setToken(response.accessToken));
+      dispatch(
+        setInfo({
+          id: response.user.id,
+          cartQuantity: Number(response.user.cartQuantity),
+          fullName: response.user.Name,
+          phoneNumber: response.user.Phone,
+          address: response.user.Address,
+          role: response.user.role,
+        }),
+      );
       navigate("/home");
     } catch (error: unknown) {
       if (isAxiosError<LoginErrorResponse>(error)) {

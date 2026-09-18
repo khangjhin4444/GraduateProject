@@ -1,3 +1,5 @@
+import { refreshAuth } from "@/lib/authRefresh";
+import { store } from "@/state/store";
 import axios, {
   type AxiosResponse,
   type AxiosError,
@@ -23,9 +25,14 @@ export const privateApi = axios.create({
   timeout: 10000,
 });
 
+export const authApi = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10000,
+});
+
 privateApi.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem("accessToken");
+    const token = store.getState().token.accessToken;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -84,16 +91,22 @@ privateApi.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      try {
-        //Token refresh will happen here
-      } catch (error) {
-        console.error("Session Expired!");
-        return Promise.reject(error);
+      const result = await refreshAuth(); // dùng chung singleton promise với loader
+
+      if (result.success) {
+        const newToken = store.getState().token;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return privateApi(originalRequest);
       }
+
+      if (result.expiredSession) {
+        window.location.href = "/login";
+      }
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   },
