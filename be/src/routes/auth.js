@@ -60,7 +60,9 @@ router.post("/login", async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, currentUser.Password);
     if (!isMatch)
-      return res.status(400).json({ message: "Wrong Usernam or Password!" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Wrong Username or Password!" });
 
     // 2. Tạo Access Token (sống 15 phút) và Refresh Token (sống 7 ngày)
     const accessToken = jwt.sign(
@@ -101,7 +103,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 });
 
