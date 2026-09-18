@@ -1,8 +1,14 @@
+import { refreshAuth } from "@/lib/authRefresh";
+import { useAppDispatch } from "@/state/hooks";
+import { deleteInfo } from "@/state/profile/profileSlice";
+import { store } from "@/state/store";
+import { deleteToken, setToken } from "@/state/token/tokenSlice";
 import axios, {
   type AxiosResponse,
   type AxiosError,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { redirect } from "react-router";
 import { type ZodSchema } from "zod";
 import * as z from "zod";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -19,6 +25,11 @@ export const publicApi = axios.create({
 });
 
 export const privateApi = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10000,
+});
+
+export const authApi = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
 });
@@ -84,16 +95,22 @@ privateApi.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      try {
-        //Token refresh will happen here
-      } catch (error) {
-        console.error("Session Expired!");
-        return Promise.reject(error);
+      const result = await refreshAuth(); // dùng chung singleton promise với loader
+
+      if (result.success) {
+        const newToken = store.getState().token;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return privateApi(originalRequest);
       }
+
+      if (result.expiredSession) {
+        window.location.href = "/login";
+      }
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   },

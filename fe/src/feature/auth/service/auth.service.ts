@@ -52,6 +52,7 @@ export const authService: AuthService = {
         password: payload.password,
       },
       responseSchema: LoginSchema,
+      withCredentials: true,
     });
     return response.data as LoginResponseEntity;
   },
