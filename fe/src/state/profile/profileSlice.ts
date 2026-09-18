@@ -27,9 +27,12 @@ const profileSlice = createSlice({
       state.address = action.payload.address;
       state.phoneNumber = action.payload.phoneNumber;
     },
+    deleteInfo: (state) => {
+      state = initialState;
+    },
   },
 });
 
-export const { setInfo } = profileSlice.actions;
+export const { setInfo, deleteInfo } = profileSlice.actions;
 
 export default profileSlice.reducer;
