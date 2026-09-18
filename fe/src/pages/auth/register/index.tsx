@@ -16,56 +16,61 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import useRegister from "@/hooks/useRegister";
 import { useNavigate } from "react-router";
 import { isAxiosError } from "axios";
+import { EyeOffIcon, EyeIcon } from "lucide-react";
+import { useState } from "react";
 
-const RegisterSchema = z
-  .object({
-    username: z.string().min(5, {
-      message: "Username must contains at least 8 characters",
-    }),
-    password: z
-      .string()
-      .min(8, {
-        message: "Password must contains at least 8 characters",
-      })
-      .max(20, {
-        message: "Password must be equal or less than 20 characters",
-      })
-      .refine(
-        (val) => {
-          return /^(?=.*[A-Z])(?=.*\d)/.test(val);
-        },
-        {
-          message: "Password must contains at least 1 Uppercase and 1 number",
-        },
-      ),
-    confirmPassword: z.string(),
-    fullName: z.string().or(z.literal("")),
-    phoneNumber: z
-      .string()
-      .regex(/^\d{10}$/, {
-        message: "Phone number must contains 10 numbers",
-      })
-      .or(z.literal("")),
-    address: z.string().or(z.literal("")),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+const RegisterSchema = z.object({
+  username: z.string().min(5, {
+    message: "Username must contains at least 5 characters",
+  }),
+  password: z
+    .string()
+    .min(8, {
+      message: "Password must contains at least 8 characters",
+    })
+    .max(20, {
+      message: "Password must be equal or less than 20 characters",
+    })
+    .refine(
+      (val) => {
+        return /^(?=.*[A-Z])(?=.*\d)/.test(val);
+      },
+      {
+        message: "Password must contains at least 1 Uppercase and 1 number",
+      },
+    ),
+  confirmPassword: z.string(),
+  fullName: z.string().or(z.literal("")),
+  phoneNumber: z
+    .string()
+    .regex(/^\d{10}$/, {
+      message: "Phone number must contains 10 numbers",
+    })
+    .or(z.literal("")),
+  address: z.string().or(z.literal("")),
+});
 
 type RegisterForm = z.infer<typeof RegisterSchema>;
 
 export default function Page() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const navigate = useNavigate();
   const registerMutation = useRegister();
   const form = useForm<RegisterForm>({
     resolver: zodResolver(RegisterSchema),
-    mode: "onSubmit",
+    mode: "onChange",
     reValidateMode: "onSubmit",
     defaultValues: {
       username: "",
@@ -78,6 +83,13 @@ export default function Page() {
   });
 
   async function onSubmit(data: RegisterForm) {
+    if (data.password !== data.confirmPassword) {
+      form.setError("confirmPassword", {
+        type: "manual",
+        message: "Passwords do not match",
+      });
+      return;
+    }
     try {
       await registerMutation.mutateAsync(data);
       navigate("/login");
@@ -90,8 +102,9 @@ export default function Page() {
       form.setError("root", { message });
     }
   }
+
   return (
-    <Card className="w-1/2 shadow-2xl py-15 px-5 rounded-[60px]">
+    <Card className="w-full md:w-2/3 lg:w-3/4 shadow-2xl py-10 px-5 rounded-[60px]">
       <CardHeader>
         <CardTitle className="text-2xl bg-linear-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">
           Create account
@@ -105,10 +118,9 @@ export default function Page() {
               name="username"
               control={form.control}
               render={({ field, fieldState }) => {
-                const hasEnoughLength = field.value.length >= 5 ? true : false;
                 return (
                   <Field
-                    className="w-full mt-5"
+                    className="w-full mt-3"
                     data-invalid={fieldState.invalid}
                   >
                     <FieldLabel htmlFor="username-input">
@@ -122,17 +134,10 @@ export default function Page() {
                         placeholder="exampleUsername"
                       />
                     </div>
-                    {fieldState.invalid && (
-                      <FieldDescription className="text-[12px] ml-1 pt-2">
-                        <span
-                          className={cn("font-semibold", {
-                            "text-green-500": hasEnoughLength,
-                            "text-red-500": fieldState.invalid,
-                          })}
-                        >
-                          At least 5 characters
-                        </span>
-                      </FieldDescription>
+                    {fieldState.error && (
+                      <p className="text-[12px] text-red-500 font-semibold ml-3 pt-2">
+                        {fieldState.error.message}
+                      </p>
                     )}
                   </Field>
                 );
@@ -142,45 +147,46 @@ export default function Page() {
               name="password"
               control={form.control}
               render={({ field, fieldState }) => {
-                const currentValue = field.value || "";
-                const hasEnoughLength = currentValue.length >= 8;
-                const hasPattern = /^(?=.*[A-Z])(?=.*\d)/.test(currentValue);
                 return (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="password-input">Password</FieldLabel>
                     <div className="px-2">
-                      <Input
-                        aria-invalid={fieldState.invalid}
-                        {...field}
-                        id="password-input"
-                        type="password"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          if (fieldState.invalid) {
-                            form.clearErrors(field.name);
-                          }
-                        }}
-                        placeholder="Enter your password here"
-                      />
-                      <FieldDescription className="text-[12px] ml-1 pt-2">
-                        <span
-                          className={cn("font-semibold", {
-                            "text-green-500": hasEnoughLength,
-                            "text-red-500": fieldState.invalid,
-                          })}
+                      <InputGroup>
+                        <InputGroupInput
+                          aria-invalid={fieldState.invalid}
+                          {...field}
+                          id="password-input"
+                          type={!showPassword ? "password" : "text"}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            if (fieldState.invalid) {
+                              form.clearErrors(field.name);
+                            }
+                          }}
+                          placeholder="Enter your password here"
+                        />
+                        <InputGroupAddon
+                          align={"inline-end"}
+                          className="cursor-pointer"
+                          onClick={() => setShowPassword((prev) => !prev)}
                         >
+                          {!showPassword ? <EyeIcon /> : <EyeOffIcon />}
+                        </InputGroupAddon>
+                      </InputGroup>
+                      <FieldDescription className="text-[12px] ml-1 pt-2">
+                        <span className={cn("font-semibold")}>
                           At least 8 characters
                         </span>
                         <br></br>
-                        <span
-                          className={cn("font-semibold", {
-                            "text-green-500": hasPattern,
-                            "text-red-500": fieldState.invalid,
-                          })}
-                        >
+                        <span className={cn("font-semibold")}>
                           At least 1 Uppercase letter and 1 number
                         </span>
                       </FieldDescription>
+                      {fieldState.error && (
+                        <p className="text-[12px] text-red-500 font-semibold ml-1 pt-2">
+                          {fieldState.error.message}
+                        </p>
+                      )}
                     </div>
                   </Field>
                 );
@@ -195,19 +201,28 @@ export default function Page() {
                     Confirm Password
                   </FieldLabel>
                   <div className="px-2">
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      type="password"
-                      id="confirm-password-input"
-                      placeholder="Confirm Password"
-                      onChange={(e) => {
-                        field.onChange(e);
-                        if (fieldState.invalid) {
-                          form.clearErrors(field.name);
-                        }
-                      }}
-                    />
+                    <InputGroup>
+                      <InputGroupInput
+                        aria-invalid={fieldState.invalid}
+                        {...field}
+                        id="confirm-password-input"
+                        type={!showConfirmPassword ? "password" : "text"}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          if (fieldState.invalid) {
+                            form.clearErrors(field.name);
+                          }
+                        }}
+                        placeholder="Enter your password here"
+                      />
+                      <InputGroupAddon
+                        align={"inline-end"}
+                        className="cursor-pointer"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      >
+                        {!showConfirmPassword ? <EyeIcon /> : <EyeOffIcon />}
+                      </InputGroupAddon>
+                    </InputGroup>
                   </div>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} className="ml-2" />
@@ -242,14 +257,14 @@ export default function Page() {
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel htmlFor="full-name-input">
+                  <FieldLabel htmlFor="address-input">
                     Address (Optional)
                   </FieldLabel>
                   <div className="px-2">
                     <Input
                       {...field}
                       type="text"
-                      id="full-name-input"
+                      id="address-input"
                       placeholder="Your Shipping Address"
                       onChange={(e) => {
                         field.onChange(e);
@@ -263,9 +278,6 @@ export default function Page() {
               name="phoneNumber"
               control={form.control}
               render={({ field, fieldState }) => {
-                const currentValue = field.value || "";
-                const hasEnoughLength = currentValue.length === 10;
-                const hasPattern = /^\d{10}$/.test(currentValue);
                 return (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="phone-input">
@@ -285,16 +297,11 @@ export default function Page() {
                         }}
                         placeholder="Enter your Phone Number"
                       />
-                      <FieldDescription className="text-[12px] ml-1 pt-2">
-                        <span
-                          className={cn("font-semibold", {
-                            "text-green-500": hasPattern && hasEnoughLength,
-                            "text-red-500": fieldState.invalid,
-                          })}
-                        >
-                          Has 10 numbers
-                        </span>
-                      </FieldDescription>
+                      {fieldState.error && (
+                        <p className="text-[12px] text-red-500 font-semibold ml-1 pt-2">
+                          {fieldState.error.message}
+                        </p>
+                      )}
                     </div>
                   </Field>
                 );
