@@ -153,7 +153,7 @@ export default function Page() {
           </Button>
         </Field>
         <div className="flex justify-center items-center gap-2 mt-5">
-          <p>Dont't have an account?</p>
+          <p>Don't have an account?</p>
           <a
             href="/register"
             className="text-blue-500 border-b-2 border-blue-500 font-bold"
