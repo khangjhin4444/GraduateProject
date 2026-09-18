@@ -5,4 +5,23 @@ export const RegisterSchema = z.object({
   message: z.string(),
 });
 
+export const LoginSchema = z.object({
+  success: z.boolean(),
+  accessToken: z.string(),
+  user: z.object({
+    id: z.number(),
+    cartQuantity: z.string(),
+    Name: z.string(),
+    Phone: z.string(),
+    Address: z.string(),
+    role: z.enum(["user", "admin"]),
+  }),
+});
+
+export type LoginErrorResponse = {
+  success: boolean;
+  message: string;
+};
+
+export type LoginResponseEntity = z.infer<typeof LoginSchema>;
 export type RegisterResponseEntity = z.infer<typeof RegisterSchema>;
