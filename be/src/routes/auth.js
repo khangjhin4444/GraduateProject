@@ -11,7 +11,7 @@ const sql = neon(process.env.DATABASE_URL);
 router.post("/register", async (req, res) => {
   const { username, password, fullName, phone, address } = req.body;
   try {
-    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{10,20}$/;
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,20}$/;
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         success: false,
@@ -23,7 +23,7 @@ router.post("/register", async (req, res) => {
     if (existingUser.length > 0)
       return res
         .status(409)
-        .json({ success: false, message: "Username existed!" });
+        .json({ success: false, message: "Username Existed!" });
 
     // 2. Băm mật khẩu (ĐÂY LÀ NƠI BCRYPT HOẠT ĐỘNG)
     const salt = await bcrypt.genSalt(10);
