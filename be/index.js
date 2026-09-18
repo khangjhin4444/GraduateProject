@@ -14,11 +14,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://keyboard-shop-next-henna.vercel.app",
-      "https://jkkeyboard.netlify.app",
-    ],
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   }),

@@ -44,21 +44,27 @@ router.post("/register", async (req, res) => {
 // API ĐĂNG NHẬP
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
+  console.time("total");
   try {
+    console.time("query-user");
     const user = await sql`SELECT * FROM "user" WHERE "Username" = ${username}`;
+    console.timeEnd("query-user");
     if (user.length === 0)
       return res.status(400).json({ message: "Wrong Username or Password" });
 
     const currentUser = user[0];
     const role = currentUser.Username === "admin" ? "admin" : "user";
+    console.time("query-cart");
     const cartQuantityResult =
       await sql`SELECT COALESCE(SUM(ci."Quantity"), 0) AS total_quantity
                               FROM "cart" c
                               LEFT JOIN "cart_items" ci ON c."CartID" = ci."CartID"
                               WHERE c."UserID" = ${currentUser.UserID};`;
+    console.timeEnd("query-cart");
     const cartQuantity = cartQuantityResult[0]?.total_quantity ?? 0;
-
+    console.time("bcrypt-compare");
     const isMatch = await bcrypt.compare(password, currentUser.Password);
+    console.timeEnd("bcrypt-compare");
     if (!isMatch)
       return res
         .status(400)
@@ -82,10 +88,11 @@ router.post("/login", async (req, res) => {
       INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
       VALUES (${currentUser.UserID}, ${refreshToken}, ${expiresAt})
     `;
+    console.timeEnd("total");
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      sameSite: "Lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({
@@ -167,7 +174,19 @@ router.post("/refresh", async (req, res) => {
     await sql`
       DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
     `;
+    const user =
+      await sql`SELECT * FROM "user" WHERE "UserID" = ${decoded.userId}`;
+    if (user.length === 0)
+      return res.status(400).json({ message: "Wrong Username or Password" });
 
+    const currentUser = user[0];
+    const role = currentUser.Username === "admin" ? "admin" : "user";
+    const cartQuantityResult =
+      await sql`SELECT COALESCE(SUM(ci."Quantity"), 0) AS total_quantity
+                              FROM "cart" c
+                              LEFT JOIN "cart_items" ci ON c."CartID" = ci."CartID"
+                              WHERE c."UserID" = ${currentUser.UserID};`;
+    const cartQuantity = cartQuantityResult[0]?.total_quantity ?? 0;
     // 4. Tạo cặp token MỚI
     const newAccessToken = jwt.sign(
       { userId: decoded.userId, role: decoded.role },
@@ -189,43 +208,55 @@ router.post("/refresh", async (req, res) => {
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      sameSite: "Lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({
       success: true,
       accessToken: newAccessToken,
+      user: {
+        id: currentUser.UserID,
+        username: currentUser.Username,
+        cartQuantity: cartQuantity,
+        Name: currentUser.Name,
+        Phone: currentUser.Phone,
+        Address: currentUser.Address,
+        role: role,
+      },
     });
   } catch (err) {
-    return res
-      .status(403)
-      .json({ success: false, message: "Token hết hạn hoặc không hợp lệ!" });
+    console.log(err);
+    return res.status(403).json({ success: false, message: "Expired Token!" });
   }
 });
 
 router.post("/logout", async (req, res) => {
-  const { refreshToken } = req.body;
-
+  const refreshToken = req.cookies.refreshToken;
+  console.time("total");
   if (!refreshToken) {
     return res
       .status(400)
       .json({ success: false, message: "Thiếu refresh token!" });
   }
-
   try {
-    // Xóa refresh token khỏi DB → token không thể dùng lại
+    console.time("query-del-token");
     await sql`
-      DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
-    `;
-
-    res.status(200).json({
-      success: true,
-      message: "Đăng xuất thành công, token đã bị thu hồi",
-    });
+        DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
+      `;
   } catch (error) {
-    console.log("Logout error:", error);
-    res.status(500).json({ success: false, message: "Lỗi server" });
+    console.error("Logout error:", error);
   }
+  console.timeEnd("query-del-token");
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+  });
+  console.timeEnd("total");
+  return res.status(200).json({
+    success: true,
+    message: "Đăng xuất thành công, token đã bị thu hồi",
+  });
 });
 
 router.post("/google", async (req, res) => {
