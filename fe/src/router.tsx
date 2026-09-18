@@ -4,6 +4,7 @@ import Service from "./pages/service";
 import Contact from "./pages/contact";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
+import AuthLayout from "./pages/auth/layout";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 
 const lazyLoad = (importFunc: () => Promise<any>) => async () => {
@@ -22,6 +23,11 @@ export const router = createBrowserRouter([
   },
   { path: "/service", Component: Service },
   { path: "/contact", Component: Contact },
-  { path: "/register", Component: Register },
-  { path: "/login", Component: Login },
+  {
+    Component: AuthLayout,
+    children: [
+      { path: "/register", Component: Register },
+      { path: "/login", Component: Login },
+    ],
+  },
 ]);

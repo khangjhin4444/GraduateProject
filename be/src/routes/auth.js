@@ -11,7 +11,7 @@ const sql = neon(process.env.DATABASE_URL);
 router.post("/register", async (req, res) => {
   const { username, password, fullName, phone, address } = req.body;
   try {
-    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{10,20}$/;
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,20}$/;
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         success: false,
@@ -21,7 +21,9 @@ router.post("/register", async (req, res) => {
     const existingUser =
       await sql`SELECT * FROM "user" WHERE "Username" = ${username}`;
     if (existingUser.length > 0)
-      return res.status(400).json({ message: "Username existed!" });
+      return res
+        .status(409)
+        .json({ success: false, message: "Username Existed!" });
 
     // 2. Băm mật khẩu (ĐÂY LÀ NƠI BCRYPT HOẠT ĐỘNG)
     const salt = await bcrypt.genSalt(10);
@@ -32,10 +34,10 @@ router.post("/register", async (req, res) => {
       INSERT INTO "user" ("Name", "Phone", "Address", "Username", "Password") 
       VALUES (${fullName}, ${phone}, ${address}, ${username}, ${hashedPassword})
     `;
-    res.status(200).json({ success: true, message: "Đăng ký thành công" });
+    res.status(200).json({ success: true, message: "Register Success!" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 });
 
