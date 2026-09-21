@@ -1,5 +1,7 @@
 "use client";
 import {
+  ChevronDown,
+  ChevronRight,
   CircleUserRound,
   Menu,
   ReceiptText,
@@ -63,6 +65,10 @@ export default function Header() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false);
+  const [openProductSubmenu, setOpenProductSubmenu] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const updateScrollState = () => {
@@ -218,20 +224,226 @@ export default function Header() {
         </div>
 
         <div className="hidden md:flex md:flex-row mb-1">
-          <HeaderLink href="/home">Home</HeaderLink>
-          <div className="group relative">
-            <button type="button" className="header-link mx-4 text-lg">
-              Products
+          <NavLink to="/home" className="header-link mx-4 text-lg">
+            Home
+          </NavLink>
+          <div
+            className="group relative"
+            onMouseEnter={() => setIsProductsMenuOpen(true)}
+            onMouseLeave={() => {
+              setIsProductsMenuOpen(false);
+              setOpenProductSubmenu(null);
+            }}
+          >
+            <button
+              type="button"
+              className="header-link mx-4 text-lg flex items-center gap-1"
+              onClick={() => setIsProductsMenuOpen((isOpen) => !isOpen)}
+            >
+              Products <ChevronDown />
             </button>
-            <div className="invisible absolute left-0 top-full z-10 flex w-36 translate-y-2 flex-col items-start gap-1 bg-background mt-1 p-2 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-              <HeaderLink href="/collection/kit">Kit</HeaderLink>
-              <HeaderLink href="/collection/prebuild">Prebuild</HeaderLink>
-              <HeaderLink href="/collection/keycap">Keycap</HeaderLink>
+            <div
+              className={clsx(
+                "absolute left-0 top-full z-10 mt-1 flex w-42 flex-col items-start gap-1 bg-background pb-1 shadow-lg transition-all duration-200",
+                isProductsMenuOpen
+                  ? "visible translate-y-0 opacity-100"
+                  : "invisible translate-y-2 opacity-0",
+              )}
+              onClickCapture={(event) => {
+                if ((event.target as HTMLElement).closest("a")) {
+                  setIsProductsMenuOpen(false);
+                  setOpenProductSubmenu(null);
+                }
+              }}
+            >
+              <div
+                className="group/sub relative w-full"
+                onMouseEnter={() => setOpenProductSubmenu("keyboardkit")}
+                onMouseLeave={() => setOpenProductSubmenu("")}
+              >
+                <NavLink
+                  to="/collection/keyboardkit"
+                  className="header-link mx-4 text-lg flex gap-1 items-center justify-between"
+                  onClick={() => {
+                    setIsProductsMenuOpen(false);
+                    setOpenProductSubmenu(null);
+                  }}
+                >
+                  Keyboard Kit <ChevronRight />
+                </NavLink>
+                <div
+                  className={clsx(
+                    "absolute right-[-80%] top-0 z-10 flex w-36 flex-col items-start gap-1 bg-background pb-1 shadow-lg transition-all duration-200",
+                    openProductSubmenu === "keyboardkit"
+                      ? "visible opacity-100"
+                      : "invisible opacity-0",
+                  )}
+                >
+                  <NavLink
+                    to="/collection/keyboardkit/fullsize"
+                    className="header-link mx-4 text-lg"
+                    onClick={() => setIsProductsMenuOpen(false)}
+                  >
+                    Full Size
+                  </NavLink>
+                  <NavLink
+                    to="/collection/keyboardkit/tkl"
+                    className="header-link mx-4 text-lg"
+                    onClick={() => setIsProductsMenuOpen(false)}
+                  >
+                    TKL
+                  </NavLink>
+                  <NavLink
+                    to="/collection/keyboardkit/75"
+                    className="header-link mx-4 text-lg"
+                    onClick={() => setIsProductsMenuOpen(false)}
+                  >
+                    75% or less
+                  </NavLink>
+                  <NavLink
+                    to="/collection/keyboardkit/alice"
+                    className="header-link mx-4 text-lg"
+                    onClick={() => setIsProductsMenuOpen(false)}
+                  >
+                    Alice
+                  </NavLink>
+                </div>
+              </div>
+
+              <div
+                className="group/sub relative w-full"
+                onMouseEnter={() => setOpenProductSubmenu("prebuild")}
+                onMouseLeave={() => setOpenProductSubmenu("")}
+              >
+                <NavLink
+                  to="/collection/prebuild"
+                  className="header-link mx-4 text-lg flex gap-1 items-center justify-between"
+                  onClick={() => {
+                    setIsProductsMenuOpen(false);
+                    setOpenProductSubmenu(null);
+                  }}
+                >
+                  Prebuild <ChevronRight />
+                </NavLink>
+                <div className="invisible absolute pb-1 flex  right-[-80%] top-0 z-10 w-36 flex-col items-start gap-1 bg-background  opacity-0 shadow-lg transition-all duration-200 group-hover/sub:visible   group-hover/sub:opacity-100 group-focus-within/sub:visible group-focus-within/sub:translate-y-0 group-focus-within/sub:opacity-100">
+                  <NavLink
+                    to="/collection/prebuild/fullsize"
+                    className="header-link mx-4 text-lg"
+                  >
+                    Full Size
+                  </NavLink>
+                  <NavLink
+                    to="/collection/prebuild/tkl"
+                    className="header-link mx-4 text-lg"
+                  >
+                    TKL
+                  </NavLink>
+                  <NavLink
+                    to="/collection/prebuild/75"
+                    className="header-link mx-4 text-lg"
+                  >
+                    75% or less
+                  </NavLink>
+                  <NavLink
+                    to="/collection/prebuild/alice"
+                    className="header-link mx-4 text-lg"
+                  >
+                    Alice
+                  </NavLink>
+                </div>
+              </div>
+              <div
+                className="group/sub relative w-full"
+                onMouseEnter={() => setOpenProductSubmenu("keycap")}
+                onMouseLeave={() => setOpenProductSubmenu("")}
+              >
+                <NavLink
+                  to="/collection/keycap"
+                  className="header-link mx-4 text-lg flex gap-1 items-center justify-between"
+                  onClick={() => {
+                    setIsProductsMenuOpen(false);
+                    setOpenProductSubmenu(null);
+                  }}
+                >
+                  Keycap <ChevronRight />
+                </NavLink>
+                <div className="invisible absolute pb-1 flex  right-[-80%] top-0 z-10 w-36 flex-col items-start gap-1 bg-background  opacity-0 shadow-lg transition-all duration-200 group-hover/sub:visible   group-hover/sub:opacity-100 group-focus-within/sub:visible group-focus-within/sub:translate-y-0 group-focus-within/sub:opacity-100">
+                  <NavLink
+                    to="/collection/keycap/cherry"
+                    className="header-link mx-4 text-lg"
+                  >
+                    Cherry
+                  </NavLink>
+                  <NavLink
+                    to="/collection/keycap/mda"
+                    className="header-link mx-4 text-lg"
+                  >
+                    TMDA
+                  </NavLink>
+                  <NavLink
+                    to="/collection/keycap/sa"
+                    className="header-link mx-4 text-lg"
+                  >
+                    SA
+                  </NavLink>
+                  <NavLink
+                    to="/collection/keycap/artisan"
+                    className="header-link mx-4 text-lg"
+                  >
+                    Artisan
+                  </NavLink>
+                </div>
+              </div>
+              <div
+                className="group/sub relative w-full"
+                onMouseEnter={() => setOpenProductSubmenu("switch")}
+                onMouseLeave={() => setOpenProductSubmenu("")}
+              >
+                <NavLink
+                  to="/collection/switch"
+                  className="header-link mx-4 text-lg flex gap-1 items-center justify-between"
+                  onClick={() => {
+                    setIsProductsMenuOpen(false);
+                    setOpenProductSubmenu(null);
+                  }}
+                >
+                  Switch <ChevronRight />
+                </NavLink>
+                <div className="invisible absolute pb-1 flex  right-[-80%] top-0 z-10 w-36 flex-col items-start gap-1 bg-background  opacity-0 shadow-lg transition-all duration-200 group-hover/sub:visible   group-hover/sub:opacity-100 group-focus-within/sub:visible group-focus-within/sub:translate-y-0 group-focus-within/sub:opacity-100">
+                  <NavLink
+                    to="/collection/switch/linear"
+                    className="header-link mx-4 text-lg"
+                  >
+                    Linear
+                  </NavLink>
+                  <NavLink
+                    to="/collection/switch/tactile"
+                    className="header-link mx-4 text-lg"
+                  >
+                    Tactile
+                  </NavLink>
+                  <NavLink
+                    to="/collection/switch/clicky"
+                    className="header-link mx-4 text-lg"
+                  >
+                    Clicky
+                  </NavLink>
+                  <NavLink
+                    to="/collection/switch/silent"
+                    className="header-link mx-4 text-lg"
+                  >
+                    Silent
+                  </NavLink>
+                </div>
+              </div>
             </div>
           </div>
-
-          <HeaderLink href="/about">About</HeaderLink>
-          <HeaderLink href="/contact">Contact</HeaderLink>
+          <NavLink to="/service" className="header-link mx-4 text-lg">
+            Service
+          </NavLink>
+          <NavLink to="/contact" className="header-link mx-4 text-lg">
+            Contact
+          </NavLink>
         </div>
       </header>
 
@@ -289,19 +501,5 @@ function MobileNavigationLink({
     >
       {children}
     </Link>
-  );
-}
-
-function HeaderLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <NavLink to={href} className="header-link mx-4 text-lg">
-      {children}
-    </NavLink>
   );
 }
