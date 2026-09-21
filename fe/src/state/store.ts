@@ -4,7 +4,7 @@ import tokenReducer from "./token/tokenSlice";
 
 export const store = configureStore({
   reducer: {
-    counter: profileReducer,
+    profile: profileReducer,
     token: tokenReducer,
   },
 });

@@ -23,12 +23,15 @@ const profileSlice = createSlice({
   initialState,
   reducers: {
     setInfo: (state, action: PayloadAction<profileState>) => {
+      state.id = action.payload.id;
+      state.cartQuantity = action.payload.cartQuantity;
       state.fullName = action.payload.fullName;
       state.address = action.payload.address;
       state.phoneNumber = action.payload.phoneNumber;
+      state.role = action.payload.role;
     },
-    deleteInfo: (state) => {
-      state = initialState;
+    deleteInfo: () => {
+      return initialState;
     },
   },
 });
