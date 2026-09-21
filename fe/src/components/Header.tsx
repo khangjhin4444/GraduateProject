@@ -86,20 +86,22 @@ export default function Header() {
         <div className="flex flex-row w-full justify-around items-center">
           <div className="flex-1 flex items-center justify-around md:justify-center">
             <MobileSidebarTrigger />
-            <img
-              className=" object-contain rounded-[50%] cursor-pointer border border-foreground w-12 h-12 md:w-14 md:h-14"
-              src="/logo.png"
-              alt="Logo"
-              onClick={() => {
-                navigate("/home");
-              }}
-            />
+            <button>
+              <img
+                className=" object-contain rounded-[50%] cursor-pointer border border-foreground w-12 h-12 md:w-14 md:h-14"
+                src="/logo.png"
+                alt="Logo"
+                onClick={() => {
+                  navigate("/home");
+                }}
+              />
+            </button>
           </div>
 
           <div className="flex-1 relative w-full flex justify-center ">
             <input
               type="text"
-              className="w-full py-2 px-3 bg-secondary rounded-[40px] my-6 text-secondary-foreground placeholder:text-secondary-foreground  focus:outline-none placeholder:text-[13px] md:placeholder:text-[16px]"
+              className="focus-visible:ring-primary focus-visible:ring-2 w-full py-2 px-3 bg-secondary rounded-[40px] my-6 text-secondary-foreground placeholder:text-secondary-foreground  focus:outline-none placeholder:text-[13px] md:placeholder:text-[16px]"
               placeholder="Search items..."
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={(e) => {
@@ -110,6 +112,7 @@ export default function Header() {
             />
             <div>
               <button
+                aria-label="search-btn"
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-secondary-foreground/70"
                 onClick={() => {
                   if (keyword !== "") {
@@ -123,7 +126,11 @@ export default function Header() {
           </div>
 
           <div className="flex-1  flex-row items-center gap-7 flex justify-center">
-            <button onClick={() => {}} className="relative cursor-pointer">
+            <button
+              aria-label="cart-btn"
+              onClick={() => {}}
+              className="relative cursor-pointer"
+            >
               <ShoppingCart className="w-8 h-8 text-foreground" />
               <div
                 className={clsx(
@@ -135,6 +142,7 @@ export default function Header() {
               </div>
             </button>
             <button
+              aria-label="order-btn"
               className="hidden md:flex justify-center font-semibold text-foreground cursor-pointer items-center"
               onClick={() => {}}
             >
@@ -153,7 +161,10 @@ export default function Header() {
                     <DropdownMenuGroup>
                       <DialogTrigger>
                         <DropdownMenuItem>
-                          <UserIcon className="mr-2 h-4 w-4" />
+                          <UserIcon
+                            aria-label="profile-btn"
+                            className="mr-2 h-4 w-4"
+                          />
                           Profile
                         </DropdownMenuItem>
                       </DialogTrigger>
@@ -213,9 +224,9 @@ export default function Header() {
               Products
             </button>
             <div className="invisible absolute left-0 top-full z-10 flex w-36 translate-y-2 flex-col items-start gap-1 bg-background mt-2 p-2 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-              <HeaderLink href="/product/kit">Kit</HeaderLink>
-              <HeaderLink href="/product/prebuild">Prebuild</HeaderLink>
-              <HeaderLink href="/product/keycap">Keycap</HeaderLink>
+              <HeaderLink href="/collection/kit">Kit</HeaderLink>
+              <HeaderLink href="/collection/prebuild">Prebuild</HeaderLink>
+              <HeaderLink href="/collection/keycap">Keycap</HeaderLink>
             </div>
           </div>
 
