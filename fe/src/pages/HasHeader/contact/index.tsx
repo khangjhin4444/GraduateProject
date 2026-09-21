@@ -7,6 +7,7 @@ export default function Page() {
   const navigate = useNavigate();
   return (
     <div>
+      <title>JK Keyboard-Contact Page</title>
       <h1>This is Service Page</h1>
       {token.accessToken !== "" && (
         <button onClick={() => handleLogout()}>Logout</button>
