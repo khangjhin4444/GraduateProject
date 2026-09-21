@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-
+@import "@fontsource-variable/geist";
 .header-link {
   position: relative;
   color: var(--foreground);
@@ -30,7 +30,6 @@
 .header-link:focus-visible::after {
   transform: scaleX(1);
 }
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
