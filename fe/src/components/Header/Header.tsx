@@ -144,7 +144,7 @@ export default function Header() {
               <ShoppingCart className="w-8 h-8 text-foreground" />
               <div
                 className={clsx(
-                  "absolute select-none -right-2 -top-2 bg-red-500 text-white rounded-full p-2 w-6 h-6  items-center flex justify-center font-bold",
+                  "absolute select-none -right-2 -top-2 bg-accent text-accent-foreground rounded-full w-6 h-6  items-center flex justify-center font-bold",
                   { hidden: !isAuth },
                 )}
               >
@@ -243,10 +243,13 @@ export default function Header() {
               type="button"
               className="header-link mx-4 text-lg flex items-center gap-1"
               onClick={() => setIsProductsMenuOpen((isOpen) => !isOpen)}
+              aria-expanded={isProductsMenuOpen}
+              aria-controls="products-menu"
             >
               Products <ChevronDown />
             </button>
             <div
+              id="products-menu"
               className={clsx(
                 "absolute left-0 top-full z-10 mt-1 flex w-42 flex-col items-start gap-1 bg-background pb-1 shadow-lg transition-all duration-200",
                 isProductsMenuOpen
