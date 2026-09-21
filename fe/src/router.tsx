@@ -4,13 +4,14 @@ import {
   redirect,
   type LoaderFunction,
 } from "react-router";
-import Home from "./pages/home";
-import Service from "./pages/service";
-import Contact from "./pages/contact";
+import Home from "./pages/HasHeader/home";
+import Service from "./pages/HasHeader/service";
+import Contact from "./pages/HasHeader/contact";
 import Login from "./pages/auth/login";
-import ProductDetail from "./pages/product";
+import ProductDetail from "./pages/HasHeader/product";
 import Register from "./pages/auth/register";
 import AuthLayout from "./pages/auth/layout";
+import HasHeaderLayout from "./pages/HasHeader/layout";
 import NotFoundPage from "./components/NotFound";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
@@ -66,23 +67,28 @@ export const router = createBrowserRouter([
         loader: () => redirect("/home"),
       },
       {
-        path: "/home",
-        Component: Home,
-        errorElement: <GlobalErrorFallback />,
-      },
-      { path: "/service", Component: Service },
-      { path: "/contact", Component: Contact },
-      {
-        path: "/product/:id",
-        loader: withAuth(async ({ params }) => {
-          const productId = Number(params.id);
-          if (isNaN(productId)) {
-            return redirect("/not-found");
-          }
-          return null;
-        }),
-        Component: ProductDetail,
-        hydrateFallbackElement: <p>Loading</p>,
+        Component: HasHeaderLayout,
+        children: [
+          {
+            path: "/home",
+            Component: Home,
+            errorElement: <GlobalErrorFallback />,
+          },
+          { path: "/service", Component: Service },
+          { path: "/contact", Component: Contact },
+          {
+            path: "/product/:id",
+            loader: withAuth(async ({ params }) => {
+              const productId = Number(params.id);
+              if (isNaN(productId)) {
+                return redirect("/not-found");
+              }
+              return null;
+            }),
+            Component: ProductDetail,
+            hydrateFallbackElement: <p>Loading</p>,
+          },
+        ],
       },
     ],
   },

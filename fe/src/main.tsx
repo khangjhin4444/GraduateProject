@@ -8,11 +8,14 @@ import { queryClient } from "@/providers/QueryProvider";
 
 import { Provider } from "react-redux";
 import { store } from "./state/store.ts";
+import { TooltipProvider } from "./components/ui/tooltip.tsx";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <RouterProvider router={router} />
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
       </Provider>
     </QueryClientProvider>
   </StrictMode>,
