@@ -117,7 +117,7 @@ export const router = createBrowserRouter([
             hydrateFallbackElement: <p>Loading</p>,
           },
           {
-            path: "/collection/:type/:sub",
+            path: "/collection/:type/:sub?",
             loader: withAuth(({ params }) => {
               const type = params.type;
               const sub = params.sub;
