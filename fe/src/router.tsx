@@ -11,6 +11,7 @@ import Login from "./pages/auth/login";
 import ProductDetail from "./pages/product";
 import Register from "./pages/auth/register";
 import AuthLayout from "./pages/auth/layout";
+import NotFoundPage from "./components/NotFound";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
@@ -73,10 +74,13 @@ export const router = createBrowserRouter([
       { path: "/contact", Component: Contact },
       {
         path: "/product/:id",
-        // loader: withAuth(async ({ params }) => {
-        //   const productId = Number(params.id);
-        //   return await queryClient.query(productDetailOptions(productId));
-        // }),
+        loader: withAuth(async ({ params }) => {
+          const productId = Number(params.id);
+          if (isNaN(productId)) {
+            return redirect("/not-found");
+          }
+          return null;
+        }),
         Component: ProductDetail,
         hydrateFallbackElement: <p>Loading</p>,
       },
@@ -89,4 +93,5 @@ export const router = createBrowserRouter([
       { path: "/login", Component: Login },
     ],
   },
+  { path: "/not-found", Component: NotFoundPage },
 ]);
