@@ -1,7 +1,6 @@
 "use client";
 import {
   ChevronDown,
-  ChevronRight,
   CircleUserRound,
   Menu,
   ReceiptText,
@@ -26,10 +25,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import EditProfileForm from "./edit-profile-form";
+import EditProfileForm from "../edit-profile-form";
 import { useAppSelector } from "@/state/hooks";
 import { handleLogout } from "@/lib/handleLogout";
-import { Link, NavLink, useNavigate } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -41,7 +40,12 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "./ui/accordion";
+} from "../ui/accordion";
+import { SUBTYPES } from "@/shared/ProductSubtype";
+import MobileProductCategory, {
+  MobileNavigationLink,
+} from "./_components/MobileProductCategory";
+import DesktopProductCategory from "./_components/DesktopProductCategory";
 
 function MobileSidebarTrigger() {
   const { toggleSidebar } = useSidebar();
@@ -256,186 +260,19 @@ export default function Header() {
                 }
               }}
             >
-              <div
-                className="group/sub relative w-full"
-                onMouseEnter={() => setOpenProductSubmenu("keyboardkit")}
-                onMouseLeave={() => setOpenProductSubmenu("")}
-              >
-                <NavLink
-                  to="/collection/keyboardkit"
-                  className="header-link mx-4 text-lg flex gap-1 items-center justify-between"
-                  onClick={() => {
+              {Object.keys(SUBTYPES).map((type) => (
+                <DesktopProductCategory
+                  key={type}
+                  type={type}
+                  isOpen={openProductSubmenu === type}
+                  onOpen={() => setOpenProductSubmenu(type)}
+                  onClose={() => setOpenProductSubmenu(null)}
+                  onNavigate={() => {
                     setIsProductsMenuOpen(false);
                     setOpenProductSubmenu(null);
                   }}
-                >
-                  Keyboard Kit <ChevronRight />
-                </NavLink>
-                <div
-                  className={clsx(
-                    "absolute right-[-80%] top-0 z-10 flex w-36 flex-col items-start gap-1 bg-background pb-1 shadow-lg transition-all duration-200",
-                    openProductSubmenu === "keyboardkit"
-                      ? "visible opacity-100"
-                      : "invisible opacity-0",
-                  )}
-                >
-                  <NavLink
-                    to="/collection/keyboardkit/fullsize"
-                    className="header-link mx-4 text-lg"
-                    onClick={() => setIsProductsMenuOpen(false)}
-                  >
-                    Full Size
-                  </NavLink>
-                  <NavLink
-                    to="/collection/keyboardkit/tkl"
-                    className="header-link mx-4 text-lg"
-                    onClick={() => setIsProductsMenuOpen(false)}
-                  >
-                    TKL
-                  </NavLink>
-                  <NavLink
-                    to="/collection/keyboardkit/75"
-                    className="header-link mx-4 text-lg"
-                    onClick={() => setIsProductsMenuOpen(false)}
-                  >
-                    75% or less
-                  </NavLink>
-                  <NavLink
-                    to="/collection/keyboardkit/alice"
-                    className="header-link mx-4 text-lg"
-                    onClick={() => setIsProductsMenuOpen(false)}
-                  >
-                    Alice
-                  </NavLink>
-                </div>
-              </div>
-
-              <div
-                className="group/sub relative w-full"
-                onMouseEnter={() => setOpenProductSubmenu("prebuild")}
-                onMouseLeave={() => setOpenProductSubmenu("")}
-              >
-                <NavLink
-                  to="/collection/prebuild"
-                  className="header-link mx-4 text-lg flex gap-1 items-center justify-between"
-                  onClick={() => {
-                    setIsProductsMenuOpen(false);
-                    setOpenProductSubmenu(null);
-                  }}
-                >
-                  Prebuild <ChevronRight />
-                </NavLink>
-                <div className="invisible absolute pb-1 flex  right-[-80%] top-0 z-10 w-36 flex-col items-start gap-1 bg-background  opacity-0 shadow-lg transition-all duration-200 group-hover/sub:visible   group-hover/sub:opacity-100 group-focus-within/sub:visible group-focus-within/sub:translate-y-0 group-focus-within/sub:opacity-100">
-                  <NavLink
-                    to="/collection/prebuild/fullsize"
-                    className="header-link mx-4 text-lg"
-                  >
-                    Full Size
-                  </NavLink>
-                  <NavLink
-                    to="/collection/prebuild/tkl"
-                    className="header-link mx-4 text-lg"
-                  >
-                    TKL
-                  </NavLink>
-                  <NavLink
-                    to="/collection/prebuild/75"
-                    className="header-link mx-4 text-lg"
-                  >
-                    75% or less
-                  </NavLink>
-                  <NavLink
-                    to="/collection/prebuild/alice"
-                    className="header-link mx-4 text-lg"
-                  >
-                    Alice
-                  </NavLink>
-                </div>
-              </div>
-              <div
-                className="group/sub relative w-full"
-                onMouseEnter={() => setOpenProductSubmenu("keycap")}
-                onMouseLeave={() => setOpenProductSubmenu("")}
-              >
-                <NavLink
-                  to="/collection/keycap"
-                  className="header-link mx-4 text-lg flex gap-1 items-center justify-between"
-                  onClick={() => {
-                    setIsProductsMenuOpen(false);
-                    setOpenProductSubmenu(null);
-                  }}
-                >
-                  Keycap <ChevronRight />
-                </NavLink>
-                <div className="invisible absolute pb-1 flex  right-[-80%] top-0 z-10 w-36 flex-col items-start gap-1 bg-background  opacity-0 shadow-lg transition-all duration-200 group-hover/sub:visible   group-hover/sub:opacity-100 group-focus-within/sub:visible group-focus-within/sub:translate-y-0 group-focus-within/sub:opacity-100">
-                  <NavLink
-                    to="/collection/keycap/cherry"
-                    className="header-link mx-4 text-lg"
-                  >
-                    Cherry
-                  </NavLink>
-                  <NavLink
-                    to="/collection/keycap/mda"
-                    className="header-link mx-4 text-lg"
-                  >
-                    TMDA
-                  </NavLink>
-                  <NavLink
-                    to="/collection/keycap/sa"
-                    className="header-link mx-4 text-lg"
-                  >
-                    SA
-                  </NavLink>
-                  <NavLink
-                    to="/collection/keycap/artisan"
-                    className="header-link mx-4 text-lg"
-                  >
-                    Artisan
-                  </NavLink>
-                </div>
-              </div>
-              <div
-                className="group/sub relative w-full"
-                onMouseEnter={() => setOpenProductSubmenu("switch")}
-                onMouseLeave={() => setOpenProductSubmenu("")}
-              >
-                <NavLink
-                  to="/collection/switch"
-                  className="header-link mx-4 text-lg flex gap-1 items-center justify-between"
-                  onClick={() => {
-                    setIsProductsMenuOpen(false);
-                    setOpenProductSubmenu(null);
-                  }}
-                >
-                  Switch <ChevronRight />
-                </NavLink>
-                <div className="invisible absolute pb-1 flex  right-[-80%] top-0 z-10 w-36 flex-col items-start gap-1 bg-background  opacity-0 shadow-lg transition-all duration-200 group-hover/sub:visible   group-hover/sub:opacity-100 group-focus-within/sub:visible group-focus-within/sub:translate-y-0 group-focus-within/sub:opacity-100">
-                  <NavLink
-                    to="/collection/switch/linear"
-                    className="header-link mx-4 text-lg"
-                  >
-                    Linear
-                  </NavLink>
-                  <NavLink
-                    to="/collection/switch/tactile"
-                    className="header-link mx-4 text-lg"
-                  >
-                    Tactile
-                  </NavLink>
-                  <NavLink
-                    to="/collection/switch/clicky"
-                    className="header-link mx-4 text-lg"
-                  >
-                    Clicky
-                  </NavLink>
-                  <NavLink
-                    to="/collection/switch/silent"
-                    className="header-link mx-4 text-lg"
-                  >
-                    Silent
-                  </NavLink>
-                </div>
-              </div>
+                />
+              ))}
             </div>
           </div>
           <NavLink to="/service" className="header-link mx-4 text-lg">
@@ -462,15 +299,9 @@ export default function Header() {
                   Products
                 </AccordionTrigger>
                 <AccordionContent className="flex flex-col border-b-2">
-                  <MobileNavigationLink href="/home">
-                    Keyboard Kit
-                  </MobileNavigationLink>
-                  <MobileNavigationLink href="/home">
-                    Prebuild
-                  </MobileNavigationLink>
-                  <MobileNavigationLink href="/home">
-                    Keycap
-                  </MobileNavigationLink>
+                  {Object.keys(SUBTYPES).map((type) => (
+                    <MobileProductCategory key={type} type={type} />
+                  ))}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -481,25 +312,5 @@ export default function Header() {
         </Sidebar>
       </div>
     </>
-  );
-}
-
-function MobileNavigationLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  const { setOpenMobile } = useSidebar();
-
-  return (
-    <Link
-      to={href}
-      className="px-4 py-3 text-base text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-      onClick={() => setOpenMobile(false)}
-    >
-      {children}
-    </Link>
   );
 }
