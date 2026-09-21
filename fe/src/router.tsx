@@ -21,6 +21,7 @@ import Checkout from "./pages/checkout";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
+import { SUBTYPES } from "./shared/ProductSubtype";
 
 const lazyLoad = (importFunc: () => Promise<any>) => async () => {
   const module = await importFunc();
@@ -67,13 +68,6 @@ function withAuth(
     return loader ? loader(args) : null;
   };
 }
-
-const SUBTYPES: Record<string, string[]> = {
-  keyboardkit: ["alice", "75", "tkl", "fullsize"],
-  prebuild: ["alice", "75", "tkl", "fullsize"],
-  keycap: ["cherry", "mda", "sa", "artisan"],
-  switch: ["linear", "tactile", "clicky", "silent"],
-};
 
 export const router = createBrowserRouter([
   {
