@@ -15,7 +15,7 @@ export const ProductDetailSchema = z.object({
     Description: z.string(),
     SubType: z.string(),
     images: z.array(z.string()),
-    variants: z.array(VariantSchema),
+    variants: z.array(VariantSchema).min(1),
   }),
 });
 
