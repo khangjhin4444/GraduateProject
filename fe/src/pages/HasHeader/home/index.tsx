@@ -7,6 +7,7 @@ export default function Page() {
   const navigate = useNavigate();
   return (
     <div className="flex gap-3">
+      <title>JK Keyboard-Home Page</title>
       <h1>This is home page</h1>
       {token.accessToken !== "" && (
         <button onClick={() => handleLogout()}>Logout</button>
