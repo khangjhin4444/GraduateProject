@@ -13,11 +13,14 @@ import Register from "./pages/auth/register";
 import AuthLayout from "./pages/auth/layout";
 import HasHeaderLayout from "./pages/HasHeader/layout";
 import NotFoundPage from "./components/NotFound";
+import ForbiddenPage from "./components/Forbidden";
+import ProductByCategory from "./pages/HasHeader/productByCategory";
+import ProductByKeyword from "./pages/HasHeader/productByKeyword";
+import Cart from "./pages/HasHeader/cart";
+import Checkout from "./pages/checkout";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
-import { queryClient } from "./providers/QueryProvider";
-import { productDetailOptions } from "./hooks/useProductDetail";
 
 const lazyLoad = (importFunc: () => Promise<any>) => async () => {
   const module = await importFunc();
@@ -42,7 +45,10 @@ async function rootLoader() {
   return null;
 }
 
-function withAuth(loader: LoaderFunction): LoaderFunction {
+function withAuth(
+  loader?: LoaderFunction,
+  options?: { roles?: string[] },
+): LoaderFunction {
   return async (args) => {
     if (store.getState().token.accessToken === "") {
       await refreshAuth();
@@ -52,9 +58,22 @@ function withAuth(loader: LoaderFunction): LoaderFunction {
       throw redirect("/login");
     }
 
-    return loader(args);
+    if (options?.roles) {
+      const role = store.getState().profile.role;
+      if (!options.roles.includes(role)) {
+        throw redirect("/forbbiden");
+      }
+    }
+    return loader ? loader(args) : null;
   };
 }
+
+const SUBTYPES: Record<string, string[]> = {
+  keyboardkit: ["alice", "75", "tkl", "fullsize"],
+  prebuild: ["alice", "75", "tkl", "fullsize"],
+  keycap: ["cherry", "mda", "sa", "artisan"],
+  switch: ["linear", "tactile", "clicky", "silent"],
+};
 
 export const router = createBrowserRouter([
   {
@@ -77,8 +96,17 @@ export const router = createBrowserRouter([
           { path: "/service", Component: Service },
           { path: "/contact", Component: Contact },
           {
+            path: "/search/:keyword",
+            loader: ({ params }) => {
+              const keyword = params.keyword;
+              if (!keyword) return redirect("/home");
+              return { keyword };
+            },
+            Component: ProductByKeyword,
+          },
+          {
             path: "/product/:id",
-            loader: withAuth(async ({ params }) => {
+            loader: withAuth(({ params }) => {
               const productId = Number(params.id);
               if (isNaN(productId)) {
                 return redirect("/not-found");
@@ -87,6 +115,57 @@ export const router = createBrowserRouter([
             }),
             Component: ProductDetail,
             hydrateFallbackElement: <p>Loading</p>,
+          },
+          {
+            path: "/collection/:type/:sub",
+            loader: withAuth(({ params }) => {
+              const type = params.type;
+              const sub = params.sub;
+              if (!type) return redirect("/home");
+              if (
+                !["keyboardkit", "prebuild", "keycap", "switch"].includes(type)
+              ) {
+                return redirect("/not-found");
+              }
+              if (sub && !SUBTYPES[type].includes(sub))
+                return redirect("/not-found");
+              return { type, sub };
+            }),
+            Component: ProductByCategory,
+          },
+          {
+            path: "/cart",
+            loader: withAuth(),
+            Component: Cart,
+          },
+          { path: "*", Component: NotFoundPage },
+        ],
+      },
+      {
+        children: [
+          {
+            path: "/checkout",
+            loader: withAuth(),
+            Component: Checkout,
+          },
+          {
+            path: "/admin",
+            loader: withAuth(() => {}, { roles: ["admin"] }),
+            children: [
+              {
+                path: "dashboard",
+                lazy: lazyLoad(() => import("./pages/admin/dashboard")),
+              },
+              {
+                path: "products",
+                lazy: lazyLoad(() => import("./pages/admin/products")),
+              },
+              {
+                path: "orders",
+                lazy: lazyLoad(() => import("./pages/admin/orders")),
+              },
+              { path: "*", Component: NotFoundPage },
+            ],
           },
         ],
       },
@@ -100,4 +179,5 @@ export const router = createBrowserRouter([
     ],
   },
   { path: "/not-found", Component: NotFoundPage },
+  { path: "/forbbiden", Component: ForbiddenPage },
 ]);
