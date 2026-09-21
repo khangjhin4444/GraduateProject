@@ -217,13 +217,13 @@ export default function Header() {
           </div>
         </div>
 
-        <div className="hidden md:flex md:flex-row">
+        <div className="hidden md:flex md:flex-row mb-1">
           <HeaderLink href="/home">Home</HeaderLink>
           <div className="group relative">
             <button type="button" className="header-link mx-4 text-lg">
               Products
             </button>
-            <div className="invisible absolute left-0 top-full z-10 flex w-36 translate-y-2 flex-col items-start gap-1 bg-background mt-2 p-2 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+            <div className="invisible absolute left-0 top-full z-10 flex w-36 translate-y-2 flex-col items-start gap-1 bg-background mt-1 p-2 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
               <HeaderLink href="/collection/kit">Kit</HeaderLink>
               <HeaderLink href="/collection/prebuild">Prebuild</HeaderLink>
               <HeaderLink href="/collection/keycap">Keycap</HeaderLink>
