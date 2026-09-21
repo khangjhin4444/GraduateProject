@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import Header from "@/components/Header";
+import Header from "@/components/Header/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import Footer from "@/components/Footer";
 

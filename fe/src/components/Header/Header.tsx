@@ -1,5 +1,6 @@
 "use client";
 import {
+  ChevronDown,
   CircleUserRound,
   Menu,
   ReceiptText,
@@ -24,10 +25,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import EditProfileForm from "./edit-profile-form";
+import EditProfileForm from "../edit-profile-form";
 import { useAppSelector } from "@/state/hooks";
 import { handleLogout } from "@/lib/handleLogout";
-import { Link, NavLink, useNavigate } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -39,7 +40,12 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "./ui/accordion";
+} from "../ui/accordion";
+import { SUBTYPES } from "@/shared/ProductSubtype";
+import MobileProductCategory, {
+  MobileNavigationLink,
+} from "./_components/MobileProductCategory";
+import DesktopProductCategory from "./_components/DesktopProductCategory";
 
 function MobileSidebarTrigger() {
   const { toggleSidebar } = useSidebar();
@@ -63,6 +69,10 @@ export default function Header() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false);
+  const [openProductSubmenu, setOpenProductSubmenu] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const updateScrollState = () => {
@@ -134,7 +144,7 @@ export default function Header() {
               <ShoppingCart className="w-8 h-8 text-foreground" />
               <div
                 className={clsx(
-                  "absolute select-none -right-2 -top-2 bg-red-500 text-white rounded-full p-2 w-6 h-6  items-center flex justify-center font-bold",
+                  "absolute select-none -right-2 -top-2 bg-accent text-accent-foreground rounded-full w-6 h-6  items-center flex justify-center font-bold",
                   { hidden: !isAuth },
                 )}
               >
@@ -218,20 +228,62 @@ export default function Header() {
         </div>
 
         <div className="hidden md:flex md:flex-row mb-1">
-          <HeaderLink href="/home">Home</HeaderLink>
-          <div className="group relative">
-            <button type="button" className="header-link mx-4 text-lg">
-              Products
+          <NavLink to="/home" className="header-link mx-4 text-lg">
+            Home
+          </NavLink>
+          <div
+            className="group relative"
+            onMouseEnter={() => setIsProductsMenuOpen(true)}
+            onMouseLeave={() => {
+              setIsProductsMenuOpen(false);
+              setOpenProductSubmenu(null);
+            }}
+          >
+            <button
+              type="button"
+              className="header-link mx-4 text-lg flex items-center gap-1"
+              onClick={() => setIsProductsMenuOpen((isOpen) => !isOpen)}
+              aria-expanded={isProductsMenuOpen}
+              aria-controls="products-menu"
+            >
+              Products <ChevronDown />
             </button>
-            <div className="invisible absolute left-0 top-full z-10 flex w-36 translate-y-2 flex-col items-start gap-1 bg-background mt-1 p-2 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-              <HeaderLink href="/collection/kit">Kit</HeaderLink>
-              <HeaderLink href="/collection/prebuild">Prebuild</HeaderLink>
-              <HeaderLink href="/collection/keycap">Keycap</HeaderLink>
+            <div
+              id="products-menu"
+              className={clsx(
+                "absolute left-0 top-full z-10 mt-1 flex w-42 flex-col items-start gap-1 bg-background pb-1 shadow-lg transition-all duration-200",
+                isProductsMenuOpen
+                  ? "visible translate-y-0 opacity-100"
+                  : "invisible translate-y-2 opacity-0",
+              )}
+              onClickCapture={(event) => {
+                if ((event.target as HTMLElement).closest("a")) {
+                  setIsProductsMenuOpen(false);
+                  setOpenProductSubmenu(null);
+                }
+              }}
+            >
+              {Object.keys(SUBTYPES).map((type) => (
+                <DesktopProductCategory
+                  key={type}
+                  type={type}
+                  isOpen={openProductSubmenu === type}
+                  onOpen={() => setOpenProductSubmenu(type)}
+                  onClose={() => setOpenProductSubmenu(null)}
+                  onNavigate={() => {
+                    setIsProductsMenuOpen(false);
+                    setOpenProductSubmenu(null);
+                  }}
+                />
+              ))}
             </div>
           </div>
-
-          <HeaderLink href="/about">About</HeaderLink>
-          <HeaderLink href="/contact">Contact</HeaderLink>
+          <NavLink to="/service" className="header-link mx-4 text-lg">
+            Service
+          </NavLink>
+          <NavLink to="/contact" className="header-link mx-4 text-lg">
+            Contact
+          </NavLink>
         </div>
       </header>
 
@@ -250,15 +302,9 @@ export default function Header() {
                   Products
                 </AccordionTrigger>
                 <AccordionContent className="flex flex-col border-b-2">
-                  <MobileNavigationLink href="/home">
-                    Keyboard Kit
-                  </MobileNavigationLink>
-                  <MobileNavigationLink href="/home">
-                    Prebuild
-                  </MobileNavigationLink>
-                  <MobileNavigationLink href="/home">
-                    Keycap
-                  </MobileNavigationLink>
+                  {Object.keys(SUBTYPES).map((type) => (
+                    <MobileProductCategory key={type} type={type} />
+                  ))}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -269,39 +315,5 @@ export default function Header() {
         </Sidebar>
       </div>
     </>
-  );
-}
-
-function MobileNavigationLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  const { setOpenMobile } = useSidebar();
-
-  return (
-    <Link
-      to={href}
-      className="px-4 py-3 text-base text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-      onClick={() => setOpenMobile(false)}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function HeaderLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <NavLink to={href} className="header-link mx-4 text-lg">
-      {children}
-    </NavLink>
   );
 }
