@@ -170,10 +170,7 @@ router.post("/refresh", async (req, res) => {
       });
     }
 
-    // 3. Xóa token cũ khỏi DB (vô hiệu hóa)
-    await sql`
-      DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
-    `;
+    // Chuẩn bị toàn bộ dữ liệu thay thế trước khi vô hiệu hóa token cũ.
     const user =
       await sql`SELECT * FROM "user" WHERE "UserID" = ${decoded.userId}`;
     if (user.length === 0)
@@ -199,12 +196,17 @@ router.post("/refresh", async (req, res) => {
       { expiresIn: "7d" },
     );
 
-    // 5. Lưu refresh token MỚI vào DB
+    // 5. Xóa token cũ và lưu token mới atomically.
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await sql`
-      INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
-      VALUES (${decoded.userId}, ${newRefreshToken}, ${expiresAt})
-    `;
+    await sql.transaction([
+      sql`
+        DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
+      `,
+      sql`
+        INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
+        VALUES (${decoded.userId}, ${newRefreshToken}, ${expiresAt})
+      `,
+    ]);
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
