@@ -1,4 +1,4 @@
-import { handleLogout } from "@/lib/handleLogou";
+import { handleLogout } from "@/lib/handleLogout";
 import { useAppSelector } from "@/state/hooks";
 import { useNavigate } from "react-router";
 
