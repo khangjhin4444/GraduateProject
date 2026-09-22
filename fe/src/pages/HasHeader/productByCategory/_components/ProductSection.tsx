@@ -31,7 +31,7 @@ export default function ProductSection({
 }) {
   const [page, setPage] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
-  const isInitialRender = useRef(true);
+  const shouldScrollAfterPageChange = useRef(false);
   const { data, isPending, isError, error } = useProducts({
     type: formatRequest(type),
     sub: sub ? formatRequest(sub) : undefined,
@@ -44,18 +44,17 @@ export default function ProductSection({
     !isPending && !isError && products.length > 0 && (page > 1 || hasNextPage);
 
   useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      return;
-    }
+    if (!shouldScrollAfterPageChange.current || isPending || isError) return;
 
+    shouldScrollAfterPageChange.current = false;
     sectionRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
-  }, [page]);
+  }, [page, isPending, isError]);
 
   const changePage = (nextPage: number) => {
+    shouldScrollAfterPageChange.current = true;
     setPage(nextPage);
   };
 
@@ -124,7 +123,10 @@ export default function ProductSection({
               >
                 <ChevronLeft />
               </Button>
-              <span className="flex min-w-10 items-center justify-center text-sm font-medium">
+              <span
+                className="flex min-w-10 items-center justify-center text-sm font-medium"
+                aria-current="page"
+              >
                 {page}
               </span>
               <Button
