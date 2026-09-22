@@ -7,11 +7,13 @@ import { deleteInfo, setInfo } from "@/state/profile/profileSlice";
 let refreshPromise: Promise<{
   success: boolean;
   expiredSession: boolean;
+  shouldLogin: boolean;
 }> | null = null;
 
 export function refreshAuth(): Promise<{
   success: boolean;
   expiredSession: boolean;
+  shouldLogin: boolean;
 }> {
   if (refreshPromise) {
     return refreshPromise;
@@ -36,16 +38,24 @@ export function refreshAuth(): Promise<{
           role: data.user.role,
         }),
       );
-      return { success: true, expiredSession: false };
+      return { success: true, expiredSession: false, shouldLogin: false };
     })
     .catch((error) => {
       console.log(error);
       const status = error?.response?.status;
-      if (status === 401) return { success: false, expiredSession: false };
-      if (status === 409) return { success: false, expiredSession: false };
+      if (status === 401) {
+        return { success: false, expiredSession: false, shouldLogin: true };
+      }
+      if (status === 409 || status === 503 || !error?.response) {
+        return { success: false, expiredSession: false, shouldLogin: false };
+      }
       store.dispatch(deleteInfo());
       store.dispatch(deleteToken());
-      return { success: false, expiredSession: status === 403 };
+      return {
+        success: false,
+        expiredSession: status === 403,
+        shouldLogin: status === 403,
+      };
     })
     .finally(() => {
       refreshPromise = null;
