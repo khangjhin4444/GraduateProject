@@ -5,61 +5,30 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const getProducts = async (req, res) => {
   try {
     const type = req.query.type;
-    const limit = parseInt(req.query.limit) || 8;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 8, 1), 20);
+    const offset = (page - 1) * limit;
     const sort = req.query.sort || "default";
     const sub = req.query.sub || null;
 
-    // 1. Giải mã Cursor từ Frontend gửi lên (nếu có)
-    let cursor = null;
-    if (req.query.cursor !== "null") {
-      try {
-        const decoded = Buffer.from(req.query.cursor, "base64").toString(
-          "utf-8",
-        );
-        cursor = JSON.parse(decoded);
-      } catch (e) {
-        console.error("Lỗi parse cursor:", e);
-      }
-    }
-
-    // 2. Cấu hình câu lệnh Sắp xếp (ORDER BY) và Điều kiện con trỏ (WHERE cursor)
+    // Fetch one extra product to determine whether another page exists.
     let orderBySql = sql`"ProductID" ASC`;
-    let cursorCondition = sql``;
 
     if (sort === "price-asc") {
       orderBySql = sql`"Price" ASC, "ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "Price" > ${cursor.value} OR ("Price" = ${cursor.value} AND "ProductID" > ${cursor.id})`;
-      }
     } else if (sort === "price-desc") {
       orderBySql = sql`"Price" DESC, "ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "Price" < ${cursor.value} OR ("Price" = ${cursor.value} AND "ProductID" > ${cursor.id})`;
-      }
     } else if (sort === "name-asc") {
       orderBySql = sql`"Name" ASC, "ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "Name" > ${cursor.value} OR ("Name" = ${cursor.value} AND "ProductID" > ${cursor.id})`;
-      }
     } else if (sort === "name-desc") {
       orderBySql = sql`"Name" DESC, "ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "Name" < ${cursor.value} OR ("Name" = ${cursor.value} AND "ProductID" > ${cursor.id})`;
-      }
-    } else {
-      // Default: Chỉ sắp xếp theo ID
-      orderBySql = sql`"ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "ProductID" > ${cursor.id}`;
-      }
     }
 
-    // 3. Cấu hình bộ lọc Category và SubCategory
-    const categoryFilter = sub
-      ? sql`p."ProductType" = ${type} AND p."SubType" = ${sub}`
-      : sql`p."ProductType" = ${type}`;
+    const categoryFilter =
+      sub !== "undefined"
+        ? sql`p."ProductType" = ${type} AND p."SubType" = ${sub}`
+        : sql`p."ProductType" = ${type}`;
 
-    // 4. Truy vấn CSDL
     const products = await sql`
       WITH BaseProducts AS (
         SELECT DISTINCT ON (p."ProductID") 
@@ -77,9 +46,8 @@ const getProducts = async (req, res) => {
       ),
       PaginatedProducts AS (
         SELECT * FROM BaseProducts
-        ${cursorCondition}
         ORDER BY ${orderBySql}
-        LIMIT ${limit}
+        LIMIT ${limit + 1} OFFSET ${offset}
       )
       SELECT 
         pp.*,
@@ -98,29 +66,16 @@ const getProducts = async (req, res) => {
       ORDER BY ${orderBySql}
     `;
 
-    // 5. Tạo nextCursor cho lần gọi tiếp theo
-    let nextCursor = null;
-    if (products.length === limit) {
-      const lastProduct = products[products.length - 1];
-      let cursorData = { id: lastProduct.ProductID };
-
-      // Lưu giá trị tie-breaker tương ứng với kiểu sort
-      if (sort.startsWith("price")) {
-        cursorData.value = lastProduct.Price;
-      } else if (sort.startsWith("name")) {
-        cursorData.value = lastProduct.Name;
-      }
-
-      // Mã hóa thành chuỗi Base64 để gửi về Frontend cho an toàn và gọn gàng
-      nextCursor = Buffer.from(JSON.stringify(cursorData)).toString("base64");
-    }
+    const hasNextPage = products.length > limit;
+    const data = hasNextPage ? products.slice(0, limit) : products;
 
     res.status(200).json({
       success: true,
+      page,
       limit: limit,
-      count: products.length,
-      data: products,
-      nextCursor: nextCursor, // Frontend sẽ dùng chuỗi này thay cho `page`
+      hasNextPage,
+      nextPage: hasNextPage ? page + 1 : null,
+      data,
     });
   } catch (error) {
     console.error("Error catch:", error);
