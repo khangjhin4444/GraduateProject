@@ -115,6 +115,7 @@ export const router = createBrowserRouter([
             loader: withAuth(({ params }) => {
               const type = params.type;
               const sub = params.sub;
+              console.log(type);
               if (!type) return redirect("/home");
               if (
                 !["keyboardkit", "prebuild", "keycap", "switch"].includes(type)
@@ -132,7 +133,6 @@ export const router = createBrowserRouter([
             loader: withAuth(),
             Component: Cart,
           },
-          { path: "*", Component: NotFoundPage },
         ],
       },
       {
@@ -174,4 +174,5 @@ export const router = createBrowserRouter([
   },
   { path: "/not-found", Component: NotFoundPage },
   { path: "/forbbiden", Component: ForbiddenPage },
+  { path: "*", Component: NotFoundPage },
 ]);
