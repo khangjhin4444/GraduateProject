@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import {
   createBrowserRouter,
   Outlet,
@@ -22,8 +24,11 @@ import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
 import { SUBTYPES } from "./shared/ProductSubtype";
+import type { ComponentType } from "react";
 
-const lazyLoad = (importFunc: () => Promise<any>) => async () => {
+type LazyModule = { default: ComponentType };
+
+const lazyLoad = (importFunc: () => Promise<LazyModule>) => async () => {
   const module = await importFunc();
   return { Component: module.default };
 };

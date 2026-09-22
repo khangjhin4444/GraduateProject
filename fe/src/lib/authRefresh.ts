@@ -1,6 +1,6 @@
 import { store } from "@/state/store";
 import { authApi } from "@/api/axios.instance";
-import type { LoginResponseEntity } from "@/feature/auth/schema/auth.schema";
+import type { LoginResponseEntity } from "@/features/auth/schema/auth.schema";
 import { deleteToken, setToken } from "@/state/token/tokenSlice";
 import { deleteInfo, setInfo } from "@/state/profile/profileSlice";
 

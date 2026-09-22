@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import EditProfileForm from "../edit-profile-form";
+// import EditProfileForm from "../edit-profile-form";
 import { useAppSelector } from "@/state/hooks";
 import { handleLogout } from "@/lib/handleLogout";
 import { NavLink, useNavigate } from "react-router";
@@ -212,7 +212,7 @@ export default function Header() {
                     <DialogTitle>User Profile</DialogTitle>
                   </DialogHeader>
 
-                  <EditProfileForm onSuccess={() => setIsDialogOpen(false)} />
+                  {/* <EditProfileForm onSuccess={() => setIsDialogOpen(false)} /> */}
                 </DialogContent>
               </Dialog>
             ) : (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { clsx } from "clsx";
 import { getHexColor } from "@/utils/colors";
