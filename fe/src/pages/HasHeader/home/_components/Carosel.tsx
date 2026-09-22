@@ -53,7 +53,7 @@ export default function Carosel() {
               <Link to={obj.link}>
                 <img
                   src={obj.img}
-                  alt=""
+                  alt="Carosel Image"
                   className="object-cover h-full w-full rounded-2xl"
                 />
               </Link>
