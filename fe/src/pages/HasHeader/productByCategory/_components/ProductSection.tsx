@@ -54,14 +54,6 @@ export default function ProductSection({
   };
 
   useEffect(() => {
-    shouldScrollAfterPageChange.current = false;
-    sectionRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }, [type, sub]);
-
-  useEffect(() => {
     if (!shouldScrollAfterPageChange.current || isPending || isError) return;
 
     shouldScrollAfterPageChange.current = false;
