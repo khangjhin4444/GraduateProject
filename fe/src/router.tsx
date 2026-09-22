@@ -4,6 +4,7 @@ import {
   createBrowserRouter,
   Outlet,
   redirect,
+  ScrollRestoration,
   type LoaderFunction,
 } from "react-router";
 import Home from "./pages/HasHeader/home";
@@ -37,6 +38,7 @@ function RootLayout() {
   return (
     <>
       <Outlet />
+      <ScrollRestoration />
     </>
   );
 }

@@ -10,7 +10,7 @@ export default function Page() {
   const { type, sub } = useLoaderData() as CategoryLoaderData;
   return (
     <main className="p-6 w-full">
-      <ProductSection type={type} sub={sub}></ProductSection>
+      <ProductSection key={`${type}:${sub ?? ""}`} type={type} sub={sub} />
     </main>
   );
 }

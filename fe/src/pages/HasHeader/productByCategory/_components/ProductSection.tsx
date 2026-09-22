@@ -20,6 +20,7 @@ const sortOtps = [
   { label: "Price Decrease", value: "price-desc" },
   { label: "A - Z", value: "name-asc" },
   { label: "Z - A", value: "name-desc" },
+  { label: "Default", value: "default" },
 ];
 
 export default function ProductSection({
@@ -30,11 +31,13 @@ export default function ProductSection({
   sub?: string;
 }) {
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("default");
   const sectionRef = useRef<HTMLElement>(null);
   const shouldScrollAfterPageChange = useRef(false);
   const { data, isPending, isError, error } = useProducts({
     type: formatRequest(type),
     sub: sub ? formatRequest(sub) : undefined,
+    sort,
     page,
     limit: 8,
   });
@@ -42,6 +45,13 @@ export default function ProductSection({
   const hasNextPage = data?.pages.at(-1)?.hasNextPage ?? false;
   const showPagination =
     !isPending && !isError && products.length > 0 && (page > 1 || hasNextPage);
+
+  const handleSortChange = (value: unknown) => {
+    if (typeof value === "string") {
+      setSort(value);
+      setPage(1);
+    }
+  };
 
   useEffect(() => {
     if (!shouldScrollAfterPageChange.current || isPending || isError) return;
@@ -75,7 +85,7 @@ export default function ProductSection({
         </h1>
         <div className="flex items-center gap-2">
           <p>Sort by: </p>
-          <Select items={sortOtps}>
+          <Select items={sortOtps} onValueChange={handleSortChange}>
             <SelectTrigger className="w-45">
               <SelectValue placeholder="Default" />
             </SelectTrigger>
@@ -100,7 +110,9 @@ export default function ProductSection({
         </p>
       )}
       {!isPending && !isError && products.length === 0 && (
-        <p>No products found.</p>
+        <div className="flex w-full justify-center mt-10 text-foreground font-bold text-2xl">
+          <p>No products found!</p>
+        </div>
       )}
       {!isPending && !isError && products.length > 0 && (
         <div className="w-full">
