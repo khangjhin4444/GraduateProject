@@ -14,6 +14,10 @@ const {
 const router = express.Router();
 
 const sql = neon(process.env.DATABASE_URL);
+const refreshLocks = new Map();
+const refreshReleases = new Map();
+const refreshReplayCache = new Map();
+const REFRESH_REPLAY_TTL_MS = 5000;
 
 const getRefreshCookieOptions = (maxAge) => ({
   httpOnly: true,
@@ -22,6 +26,19 @@ const getRefreshCookieOptions = (maxAge) => ({
   path: "/",
   maxAge,
 });
+
+const sendRefreshResponse = (res, result) => {
+  res.cookie(
+    "refreshToken",
+    result.refreshToken,
+    getRefreshCookieOptions(result.remainingSessionMs),
+  );
+  return res.status(200).json({
+    success: true,
+    accessToken: result.accessToken,
+    user: result.user,
+  });
+};
 
 // API ĐĂNG KÝ
 router.post("/register", async (req, res) => {
@@ -146,6 +163,34 @@ router.post("/refresh", async (req, res) => {
   try {
     // 1. Verify JWT signature trước
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const cachedRefresh = refreshReplayCache.get(refreshToken);
+    if (cachedRefresh && cachedRefresh.expiresAt > Date.now()) {
+      return sendRefreshResponse(res, cachedRefresh.result);
+    }
+    if (cachedRefresh) refreshReplayCache.delete(refreshToken);
+
+    const activeRefreshLock = refreshLocks.get(refreshToken);
+    if (activeRefreshLock) {
+      await activeRefreshLock;
+      const replayedRefresh = refreshReplayCache.get(refreshToken);
+      if (replayedRefresh && replayedRefresh.expiresAt > Date.now()) {
+        return sendRefreshResponse(res, replayedRefresh.result);
+      }
+    }
+
+    let releaseRefreshLock;
+    const refreshLock = new Promise((resolve) => {
+      releaseRefreshLock = resolve;
+    });
+    refreshLocks.set(refreshToken, refreshLock);
+    refreshReleases.set(refreshToken, releaseRefreshLock);
+    const releaseLock = () => {
+      if (refreshLocks.get(refreshToken) === refreshLock) {
+        refreshLocks.delete(refreshToken);
+        refreshReleases.delete(refreshToken);
+        releaseRefreshLock();
+      }
+    };
 
     // 2. Kiểm tra token có tồn tại trong DB không
     const tokenRecord = await sql`
@@ -154,6 +199,12 @@ router.post("/refresh", async (req, res) => {
     `;
 
     if (tokenRecord.length === 0) {
+      const replayedRefresh = refreshReplayCache.get(refreshToken);
+      if (replayedRefresh && replayedRefresh.expiresAt > Date.now()) {
+        releaseLock();
+        return sendRefreshResponse(res, replayedRefresh.result);
+      }
+
       // ⚠️ Token không còn trong DB — có 2 tình huống xảy ra:
       //
       // A) Concurrent requests (false-positive): nhiều request cùng lúc đều
@@ -174,6 +225,7 @@ router.post("/refresh", async (req, res) => {
       if (activeToken.length > 0) {
         // ✅ Case A: Có token mới đã được tạo → concurrent request hợp lệ
         // Trả 409 để NextAuth/client biết refresh đang xảy ra, thử lại sau
+        releaseLock();
         return res.status(409).json({
           success: false,
           message: "Token đang được làm mới, vui lòng thử lại.",
@@ -186,6 +238,7 @@ router.post("/refresh", async (req, res) => {
       await sql`
         DELETE FROM "refresh_tokens" WHERE "user_id" = ${decoded.userId}
       `;
+      releaseLock();
       return res.status(403).json({
         success: false,
         message: "Refresh token đã bị thu hồi! Phát hiện tái sử dụng token.",
@@ -199,6 +252,7 @@ router.post("/refresh", async (req, res) => {
         DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
       `;
       res.clearCookie("refreshToken", getRefreshCookieOptions(0));
+      releaseLock();
       return res.status(403).json({
         success: false,
         message: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
@@ -208,8 +262,10 @@ router.post("/refresh", async (req, res) => {
     // Chuẩn bị toàn bộ dữ liệu thay thế trước khi vô hiệu hóa token cũ.
     const user =
       await sql`SELECT * FROM "user" WHERE "UserID" = ${decoded.userId}`;
-    if (user.length === 0)
+    if (user.length === 0) {
+      releaseLock();
       return res.status(400).json({ message: "Wrong Username or Password" });
+    }
 
     const currentUser = user[0];
     const role = currentUser.Username === "admin" ? "admin" : "user";
@@ -246,13 +302,9 @@ router.post("/refresh", async (req, res) => {
         VALUES (${decoded.userId}, ${newRefreshToken}, ${sessionExpiresAt})
       `,
     ]);
-    res.cookie(
-      "refreshToken",
-      newRefreshToken,
-      getRefreshCookieOptions(remainingSessionMs),
-    );
-    res.status(200).json({
-      success: true,
+    const refreshResult = {
+      refreshToken: newRefreshToken,
+      remainingSessionMs,
       accessToken: newAccessToken,
       user: {
         id: currentUser.UserID,
@@ -263,8 +315,24 @@ router.post("/refresh", async (req, res) => {
         Address: currentUser.Address,
         role: role,
       },
+    };
+    refreshReplayCache.set(refreshToken, {
+      expiresAt: Date.now() + REFRESH_REPLAY_TTL_MS,
+      result: refreshResult,
     });
+    setTimeout(
+      () => refreshReplayCache.delete(refreshToken),
+      REFRESH_REPLAY_TTL_MS,
+    );
+    releaseLock();
+    return sendRefreshResponse(res, refreshResult);
   } catch (err) {
+    const releaseRefreshLock = refreshReleases.get(refreshToken);
+    if (releaseRefreshLock) {
+      refreshLocks.delete(refreshToken);
+      refreshReleases.delete(refreshToken);
+      releaseRefreshLock();
+    }
     console.log(err);
     return res.status(403).json({ success: false, message: "Expired Token!" });
   }

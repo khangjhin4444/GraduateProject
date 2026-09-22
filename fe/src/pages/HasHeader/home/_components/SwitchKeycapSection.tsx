@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useProducts from "@/hooks/useProducts";
 import ProductTab from "./ProductTab";
+import ProductSkeleton from "@/components/ProductSkeleton";
 
 export default function SwitchKeycapSection() {
   const {
@@ -38,7 +39,7 @@ export default function SwitchKeycapSection() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="switch">
-          {isSwitchPending && <p>Loading Switch products...</p>}
+          {isSwitchPending && <ProductSkeleton />}
           {isSwitchError && (
             <p role="alert">
               {SwitchError instanceof Error
@@ -59,7 +60,7 @@ export default function SwitchKeycapSection() {
           )}
         </TabsContent>
         <TabsContent value="keycap">
-          {iskeycapPending && <p>Loading keycap products...</p>}
+          {iskeycapPending && <ProductSkeleton />}
           {iskeycapError && (
             <p role="alert">
               {keycapError instanceof Error

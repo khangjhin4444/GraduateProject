@@ -20,6 +20,7 @@ import ProductByCategory from "./pages/HasHeader/productByCategory";
 import ProductByKeyword from "./pages/HasHeader/productByKeyword";
 import Cart from "./pages/HasHeader/cart";
 import Checkout from "./pages/checkout";
+import LoadingPage from "./components/LoadingPage";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
@@ -46,7 +47,7 @@ async function rootLoader() {
     return null;
   }
 
-  refreshAuth();
+  await refreshAuth();
 
   return null;
 }
@@ -77,7 +78,7 @@ function withAuth(
 export const router = createBrowserRouter([
   {
     Component: RootLayout,
-    hydrateFallbackElement: <>Loading.....</>,
+    hydrateFallbackElement: <LoadingPage />,
     loader: rootLoader,
     children: [
       {

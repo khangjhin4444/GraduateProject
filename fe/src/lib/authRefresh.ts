@@ -43,10 +43,8 @@ export function refreshAuth(): Promise<{
       const status = error?.response?.status;
       if (status === 401) return { success: false, expiredSession: false };
       if (status === 409) return { success: false, expiredSession: false };
-      store.dispatch(() => {
-        deleteInfo();
-        deleteToken();
-      });
+      store.dispatch(deleteInfo());
+      store.dispatch(deleteToken());
       return { success: false, expiredSession: status === 403 };
     })
     .finally(() => {
