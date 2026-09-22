@@ -1,4 +1,4 @@
-import { ProductUsecase } from "@/feature/product/usecase/product.usecase";
+import { ProductUsecase } from "@/features/product/usecase/product.usecase";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 
 export const productDetailOptions = (id: number) =>

@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import {
   createBrowserRouter,
   Outlet,
@@ -22,8 +24,11 @@ import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
 import { SUBTYPES } from "./shared/ProductSubtype";
+import type { ComponentType } from "react";
 
-const lazyLoad = (importFunc: () => Promise<any>) => async () => {
+type LazyModule = { default: ComponentType };
+
+const lazyLoad = (importFunc: () => Promise<LazyModule>) => async () => {
   const module = await importFunc();
   return { Component: module.default };
 };
@@ -115,6 +120,7 @@ export const router = createBrowserRouter([
             loader: withAuth(({ params }) => {
               const type = params.type;
               const sub = params.sub;
+              console.log(type);
               if (!type) return redirect("/home");
               if (
                 !["keyboardkit", "prebuild", "keycap", "switch"].includes(type)
@@ -132,7 +138,6 @@ export const router = createBrowserRouter([
             loader: withAuth(),
             Component: Cart,
           },
-          { path: "*", Component: NotFoundPage },
         ],
       },
       {
@@ -174,4 +179,5 @@ export const router = createBrowserRouter([
   },
   { path: "/not-found", Component: NotFoundPage },
   { path: "/forbbiden", Component: ForbiddenPage },
+  { path: "*", Component: NotFoundPage },
 ]);

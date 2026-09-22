@@ -21,7 +21,7 @@ import { isAxiosError } from "axios";
 import { EyeOffIcon, EyeIcon } from "lucide-react";
 import { useState } from "react";
 import useLogin from "@/hooks/useLogin";
-import type { LoginErrorResponse } from "@/feature/auth/schema/auth.schema";
+import type { LoginErrorResponse } from "@/features/auth/schema/auth.schema";
 import { useAppDispatch } from "@/state/hooks";
 import { setToken } from "@/state/token/tokenSlice";
 import { setInfo } from "@/state/profile/profileSlice";

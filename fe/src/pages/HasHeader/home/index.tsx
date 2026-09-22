@@ -1,14 +1,21 @@
 import { handleLogout } from "@/lib/handleLogout";
 import { useAppSelector } from "@/state/hooks";
 import { useNavigate } from "react-router";
+import Carosel from "./_components/Carosel";
+import KeyboardSection from "./_components/KeyboardSection";
 
 export default function Page() {
   const token = useAppSelector((state) => state.token);
   const navigate = useNavigate();
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 flex-col px-4 w-full">
       <title>JK Keyboard-Home Page</title>
-      <h1>This is home page</h1>
+      <Carosel></Carosel>
+
+      <div className="flex flex-col justify-center items-center w-full">
+        <h2 className="text-2xl font-semibold text-foreground">In stock</h2>
+        <KeyboardSection></KeyboardSection>
+      </div>
       {token.accessToken !== "" && (
         <button onClick={() => handleLogout()}>Logout</button>
       )}
