@@ -21,7 +21,7 @@ export default function ProductTab({
       </div>
       <div className="flex justify-center mt-5">
         <Button
-          className="group relative isolate overflow-hidden bg-background border-primary border-2 text-primary text-lg px-6 py-3 hover:bg-background hover:text-primary-foreground before:absolute before:inset-0 before:-z-10 before:origin-left before:scale-x-0 before:bg-primary before:transition-transform before:duration-300 before:ease-out hover:before:scale-x-100"
+          className=" cursor-pointer group relative isolate overflow-hidden bg-background border-primary border-2 text-primary text-lg px-6 py-3 hover:bg-background hover:text-primary-foreground before:absolute before:inset-0 before:-z-10 before:origin-left before:scale-x-0 before:bg-primary before:transition-transform before:duration-300 before:ease-out hover:before:scale-x-100"
           onClick={() => navigate(link)}
         >
           <span className="relative z-10">View All</span>
