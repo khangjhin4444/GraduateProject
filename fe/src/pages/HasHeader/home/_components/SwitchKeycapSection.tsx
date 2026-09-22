@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useProducts from "@/hooks/useProducts";
 import ProductTab from "./ProductTab";
-import ProductSkeleton from "./ProductSkeleton";
+import ProductSkeleton from "@/components/ProductSkeleton";
 
 export default function SwitchKeycapSection() {
   const {

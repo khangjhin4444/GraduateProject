@@ -1,7 +1,6 @@
-import { Suspense } from "react";
 import { useLoaderData } from "react-router";
-import ProductByCategory from "./_components/ProductByCategory";
 
+import ProductSection from "./_components/ProductSection";
 type CategoryLoaderData = {
   type: string;
   sub?: string;
@@ -9,10 +8,9 @@ type CategoryLoaderData = {
 
 export default function Page() {
   const { type, sub } = useLoaderData() as CategoryLoaderData;
-
   return (
-    <Suspense fallback={<div>Loading Product...</div>}>
-      <ProductByCategory type={type} sub={sub}></ProductByCategory>
-    </Suspense>
+    <main className="p-6 w-full">
+      <ProductSection type={type} sub={sub}></ProductSection>
+    </main>
   );
 }
