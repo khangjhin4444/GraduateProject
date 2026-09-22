@@ -25,7 +25,7 @@ const getProducts = async (req, res) => {
     }
 
     const categoryFilter =
-      sub !== "undefined"
+      sub !== "undefined" && sub != null
         ? sql`p."ProductType" = ${type} AND p."SubType" = ${sub}`
         : sql`p."ProductType" = ${type}`;
 
