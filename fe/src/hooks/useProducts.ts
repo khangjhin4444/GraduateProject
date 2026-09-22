@@ -17,7 +17,7 @@ export const useProductsOption = ({
   enable?: boolean | undefined;
 }) =>
   infiniteQueryOptions({
-    queryKey: ["products", type, sort, sub],
+    queryKey: ["products", type, sub, sort, page],
     initialPageParam: page,
     queryFn: ({ pageParam }) =>
       ProductUsecase.getProducts({ type, page: pageParam, limit, sort, sub }),
