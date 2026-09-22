@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="mt-10 border-t bg-primary text-primary-foreground">
+    <footer className=" border-t bg-primary text-primary-foreground h-80">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h3 className="text-2xl font-bold mb-6 text-left">JK Keyboard</h3>
 

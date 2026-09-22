@@ -5,13 +5,14 @@ import Footer from "@/components/Footer";
 
 export default function Layout() {
   return (
-    <SidebarProvider className="flex-col">
+    <SidebarProvider className="flex-col relative">
       <Header></Header>
-      <div className="flex-1">
+      <div className="flex-1 bg-background">
         <Outlet />
       </div>
-
-      <Footer></Footer>
+      <div className="sticky bottom-0 left-0 right-0 -z-10">
+        <Footer></Footer>
+      </div>
     </SidebarProvider>
   );
 }
