@@ -10,6 +10,39 @@ let refreshPromise: Promise<{
   shouldLogin: boolean;
 }> | null = null;
 
+const MAX_CONCURRENT_REFRESH_RETRIES = 2;
+const REFRESH_RETRY_DELAY_MS = 100;
+
+const wait = (milliseconds: number) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+const getErrorStatus = (error: unknown) => {
+  if (typeof error !== "object" || error === null) return undefined;
+
+  const response = (error as { response?: { status?: unknown } }).response;
+  return typeof response?.status === "number" ? response.status : undefined;
+};
+
+async function requestRefresh(attempt = 0): Promise<LoginResponseEntity> {
+  try {
+    return (
+      await authApi.post<LoginResponseEntity>(
+        "/api/auth/refresh",
+        {},
+        { withCredentials: true },
+      )
+    ).data;
+  } catch (error) {
+    const status = getErrorStatus(error);
+    if (status === 409 && attempt < MAX_CONCURRENT_REFRESH_RETRIES) {
+      await wait(REFRESH_RETRY_DELAY_MS * (attempt + 1));
+      return requestRefresh(attempt + 1);
+    }
+
+    throw error;
+  }
+}
+
 export function refreshAuth(): Promise<{
   success: boolean;
   expiredSession: boolean;
@@ -19,14 +52,8 @@ export function refreshAuth(): Promise<{
     return refreshPromise;
   }
 
-  refreshPromise = authApi
-    .post<LoginResponseEntity>(
-      "/api/auth/refresh",
-      {},
-      { withCredentials: true },
-    )
-    .then((response) => {
-      const data = response.data;
+  refreshPromise = requestRefresh()
+    .then((data) => {
       store.dispatch(setToken(data.accessToken));
       store.dispatch(
         setInfo({
@@ -42,11 +69,11 @@ export function refreshAuth(): Promise<{
     })
     .catch((error) => {
       console.log(error);
-      const status = error?.response?.status;
+      const status = getErrorStatus(error);
       if (status === 401) {
         return { success: false, expiredSession: false, shouldLogin: true };
       }
-      if (status === 409 || status === 503 || !error?.response) {
+      if (status === 409 || status === 503 || status === undefined) {
         return { success: false, expiredSession: false, shouldLogin: false };
       }
       store.dispatch(deleteInfo());

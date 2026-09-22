@@ -10,6 +10,7 @@ const {
   getRemainingSessionMs,
   getTokenTtlSeconds,
 } = require("../auth/session");
+const { isDatabaseUnavailableError } = require("../auth/refreshError");
 
 const router = express.Router();
 
@@ -199,7 +200,6 @@ router.post("/refresh", async (req, res) => {
     `;
 
     if (tokenRecord.length === 0) {
-      console.log("RefreshToken khong co trong DB");
       const replayedRefresh = refreshReplayCache.get(refreshToken);
       if (replayedRefresh && replayedRefresh.expiresAt > Date.now()) {
         releaseLock();
@@ -224,6 +224,8 @@ router.post("/refresh", async (req, res) => {
       `;
 
       if (activeToken.length > 0) {
+        // ✅ Case A: Có token mới đã được tạo → concurrent request hợp lệ
+        // Trả 409 để NextAuth/client biết refresh đang xảy ra, thử lại sau
         releaseLock();
         return res.status(409).json({
           success: false,
@@ -333,13 +335,10 @@ router.post("/refresh", async (req, res) => {
       releaseRefreshLock();
     }
     console.log(err);
-    const isDatabaseUnavailable =
-      err?.sourceError?.cause?.code === "UND_ERR_CONNECT_TIMEOUT" ||
-      err?.message?.includes("Error connecting to database");
-
-    return res.status(isDatabaseUnavailable ? 503 : 403).json({
+    const databaseUnavailable = isDatabaseUnavailableError(err);
+    return res.status(databaseUnavailable ? 503 : 403).json({
       success: false,
-      message: isDatabaseUnavailable
+      message: databaseUnavailable
         ? "Authentication service temporarily unavailable."
         : "Expired Token!",
     });
