@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useProducts from "@/hooks/useProducts";
 import ProductTab from "./ProductTab";
+import ProductSkeleton from "./ProductSkeleton";
 
 export default function KeyboardSection() {
   const {
@@ -44,7 +45,7 @@ export default function KeyboardSection() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="keyboardkit">
-          {isKeyboardPending && <p>Loading Keyboard Kit products...</p>}
+          {isKeyboardPending && <ProductSkeleton />}
           {isKeyboardError && (
             <p role="alert">
               {keyboardError instanceof Error
@@ -65,7 +66,7 @@ export default function KeyboardSection() {
           )}
         </TabsContent>
         <TabsContent value="prebuild">
-          {isPrebuildPending && <p>Loading Prebuild products...</p>}
+          {isPrebuildPending && <ProductSkeleton />}
           {isPrebuildError && (
             <p role="alert">
               {prebuildError instanceof Error
