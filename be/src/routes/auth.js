@@ -2,11 +2,27 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("node:crypto");
 const { neon } = require("@neondatabase/serverless");
+const {
+  createSessionExpiry,
+  getAccessTokenTtlSeconds,
+  getRemainingSessionMs,
+  getTokenTtlSeconds,
+} = require("../auth/session");
 
 const router = express.Router();
 
 const sql = neon(process.env.DATABASE_URL);
+
+const getRefreshCookieOptions = (maxAge) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "Lax",
+  path: "/",
+  maxAge,
+});
+
 // API ĐĂNG KÝ
 router.post("/register", async (req, res) => {
   const { username, password, fullName, phone, address } = req.body;
@@ -70,31 +86,36 @@ router.post("/login", async (req, res) => {
         .status(400)
         .json({ success: false, message: "Wrong Username or Password!" });
 
-    // 2. Tạo Access Token (sống 15 phút) và Refresh Token (sống 7 ngày)
+    const sessionExpiresAt = createSessionExpiry();
+    const remainingSessionMs = getRemainingSessionMs(sessionExpiresAt);
+    const refreshTtlSeconds = getTokenTtlSeconds(remainingSessionMs);
     const accessToken = jwt.sign(
       { userId: currentUser.UserID, role: role },
       process.env.JWT_ACCESS_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: getAccessTokenTtlSeconds(remainingSessionMs) },
     );
     const refreshToken = jwt.sign(
-      { userId: currentUser.UserID, role: role, jti: crypto.randomUUID() },
+      {
+        userId: currentUser.UserID,
+        role: role,
+        jti: crypto.randomUUID(),
+        sessionExpiresAt: sessionExpiresAt.toISOString(),
+      },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: refreshTtlSeconds },
     );
 
     // Lưu refresh token vào DB (Token Rotation)
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 ngày
     await sql`
       INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
-      VALUES (${currentUser.UserID}, ${refreshToken}, ${expiresAt})
+      VALUES (${currentUser.UserID}, ${refreshToken}, ${sessionExpiresAt})
     `;
     console.timeEnd("total");
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getRefreshCookieOptions(remainingSessionMs),
+    );
     res.status(200).json({
       success: true,
       accessToken,
@@ -128,7 +149,8 @@ router.post("/refresh", async (req, res) => {
 
     // 2. Kiểm tra token có tồn tại trong DB không
     const tokenRecord = await sql`
-      SELECT * FROM "refresh_tokens" WHERE "token" = ${refreshToken}
+      SELECT * FROM "refresh_tokens"
+      WHERE "token" = ${refreshToken} AND "expires_at" > NOW()
     `;
 
     if (tokenRecord.length === 0) {
@@ -145,7 +167,7 @@ router.post("/refresh", async (req, res) => {
       // Phân biệt bằng cách: kiểm tra user này còn có token hợp lệ nào không.
       const activeToken = await sql`
         SELECT 1 FROM "refresh_tokens"
-        WHERE "user_id" = ${decoded.userId}
+        WHERE "user_id" = ${decoded.userId} AND "expires_at" > NOW()
         LIMIT 1
       `;
 
@@ -170,6 +192,19 @@ router.post("/refresh", async (req, res) => {
       });
     }
 
+    const sessionExpiresAt = new Date(tokenRecord[0].expires_at);
+    const remainingSessionMs = getRemainingSessionMs(sessionExpiresAt);
+    if (remainingSessionMs <= 0) {
+      await sql`
+        DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
+      `;
+      res.clearCookie("refreshToken", getRefreshCookieOptions(0));
+      return res.status(403).json({
+        success: false,
+        message: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
+      });
+    }
+
     // Chuẩn bị toàn bộ dữ liệu thay thế trước khi vô hiệu hóa token cũ.
     const user =
       await sql`SELECT * FROM "user" WHERE "UserID" = ${decoded.userId}`;
@@ -188,31 +223,34 @@ router.post("/refresh", async (req, res) => {
     const newAccessToken = jwt.sign(
       { userId: decoded.userId, role: decoded.role },
       process.env.JWT_ACCESS_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: getAccessTokenTtlSeconds(remainingSessionMs) },
     );
     const newRefreshToken = jwt.sign(
-      { userId: decoded.userId, role: decoded.role, jti: crypto.randomUUID() },
+      {
+        userId: decoded.userId,
+        role: decoded.role,
+        jti: crypto.randomUUID(),
+        sessionExpiresAt: sessionExpiresAt.toISOString(),
+      },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: getTokenTtlSeconds(remainingSessionMs) },
     );
 
     // 5. Xóa token cũ và lưu token mới atomically.
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await sql.transaction([
       sql`
         DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
       `,
       sql`
         INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
-        VALUES (${decoded.userId}, ${newRefreshToken}, ${expiresAt})
+        VALUES (${decoded.userId}, ${newRefreshToken}, ${sessionExpiresAt})
       `,
     ]);
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie(
+      "refreshToken",
+      newRefreshToken,
+      getRefreshCookieOptions(remainingSessionMs),
+    );
     res.status(200).json({
       success: true,
       accessToken: newAccessToken,
@@ -250,9 +288,7 @@ router.post("/logout", async (req, res) => {
   }
   console.timeEnd("query-del-token");
   res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
+    ...getRefreshCookieOptions(0),
   });
   console.timeEnd("total");
   return res.status(200).json({
@@ -297,26 +333,39 @@ router.post("/google", async (req, res) => {
     `;
     const cartQuantity = cartQuantityResult[0]?.total_quantity ?? 0;
 
+    const sessionExpiresAt = createSessionExpiry();
+    const remainingSessionMs = getRemainingSessionMs(sessionExpiresAt);
+    const refreshTtlSeconds = getTokenTtlSeconds(remainingSessionMs);
+
     // 4. Tạo JWT Tokens
     const accessToken = jwt.sign(
       { userId: currentUser.UserID, role: role },
       process.env.JWT_ACCESS_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: getAccessTokenTtlSeconds(remainingSessionMs) },
     );
     const refreshToken = jwt.sign(
-      { userId: currentUser.UserID, role: role },
+      {
+        userId: currentUser.UserID,
+        role: role,
+        jti: crypto.randomUUID(),
+        sessionExpiresAt: sessionExpiresAt.toISOString(),
+      },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: refreshTtlSeconds },
     );
 
     // Lưu refresh token vào DB (Token Rotation)
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await sql`
       INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
-      VALUES (${currentUser.UserID}, ${refreshToken}, ${expiresAt})
+      VALUES (${currentUser.UserID}, ${refreshToken}, ${sessionExpiresAt})
     `;
 
     // 5. Trả về cho NextAuth
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getRefreshCookieOptions(remainingSessionMs),
+    );
     res.status(200).json({
       success: true,
       accessToken,
