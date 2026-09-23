@@ -135,7 +135,6 @@ export const router = createBrowserRouter([
             loader: withAuth(({ params }) => {
               const type = params.type;
               const sub = params.sub;
-              console.log(type);
               if (!type) return redirect("/home");
               if (
                 !["keyboardkit", "prebuild", "keycap", "switch"].includes(type)
