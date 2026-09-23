@@ -116,7 +116,8 @@ export default function Header() {
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key == "Enter" && keyword !== "") {
-                  // router.push(`/search/${keyword}`);
+                  const encoded = encodeURIComponent(keyword);
+                  navigate(`/search/${encoded}`);
                 }
               }}
             />
@@ -126,7 +127,8 @@ export default function Header() {
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-secondary-foreground/70"
                 onClick={() => {
                   if (keyword !== "") {
-                    // router.push(`/search/${keyword}`);
+                    const encoded = encodeURIComponent(keyword);
+                    navigate(`/search/${encoded}`);
                   }
                 }}
               >

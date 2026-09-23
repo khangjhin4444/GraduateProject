@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useProducts from "@/hooks/useProducts";
 import ProductTab from "./ProductTab";
-import ProductSkeleton from "@/components/ProductSkeleton";
+import ProductSkeleton from "@/shared/components/ProductSkeleton";
 
 export default function KeyboardSection() {
   const {

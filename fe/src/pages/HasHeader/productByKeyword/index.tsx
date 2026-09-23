@@ -1,13 +1,13 @@
-import { Suspense } from "react";
 import { useLoaderData } from "react-router";
-import ProductByKeyword from "./_components/ProductByKeyword";
+import SearchProductSection from "./_components/ProductSection";
 
 export default function Page() {
   const { keyword } = useLoaderData();
 
   return (
-    <Suspense fallback={<div>Loading Product...</div>}>
-      <ProductByKeyword keyword={keyword}></ProductByKeyword>
-    </Suspense>
+    <SearchProductSection
+      keyword={keyword}
+      key={keyword}
+    ></SearchProductSection>
   );
 }
