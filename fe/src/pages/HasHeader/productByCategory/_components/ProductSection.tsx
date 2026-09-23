@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useProducts from "@/hooks/useProducts";
-import ProductSkeleton from "@/components/ProductSkeleton";
+import ProductSkeleton from "@/shared/components/ProductSkeleton";
 import { formatRequest } from "@/utils/formatRequest";
-import { ProductCard } from "@/pages/HasHeader/home/_components/ProductCard";
+import { ProductCard } from "@/shared/components/ProductCard";
 import {
   Select,
   SelectContent,

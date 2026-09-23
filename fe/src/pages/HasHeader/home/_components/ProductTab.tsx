@@ -1,5 +1,5 @@
 import type { ProductEntity } from "@/features/product/schema/product.schema";
-import { ProductCard } from "./ProductCard";
+import { ProductCard } from "@/shared/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router";

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ProductSkeleton from "@/components/ProductSkeleton";
-import { ProductCard } from "@/pages/HasHeader/home/_components/ProductCard";
+import ProductSkeleton from "@/shared/components/ProductSkeleton";
+import { ProductCard } from "@/shared/components/ProductCard";
 import {
   Select,
   SelectContent,
