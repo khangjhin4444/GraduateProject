@@ -38,6 +38,14 @@ export const ProductSchema = z.object({
   variants: z.array(SimpleVariantSchema),
 });
 
+export const RelevantProductSchema = z.object({
+  ProductID: z.number(),
+  Name: z.string(),
+  Description: z.string(),
+  MainImage: z.string(),
+  Price: z.string(),
+});
+
 export const ProductResponseSchema = z.object({
   success: z.boolean(),
   page: z.number(),
@@ -56,6 +64,11 @@ export const SearchProductResponseSchema = z.object({
   products: z.array(ProductSchema),
 });
 
+export const RelevantProductResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.array(RelevantProductSchema),
+});
+
 export type VariantEntity = z.infer<typeof VariantSchema>;
 export type ProductDetailResponseEntity = z.infer<
   typeof ProductDetailResponseSchema
@@ -68,3 +81,8 @@ export type SimpleVariant = z.infer<typeof SimpleVariantSchema>;
 export type SearchProductResponseEntity = z.infer<
   typeof SearchProductResponseSchema
 >;
+
+export type RelevantProductResponseEntity = z.infer<
+  typeof RelevantProductResponseSchema
+>;
+export type RelevantProductEntity = z.infer<typeof RelevantProductSchema>;

@@ -3,7 +3,6 @@ import {
   type RelevantProductEntity,
   type VariantEntity,
 } from "@/features/product/schema/product.schema";
-import { ProductUsecase } from "@/features/product/usecase/product.usecase";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import React, { useState } from "react";
@@ -18,6 +17,7 @@ import { ProductDescription } from "@/mock/productDescription";
 import Quantity from "./Quantity";
 import useRelevant from "@/hooks/useRelevant";
 import { RelevantProductCard } from "./RelevantProductCard";
+import ProductSkeleton from "@/shared/components/ProductSkeleton";
 export default function Page() {
   const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
   const dispatch = useAppDispatch();
@@ -276,15 +276,7 @@ export default function Page() {
           </h3>
 
           <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-3 px-4 mb-12">
-            {isRelevantLoading && (
-              <div className="flex gap-4 p-3 rounded-lg border animate-pulse">
-                <div className="w-24 h-24 shrink-0 bg-gray-200 rounded-md"></div>
-                <div className="flex flex-col justify-center gap-2 w-full">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              </div>
-            )}
+            {isRelevantLoading && <ProductSkeleton></ProductSkeleton>}
 
             {relevantProducts && relevantProducts.length > 0
               ? relevantProducts.map((relProduct: RelevantProductEntity) => (
