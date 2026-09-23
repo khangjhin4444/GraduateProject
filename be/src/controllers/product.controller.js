@@ -235,12 +235,39 @@ const getProductByKeyword = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
 
-    const page = parseInt(req.query.page) || 1;
-    const offset = (page - 1) * 12;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 12, 1), 20);
+    const offset = (page - 1) * limit;
+    const sort = req.query.sort || "default";
     const searchPattern = `%${keyword}%`;
 
+    let orderBySql = sql`"ProductID" ASC`;
+
+    if (sort === "price-asc") {
+      orderBySql = sql`"Price" ASC, "ProductID" ASC`;
+    } else if (sort === "price-desc") {
+      orderBySql = sql`"Price" DESC, "ProductID" ASC`;
+    } else if (sort === "name-asc") {
+      orderBySql = sql`"Name" ASC, "ProductID" ASC`;
+    } else if (sort === "name-desc") {
+      orderBySql = sql`"Name" DESC, "ProductID" ASC`;
+    }
+
     const products = await sql`
-      SELECT * FROM (
+      SELECT
+        standard_products.*,
+        (
+          SELECT json_agg(
+            json_build_object(
+              'colorText', pv_sub."Color",
+              'image', pv_sub."MainImage",
+              'price', pv_sub."Price"
+            )
+          )
+          FROM "product_variants" pv_sub
+          WHERE pv_sub."ProductID" = standard_products."ProductID"
+        ) AS variants
+      FROM (
           SELECT DISTINCT ON (p."ProductID") 
               p."ProductID", 
               p."Name", 
@@ -255,11 +282,21 @@ const getProductByKeyword = async (req, res) => {
              OR p."Description" ILIKE ${searchPattern}
           ORDER BY p."ProductID"
         ) as standard_products
-        ORDER BY "ProductID" 
-        LIMIT 12 OFFSET ${offset}
+        ORDER BY ${orderBySql}
+        LIMIT ${limit + 1} OFFSET ${offset}
     `;
 
-    res.status(200).json({ success: true, products });
+    const hasNextPage = products.length > limit;
+    const data = hasNextPage ? products.slice(0, limit) : products;
+
+    res.status(200).json({
+      success: true,
+      page,
+      limit,
+      hasNextPage,
+      nextPage: hasNextPage ? page + 1 : null,
+      products: data,
+    });
   } catch (error) {
     console.error("Lỗi tìm kiếm:", error);
     res.status(500).json({ success: false, message: "Lỗi server" });
