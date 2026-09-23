@@ -74,7 +74,7 @@ const LoaderIcon = forwardRef<LoaderIconHandle, LoaderIconProps>(
           xmlns="http://www.w3.org/2000/svg"
         >
           <g
-            className={isAnimating ? "animate-spin" : undefined}
+            className={isAnimating ? "motion-safe:animate-spin" : undefined}
             style={{ transformOrigin: "12px 12px" }}
           >
             <path d="M12 2v4" />
