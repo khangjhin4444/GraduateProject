@@ -77,7 +77,8 @@ export const ProductService: ProductService = {
   }) => {
     const response = await publicApi.request({
       method: "GET",
-      url: `/api/products/search?keyword=${keyword}&page=${page}&sort=${sort}`,
+      url: "/api/products/search",
+      params: { keyword, page, sort },
       responseSchema: SearchProductResponseSchema,
     });
     return response.data as SearchProductResponseEntity;
