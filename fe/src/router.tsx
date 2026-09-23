@@ -113,7 +113,7 @@ export const router = createBrowserRouter([
             loader: ({ params }) => {
               const keyword = params.keyword;
               if (!keyword) return redirect("/home");
-              return { keyword: decodeURIComponent(keyword) };
+              return { keyword };
             },
             lazy: lazyLoad(() => import("@/pages/HasHeader/productByKeyword")),
             // Component: ProductByKeyword,
