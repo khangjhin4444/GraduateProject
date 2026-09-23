@@ -27,6 +27,7 @@ import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
 import { SUBTYPES } from "./shared/ProductSubtype";
 import type { ComponentType } from "react";
+import { formatSubtype } from "./utils/formatSubtype";
 
 type LazyModule = { default: ComponentType };
 
@@ -143,6 +144,7 @@ export const router = createBrowserRouter([
               }
               if (sub && !SUBTYPES[type].includes(sub))
                 return redirect("/not-found");
+              document.title = `${formatSubtype(type)} Collection`;
               return { type, sub };
             }),
             lazy: lazyLoad(() => import("@/pages/HasHeader/productByCategory")),
