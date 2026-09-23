@@ -31,7 +31,7 @@ export function ProductCard({ product }: { product: ProductEntity }) {
   };
 
   return (
-    <Card className="relative mx-auto transition-all duration-300 hover:scale-[1.01] hover:shadow-xl w-full max-w-sm pt-0 flex flex-col justify-between overflow-hidden border-2 border-gray-300 select-none">
+    <Card className="bg-card text-card-foreground relative mx-auto transition-all duration-300 hover:scale-[1.01] hover:shadow-xl w-full max-w-sm pt-0 flex flex-col justify-between overflow-hidden border-2 border-gray-300 select-none">
       <div
         className="relative z-10 aspect-square cursor-pointer bg-gray-50"
         onClick={navigateToDetail}
@@ -69,7 +69,7 @@ export function ProductCard({ product }: { product: ProductEntity }) {
                     setSelectedVariant(variant);
                   }}
                   className={clsx(
-                    "w-6 h-6 rounded-full border border-gray-300 transition-all",
+                    "w-6 h-6 rounded-full border border-foreground transition-all",
                     isSelected
                       ? "ring-2 ring-black ring-offset-2 scale-100"
                       : "hover:scale-110 opacity-80 hover:opacity-100",
