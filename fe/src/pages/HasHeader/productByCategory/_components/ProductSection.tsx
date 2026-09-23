@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { formatSubtype } from "@/utils/formatSubtype";
 import { Dot } from "lucide-react";
+import { useNavigate } from "react-router";
 const sortOtps = [
   { label: "Price Increase", value: "price-asc" },
   { label: "Price Decrease", value: "price-desc" },
@@ -30,6 +31,7 @@ export default function ProductSection({
   type: string;
   sub?: string;
 }) {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("default");
   const sectionRef = useRef<HTMLElement>(null);
@@ -71,7 +73,7 @@ export default function ProductSection({
   return (
     <section
       ref={sectionRef}
-      className="flex flex-col justify-center p-4 w-full scroll-mt-32"
+      className="flex flex-col p-4 mt-2 w-full scroll-mt-32 min-h-screen"
     >
       <div className="flex flex-col md:flex-row items-center justify-between w-full mb-5 gap-2">
         <h1 className="text-2xl font-semibold flex items-center gap-2">
@@ -85,7 +87,11 @@ export default function ProductSection({
         </h1>
         <div className="flex items-center gap-2">
           <p>Sort by: </p>
-          <Select items={sortOtps} onValueChange={handleSortChange}>
+          <Select
+            items={sortOtps}
+            onValueChange={handleSortChange}
+            disabled={products.length === 0}
+          >
             <SelectTrigger className="w-45">
               <SelectValue placeholder="Default" />
             </SelectTrigger>
@@ -110,8 +116,17 @@ export default function ProductSection({
         </p>
       )}
       {!isPending && !isError && products.length === 0 && (
-        <div className="flex w-full justify-center mt-10 text-foreground font-bold text-2xl">
+        <div className="flex flex-col items-center w-full justify-center mt-10 text-foreground font-bold text-2xl gap-5">
           <p>No products found!</p>
+          <Button
+            className=" cursor-pointer group relative isolate overflow-hidden bg-background border-primary border-2 text-primary text-lg px-6 py-5 hover:bg-background hover:text-primary-foreground before:absolute before:inset-0 before:-z-10 before:origin-left before:scale-x-0 before:bg-primary before:transition-transform before:duration-300 before:ease-out hover:before:scale-x-100"
+            onClick={() => navigate(`/collection/${type}`)}
+          >
+            <span className="relative z-10">
+              Explore {formatSubtype(type)} Collection
+            </span>
+            <ChevronRight className="relative z-10" />
+          </Button>
         </div>
       )}
       {!isPending && !isError && products.length > 0 && (
