@@ -35,7 +35,7 @@ export const ProductSchema = z.object({
   SubType: z.string(),
   MainImage: z.string(),
   Price: z.string(),
-  variants: z.array(SimpleVariantSchema).nullable(),
+  variants: z.array(SimpleVariantSchema),
 });
 
 export const ProductResponseSchema = z.object({
