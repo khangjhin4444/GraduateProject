@@ -10,8 +10,8 @@ let refreshPromise: Promise<{
   shouldLogin: boolean;
 }> | null = null;
 
-const MAX_CONCURRENT_REFRESH_RETRIES = 2;
-const REFRESH_RETRY_DELAY_MS = 100;
+const MAX_CONCURRENT_REFRESH_RETRIES = 5;
+const REFRESH_RETRY_DELAY_MS = 200;
 
 const wait = (milliseconds: number) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -71,6 +71,8 @@ export function refreshAuth(): Promise<{
       console.log(error);
       const status = getErrorStatus(error);
       if (status === 401) {
+        store.dispatch(deleteInfo());
+        store.dispatch(deleteToken());
         return { success: false, expiredSession: false, shouldLogin: true };
       }
       if (status === 409 || status === 503 || status === undefined) {
