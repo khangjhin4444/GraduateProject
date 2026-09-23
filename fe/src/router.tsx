@@ -17,10 +17,10 @@ import AuthLayout from "./pages/auth/layout";
 import HasHeaderLayout from "./pages/HasHeader/layout";
 import NotFoundPage from "./components/NotFound";
 import ForbiddenPage from "./components/Forbidden";
-import ProductByCategory from "./pages/HasHeader/productByCategory";
-import ProductByKeyword from "./pages/HasHeader/productByKeyword";
-import Cart from "./pages/HasHeader/cart";
-import Checkout from "./pages/checkout";
+// import ProductByCategory from "./pages/HasHeader/productByCategory";
+// import ProductByKeyword from "./pages/HasHeader/productByKeyword";
+// import Cart from "./pages/HasHeader/cart";
+// import Checkout from "./pages/checkout";
 import LoadingPage from "./components/LoadingPage";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
@@ -115,7 +115,8 @@ export const router = createBrowserRouter([
               if (!keyword) return redirect("/home");
               return { keyword };
             },
-            Component: ProductByKeyword,
+            lazy: lazyLoad(() => import("@/pages/HasHeader/productByKeyword")),
+            // Component: ProductByKeyword,
           },
           {
             path: "/product/:id",
@@ -145,12 +146,14 @@ export const router = createBrowserRouter([
                 return redirect("/not-found");
               return { type, sub };
             }),
-            Component: ProductByCategory,
+            lazy: lazyLoad(() => import("@/pages/HasHeader/productByCategory")),
+            // Component: ProductByCategory,
           },
           {
             path: "/cart",
             loader: withAuth(),
-            Component: Cart,
+            lazy: lazyLoad(() => import("@/pages/HasHeader/cart")),
+            // Component: Cart,
           },
         ],
       },
@@ -159,7 +162,8 @@ export const router = createBrowserRouter([
           {
             path: "/checkout",
             loader: withAuth(),
-            Component: Checkout,
+            lazy: lazyLoad(() => import("@/pages/checkout")),
+            // Component: Checkout,
           },
           {
             path: "/admin",
