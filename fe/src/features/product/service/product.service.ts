@@ -2,11 +2,9 @@ import { privateApi, publicApi } from "@/api/axios.instance";
 import {
   ProductDetailResponseSchema,
   ProductResponseSchema,
-  RelevantProductResponseSchema,
   SearchProductResponseSchema,
   type ProductDetailResponseEntity,
   type ProductResponseEntity,
-  type RelevantProductResponseEntity,
   type SearchProductResponseEntity,
 } from "../schema/product.schema";
 
@@ -33,20 +31,10 @@ type GetSearchProducts = ({
   page: number;
   sort?: string;
 }) => Promise<SearchProductResponseEntity>;
-
-type GetRelevantProducts = ({
-  type,
-  id,
-}: {
-  type: string;
-  id: number;
-}) => Promise<RelevantProductResponseEntity>;
-
 type ProductService = {
   getProductById: GetProductById;
   getProducts: GetProducts;
   getSearchProducts: GetSearchProducts;
-  getRelevantProducts: GetRelevantProducts;
 };
 
 export const ProductService: ProductService = {
@@ -94,17 +82,5 @@ export const ProductService: ProductService = {
       responseSchema: SearchProductResponseSchema,
     });
     return response.data as SearchProductResponseEntity;
-  },
-  getRelevantProducts: async ({ type, id }: { type: string; id: number }) => {
-    const response = await privateApi.request({
-      method: "GET",
-      url: "api/products/relevant",
-      params: {
-        type,
-        id,
-      },
-      responseSchema: RelevantProductResponseSchema,
-    });
-    return response.data as RelevantProductResponseEntity;
   },
 };

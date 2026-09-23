@@ -2,11 +2,45 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("node:crypto");
 const { neon } = require("@neondatabase/serverless");
+const {
+  createSessionExpiry,
+  getAccessTokenTtlSeconds,
+  getRemainingSessionMs,
+  getTokenTtlSeconds,
+} = require("../auth/session");
+const { isDatabaseUnavailableError } = require("../auth/refreshError");
 
 const router = express.Router();
 
 const sql = neon(process.env.DATABASE_URL);
+const refreshLocks = new Map();
+const refreshReleases = new Map();
+const refreshReplayCache = new Map();
+const REFRESH_REPLAY_TTL_MS = 5000;
+
+const getRefreshCookieOptions = (maxAge) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "Lax",
+  path: "/",
+  maxAge,
+});
+
+const sendRefreshResponse = (res, result) => {
+  res.cookie(
+    "refreshToken",
+    result.refreshToken,
+    getRefreshCookieOptions(result.remainingSessionMs),
+  );
+  return res.status(200).json({
+    success: true,
+    accessToken: result.accessToken,
+    user: result.user,
+  });
+};
+
 // API ĐĂNG KÝ
 router.post("/register", async (req, res) => {
   const { username, password, fullName, phone, address } = req.body;
@@ -70,31 +104,36 @@ router.post("/login", async (req, res) => {
         .status(400)
         .json({ success: false, message: "Wrong Username or Password!" });
 
-    // 2. Tạo Access Token (sống 15 phút) và Refresh Token (sống 7 ngày)
+    const sessionExpiresAt = createSessionExpiry();
+    const remainingSessionMs = getRemainingSessionMs(sessionExpiresAt);
+    const refreshTtlSeconds = getTokenTtlSeconds(remainingSessionMs);
     const accessToken = jwt.sign(
       { userId: currentUser.UserID, role: role },
       process.env.JWT_ACCESS_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: getAccessTokenTtlSeconds(remainingSessionMs) },
     );
     const refreshToken = jwt.sign(
-      { userId: currentUser.UserID, role: role, jti: crypto.randomUUID() },
+      {
+        userId: currentUser.UserID,
+        role: role,
+        jti: crypto.randomUUID(),
+        sessionExpiresAt: sessionExpiresAt.toISOString(),
+      },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: refreshTtlSeconds },
     );
 
     // Lưu refresh token vào DB (Token Rotation)
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 ngày
     await sql`
       INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
-      VALUES (${currentUser.UserID}, ${refreshToken}, ${expiresAt})
+      VALUES (${currentUser.UserID}, ${refreshToken}, ${sessionExpiresAt})
     `;
     console.timeEnd("total");
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getRefreshCookieOptions(remainingSessionMs),
+    );
     res.status(200).json({
       success: true,
       accessToken,
@@ -125,13 +164,48 @@ router.post("/refresh", async (req, res) => {
   try {
     // 1. Verify JWT signature trước
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const cachedRefresh = refreshReplayCache.get(refreshToken);
+    if (cachedRefresh && cachedRefresh.expiresAt > Date.now()) {
+      return sendRefreshResponse(res, cachedRefresh.result);
+    }
+    if (cachedRefresh) refreshReplayCache.delete(refreshToken);
+
+    const activeRefreshLock = refreshLocks.get(refreshToken);
+    if (activeRefreshLock) {
+      await activeRefreshLock;
+      const replayedRefresh = refreshReplayCache.get(refreshToken);
+      if (replayedRefresh && replayedRefresh.expiresAt > Date.now()) {
+        return sendRefreshResponse(res, replayedRefresh.result);
+      }
+    }
+
+    let releaseRefreshLock;
+    const refreshLock = new Promise((resolve) => {
+      releaseRefreshLock = resolve;
+    });
+    refreshLocks.set(refreshToken, refreshLock);
+    refreshReleases.set(refreshToken, releaseRefreshLock);
+    const releaseLock = () => {
+      if (refreshLocks.get(refreshToken) === refreshLock) {
+        refreshLocks.delete(refreshToken);
+        refreshReleases.delete(refreshToken);
+        releaseRefreshLock();
+      }
+    };
 
     // 2. Kiểm tra token có tồn tại trong DB không
     const tokenRecord = await sql`
-      SELECT * FROM "refresh_tokens" WHERE "token" = ${refreshToken}
+      SELECT * FROM "refresh_tokens"
+      WHERE "token" = ${refreshToken} AND "expires_at" > NOW()
     `;
 
     if (tokenRecord.length === 0) {
+      const replayedRefresh = refreshReplayCache.get(refreshToken);
+      if (replayedRefresh && replayedRefresh.expiresAt > Date.now()) {
+        releaseLock();
+        return sendRefreshResponse(res, replayedRefresh.result);
+      }
+
       // ⚠️ Token không còn trong DB — có 2 tình huống xảy ra:
       //
       // A) Concurrent requests (false-positive): nhiều request cùng lúc đều
@@ -145,13 +219,14 @@ router.post("/refresh", async (req, res) => {
       // Phân biệt bằng cách: kiểm tra user này còn có token hợp lệ nào không.
       const activeToken = await sql`
         SELECT 1 FROM "refresh_tokens"
-        WHERE "user_id" = ${decoded.userId}
+        WHERE "user_id" = ${decoded.userId} AND "expires_at" > NOW()
         LIMIT 1
       `;
 
       if (activeToken.length > 0) {
         // ✅ Case A: Có token mới đã được tạo → concurrent request hợp lệ
         // Trả 409 để NextAuth/client biết refresh đang xảy ra, thử lại sau
+        releaseLock();
         return res.status(409).json({
           success: false,
           message: "Token đang được làm mới, vui lòng thử lại.",
@@ -164,17 +239,34 @@ router.post("/refresh", async (req, res) => {
       await sql`
         DELETE FROM "refresh_tokens" WHERE "user_id" = ${decoded.userId}
       `;
+      releaseLock();
       return res.status(403).json({
         success: false,
         message: "Refresh token đã bị thu hồi! Phát hiện tái sử dụng token.",
       });
     }
 
+    const sessionExpiresAt = new Date(tokenRecord[0].expires_at);
+    const remainingSessionMs = getRemainingSessionMs(sessionExpiresAt);
+    if (remainingSessionMs <= 0) {
+      await sql`
+        DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
+      `;
+      res.clearCookie("refreshToken", getRefreshCookieOptions(0));
+      releaseLock();
+      return res.status(403).json({
+        success: false,
+        message: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
+      });
+    }
+
     // Chuẩn bị toàn bộ dữ liệu thay thế trước khi vô hiệu hóa token cũ.
     const user =
       await sql`SELECT * FROM "user" WHERE "UserID" = ${decoded.userId}`;
-    if (user.length === 0)
+    if (user.length === 0) {
+      releaseLock();
       return res.status(400).json({ message: "Wrong Username or Password" });
+    }
 
     const currentUser = user[0];
     const role = currentUser.Username === "admin" ? "admin" : "user";
@@ -188,33 +280,32 @@ router.post("/refresh", async (req, res) => {
     const newAccessToken = jwt.sign(
       { userId: decoded.userId, role: decoded.role },
       process.env.JWT_ACCESS_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: getAccessTokenTtlSeconds(remainingSessionMs) },
     );
     const newRefreshToken = jwt.sign(
-      { userId: decoded.userId, role: decoded.role, jti: crypto.randomUUID() },
+      {
+        userId: decoded.userId,
+        role: decoded.role,
+        jti: crypto.randomUUID(),
+        sessionExpiresAt: sessionExpiresAt.toISOString(),
+      },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: getTokenTtlSeconds(remainingSessionMs) },
     );
 
     // 5. Xóa token cũ và lưu token mới atomically.
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await sql.transaction([
       sql`
         DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
       `,
       sql`
         INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
-        VALUES (${decoded.userId}, ${newRefreshToken}, ${expiresAt})
+        VALUES (${decoded.userId}, ${newRefreshToken}, ${sessionExpiresAt})
       `,
     ]);
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-    res.status(200).json({
-      success: true,
+    const refreshResult = {
+      refreshToken: newRefreshToken,
+      remainingSessionMs,
       accessToken: newAccessToken,
       user: {
         id: currentUser.UserID,
@@ -225,10 +316,32 @@ router.post("/refresh", async (req, res) => {
         Address: currentUser.Address,
         role: role,
       },
+    };
+    refreshReplayCache.set(refreshToken, {
+      expiresAt: Date.now() + REFRESH_REPLAY_TTL_MS,
+      result: refreshResult,
     });
+    setTimeout(
+      () => refreshReplayCache.delete(refreshToken),
+      REFRESH_REPLAY_TTL_MS,
+    );
+    releaseLock();
+    return sendRefreshResponse(res, refreshResult);
   } catch (err) {
+    const releaseRefreshLock = refreshReleases.get(refreshToken);
+    if (releaseRefreshLock) {
+      refreshLocks.delete(refreshToken);
+      refreshReleases.delete(refreshToken);
+      releaseRefreshLock();
+    }
     console.log(err);
-    return res.status(403).json({ success: false, message: "Expired Token!" });
+    const databaseUnavailable = isDatabaseUnavailableError(err);
+    return res.status(databaseUnavailable ? 503 : 403).json({
+      success: false,
+      message: databaseUnavailable
+        ? "Authentication service temporarily unavailable."
+        : "Expired Token!",
+    });
   }
 });
 
@@ -250,9 +363,7 @@ router.post("/logout", async (req, res) => {
   }
   console.timeEnd("query-del-token");
   res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
+    ...getRefreshCookieOptions(0),
   });
   console.timeEnd("total");
   return res.status(200).json({
@@ -297,26 +408,39 @@ router.post("/google", async (req, res) => {
     `;
     const cartQuantity = cartQuantityResult[0]?.total_quantity ?? 0;
 
+    const sessionExpiresAt = createSessionExpiry();
+    const remainingSessionMs = getRemainingSessionMs(sessionExpiresAt);
+    const refreshTtlSeconds = getTokenTtlSeconds(remainingSessionMs);
+
     // 4. Tạo JWT Tokens
     const accessToken = jwt.sign(
       { userId: currentUser.UserID, role: role },
       process.env.JWT_ACCESS_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: getAccessTokenTtlSeconds(remainingSessionMs) },
     );
     const refreshToken = jwt.sign(
-      { userId: currentUser.UserID, role: role },
+      {
+        userId: currentUser.UserID,
+        role: role,
+        jti: crypto.randomUUID(),
+        sessionExpiresAt: sessionExpiresAt.toISOString(),
+      },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: refreshTtlSeconds },
     );
 
     // Lưu refresh token vào DB (Token Rotation)
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await sql`
       INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
-      VALUES (${currentUser.UserID}, ${refreshToken}, ${expiresAt})
+      VALUES (${currentUser.UserID}, ${refreshToken}, ${sessionExpiresAt})
     `;
 
     // 5. Trả về cho NextAuth
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getRefreshCookieOptions(remainingSessionMs),
+    );
     res.status(200).json({
       success: true,
       accessToken,

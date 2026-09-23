@@ -5,61 +5,30 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const getProducts = async (req, res) => {
   try {
     const type = req.query.type;
-    const limit = parseInt(req.query.limit) || 8;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 8, 1), 20);
+    const offset = (page - 1) * limit;
     const sort = req.query.sort || "default";
     const sub = req.query.sub || null;
 
-    // 1. Giải mã Cursor từ Frontend gửi lên (nếu có)
-    let cursor = null;
-    if (req.query.cursor !== "null") {
-      try {
-        const decoded = Buffer.from(req.query.cursor, "base64").toString(
-          "utf-8",
-        );
-        cursor = JSON.parse(decoded);
-      } catch (e) {
-        console.error("Lỗi parse cursor:", e);
-      }
-    }
-
-    // 2. Cấu hình câu lệnh Sắp xếp (ORDER BY) và Điều kiện con trỏ (WHERE cursor)
+    // Fetch one extra product to determine whether another page exists.
     let orderBySql = sql`"ProductID" ASC`;
-    let cursorCondition = sql``;
 
     if (sort === "price-asc") {
       orderBySql = sql`"Price" ASC, "ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "Price" > ${cursor.value} OR ("Price" = ${cursor.value} AND "ProductID" > ${cursor.id})`;
-      }
     } else if (sort === "price-desc") {
       orderBySql = sql`"Price" DESC, "ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "Price" < ${cursor.value} OR ("Price" = ${cursor.value} AND "ProductID" > ${cursor.id})`;
-      }
     } else if (sort === "name-asc") {
       orderBySql = sql`"Name" ASC, "ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "Name" > ${cursor.value} OR ("Name" = ${cursor.value} AND "ProductID" > ${cursor.id})`;
-      }
     } else if (sort === "name-desc") {
       orderBySql = sql`"Name" DESC, "ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "Name" < ${cursor.value} OR ("Name" = ${cursor.value} AND "ProductID" > ${cursor.id})`;
-      }
-    } else {
-      // Default: Chỉ sắp xếp theo ID
-      orderBySql = sql`"ProductID" ASC`;
-      if (cursor) {
-        cursorCondition = sql`WHERE "ProductID" > ${cursor.id}`;
-      }
     }
 
-    // 3. Cấu hình bộ lọc Category và SubCategory
-    const categoryFilter = sub
-      ? sql`p."ProductType" = ${type} AND p."SubType" = ${sub}`
-      : sql`p."ProductType" = ${type}`;
+    const categoryFilter =
+      sub !== "undefined" && sub != null
+        ? sql`p."ProductType" = ${type} AND p."SubType" = ${sub}`
+        : sql`p."ProductType" = ${type}`;
 
-    // 4. Truy vấn CSDL
     const products = await sql`
       WITH BaseProducts AS (
         SELECT DISTINCT ON (p."ProductID") 
@@ -77,9 +46,8 @@ const getProducts = async (req, res) => {
       ),
       PaginatedProducts AS (
         SELECT * FROM BaseProducts
-        ${cursorCondition}
         ORDER BY ${orderBySql}
-        LIMIT ${limit}
+        LIMIT ${limit + 1} OFFSET ${offset}
       )
       SELECT 
         pp.*,
@@ -98,29 +66,16 @@ const getProducts = async (req, res) => {
       ORDER BY ${orderBySql}
     `;
 
-    // 5. Tạo nextCursor cho lần gọi tiếp theo
-    let nextCursor = null;
-    if (products.length === limit) {
-      const lastProduct = products[products.length - 1];
-      let cursorData = { id: lastProduct.ProductID };
-
-      // Lưu giá trị tie-breaker tương ứng với kiểu sort
-      if (sort.startsWith("price")) {
-        cursorData.value = lastProduct.Price;
-      } else if (sort.startsWith("name")) {
-        cursorData.value = lastProduct.Name;
-      }
-
-      // Mã hóa thành chuỗi Base64 để gửi về Frontend cho an toàn và gọn gàng
-      nextCursor = Buffer.from(JSON.stringify(cursorData)).toString("base64");
-    }
+    const hasNextPage = products.length > limit;
+    const data = hasNextPage ? products.slice(0, limit) : products;
 
     res.status(200).json({
       success: true,
+      page,
       limit: limit,
-      count: products.length,
-      data: products,
-      nextCursor: nextCursor, // Frontend sẽ dùng chuỗi này thay cho `page`
+      hasNextPage,
+      nextPage: hasNextPage ? page + 1 : null,
+      data,
     });
   } catch (error) {
     console.error("Error catch:", error);
@@ -280,12 +235,39 @@ const getProductByKeyword = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
 
-    const page = parseInt(req.query.page) || 1;
-    const offset = (page - 1) * 12;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 12, 1), 20);
+    const offset = (page - 1) * limit;
+    const sort = req.query.sort || "default";
     const searchPattern = `%${keyword}%`;
 
+    let orderBySql = sql`"ProductID" ASC`;
+
+    if (sort === "price-asc") {
+      orderBySql = sql`"Price" ASC, "ProductID" ASC`;
+    } else if (sort === "price-desc") {
+      orderBySql = sql`"Price" DESC, "ProductID" ASC`;
+    } else if (sort === "name-asc") {
+      orderBySql = sql`"Name" ASC, "ProductID" ASC`;
+    } else if (sort === "name-desc") {
+      orderBySql = sql`"Name" DESC, "ProductID" ASC`;
+    }
+
     const products = await sql`
-      SELECT * FROM (
+      SELECT
+        standard_products.*,
+        (
+          SELECT json_agg(
+            json_build_object(
+              'colorText', pv_sub."Color",
+              'image', pv_sub."MainImage",
+              'price', pv_sub."Price"
+            )
+          )
+          FROM "product_variants" pv_sub
+          WHERE pv_sub."ProductID" = standard_products."ProductID"
+        ) AS variants
+      FROM (
           SELECT DISTINCT ON (p."ProductID") 
               p."ProductID", 
               p."Name", 
@@ -300,11 +282,21 @@ const getProductByKeyword = async (req, res) => {
              OR p."Description" ILIKE ${searchPattern}
           ORDER BY p."ProductID"
         ) as standard_products
-        ORDER BY "ProductID" 
-        LIMIT 12 OFFSET ${offset}
+        ORDER BY ${orderBySql}
+        LIMIT ${limit + 1} OFFSET ${offset}
     `;
 
-    res.status(200).json({ success: true, products });
+    const hasNextPage = products.length > limit;
+    const data = hasNextPage ? products.slice(0, limit) : products;
+
+    res.status(200).json({
+      success: true,
+      page,
+      limit,
+      hasNextPage,
+      nextPage: hasNextPage ? page + 1 : null,
+      products: data,
+    });
   } catch (error) {
     console.error("Lỗi tìm kiếm:", error);
     res.status(500).json({ success: false, message: "Lỗi server" });

@@ -7,7 +7,6 @@ export default function Layout() {
   return (
     <SidebarProvider className="flex-col relative">
       <Header></Header>
-      <title>JK Keyboard</title>
       <div className="flex-1 bg-background">
         <Outlet />
       </div>

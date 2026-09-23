@@ -24,7 +24,4 @@ export const ProductUsecase = {
     page: number;
     sort?: string;
   }) => ProductService.getSearchProducts({ keyword, page, sort }),
-
-  getRelevantProducts: async ({ type, id }: { type: string; id: number }) =>
-    ProductService.getRelevantProducts({ type, id }),
 };
