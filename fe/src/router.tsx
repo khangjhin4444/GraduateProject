@@ -59,11 +59,22 @@ function withAuth(
   options?: { roles?: string[] },
 ): LoaderFunction {
   return async (args) => {
+    let refreshResult = {
+      success: true,
+      expiredSession: false,
+      shouldLogin: false,
+    };
     if (store.getState().token.accessToken === "") {
-      await refreshAuth();
+      refreshResult = await refreshAuth();
     }
 
     if (store.getState().token.accessToken === "") {
+      if (!refreshResult.shouldLogin) {
+        throw new Response("Authentication service temporarily unavailable", {
+          status: 503,
+          statusText: "Authentication service unavailable",
+        });
+      }
       throw redirect("/login");
     }
 

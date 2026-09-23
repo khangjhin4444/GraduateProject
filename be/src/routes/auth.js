@@ -10,6 +10,7 @@ const {
   getRemainingSessionMs,
   getTokenTtlSeconds,
 } = require("../auth/session");
+const { isDatabaseUnavailableError } = require("../auth/refreshError");
 
 const router = express.Router();
 
@@ -334,7 +335,13 @@ router.post("/refresh", async (req, res) => {
       releaseRefreshLock();
     }
     console.log(err);
-    return res.status(403).json({ success: false, message: "Expired Token!" });
+    const databaseUnavailable = isDatabaseUnavailableError(err);
+    return res.status(databaseUnavailable ? 503 : 403).json({
+      success: false,
+      message: databaseUnavailable
+        ? "Authentication service temporarily unavailable."
+        : "Expired Token!",
+    });
   }
 });
 
