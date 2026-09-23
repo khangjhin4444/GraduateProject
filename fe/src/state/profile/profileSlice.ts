@@ -33,9 +33,12 @@ const profileSlice = createSlice({
     deleteInfo: () => {
       return initialState;
     },
+    updateCartQuantity: (state, action: PayloadAction<number>) => {
+      state.cartQuantity = action.payload;
+    },
   },
 });
 
-export const { setInfo, deleteInfo } = profileSlice.actions;
+export const { setInfo, deleteInfo, updateCartQuantity } = profileSlice.actions;
 
 export default profileSlice.reducer;
