@@ -2,7 +2,6 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { type RelevantProductEntity } from "@/features/product/schema/product.schema";
 import { useNavigate } from "react-router";
-import { Dot } from "lucide-react";
 import { formatSubtype } from "@/utils/formatSubtype";
 
 export function RelevantProductCard({
@@ -21,10 +20,7 @@ export function RelevantProductCard({
   };
 
   return (
-    <Card
-      key={product.ProductID}
-      className="bg-card text-card-foreground relative mx-auto transition-all duration-300 hover:scale-[1.01] hover:shadow-xl w-full max-w-sm pt-0 flex flex-col justify-between overflow-hidden border-2 border-gray-300 select-none"
-    >
+    <Card className="bg-card text-card-foreground relative mx-auto transition-all duration-300 hover:scale-[1.01] hover:shadow-xl w-full max-w-sm pt-0 flex flex-col justify-between overflow-hidden border-2 border-gray-300 select-none">
       <div
         className="relative z-10 aspect-square cursor-pointer bg-gray-50"
         onClick={navigateToDetail}
