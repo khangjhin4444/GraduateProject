@@ -58,10 +58,10 @@ export default function SearchProductSection({ keyword }: { keyword: string }) {
   };
 
   return (
-    <main className="p-6 w-full">
+    <main className="px-6 w-full">
       <section
         ref={sectionRef}
-        className="flex flex-col justify-center p-4 w-full scroll-mt-32"
+        className="flex flex-col mt-2 min-h-screen p-4 w-full scroll-mt-32"
       >
         <div className="flex flex-col md:flex-row items-center justify-between w-full mb-5 gap-2">
           <h1 className="text-2xl font-semibold flex items-center gap-2 justify-center">
