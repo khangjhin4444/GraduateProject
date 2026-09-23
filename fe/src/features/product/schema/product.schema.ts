@@ -35,7 +35,7 @@ export const ProductSchema = z.object({
   SubType: z.string(),
   MainImage: z.string(),
   Price: z.string(),
-  variants: z.array(SimpleVariantSchema).min(1),
+  variants: z.array(SimpleVariantSchema).nullable(),
 });
 
 export const ProductResponseSchema = z.object({
@@ -47,6 +47,15 @@ export const ProductResponseSchema = z.object({
   data: z.array(ProductSchema),
 });
 
+export const SearchProductResponseSchema = z.object({
+  success: z.boolean(),
+  page: z.number(),
+  limit: z.number(),
+  hasNextPage: z.boolean(),
+  nextPage: z.number().nullable(),
+  products: z.array(ProductSchema),
+});
+
 export type VariantEntity = z.infer<typeof VariantSchema>;
 export type ProductDetailResponseEntity = z.infer<
   typeof ProductDetailResponseSchema
@@ -56,3 +65,6 @@ export type ProductResponseEntity = z.infer<typeof ProductResponseSchema>;
 export type ProductDetailEntity = z.infer<typeof ProductDetailSchema>;
 export type ProductEntity = z.infer<typeof ProductSchema>;
 export type SimpleVariant = z.infer<typeof SimpleVariantSchema>;
+export type SearchProductResponseEntity = z.infer<
+  typeof SearchProductResponseSchema
+>;

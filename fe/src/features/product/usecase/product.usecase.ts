@@ -15,4 +15,13 @@ export const ProductUsecase = {
     sort?: string;
     sub?: string;
   }) => ProductService.getProducts({ type, page, limit, sort, sub }),
+  getSearchProducts: async ({
+    keyword,
+    page,
+    sort,
+  }: {
+    keyword: string;
+    page: number;
+    sort?: string;
+  }) => ProductService.getSearchProducts({ keyword, page, sort }),
 };
