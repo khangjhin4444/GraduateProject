@@ -47,12 +47,16 @@ function RootLayout() {
 
 async function rootLoader() {
   const token = store.getState().token;
+  const role = store.getState().profile.role;
   if (token.accessToken !== "") {
     return null;
   }
 
   await refreshAuth();
-
+  if (role === "admin") {
+    console.log("vao");
+    redirect("/admin/dashboard");
+  }
   return null;
 }
 
@@ -180,6 +184,9 @@ export const router = createBrowserRouter([
                 children: [
                   {
                     index: true,
+                    lazy: lazyLoad(() => import("./pages/admin/dashboard")),
+                  },
+                  {
                     path: "dashboard",
                     lazy: lazyLoad(() => import("./pages/admin/dashboard")),
                   },
