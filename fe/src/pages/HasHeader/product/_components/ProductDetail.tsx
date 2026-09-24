@@ -281,6 +281,7 @@ export default function Page() {
             {relevantProducts && relevantProducts.length > 0
               ? relevantProducts.map((relProduct: RelevantProductEntity) => (
                   <RelevantProductCard
+                    key={relProduct.ProductID}
                     product={relProduct}
                     type={productData.ProductType}
                   ></RelevantProductCard>
