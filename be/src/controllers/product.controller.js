@@ -174,9 +174,9 @@ const getRelevantProduct = async (req, res) => {
 
 const getProductsAdmin = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
     const type = req.query.type || null;
-    const limit = 10;
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 20);
     const offset = (page - 1) * limit;
 
     const products = await sql`
@@ -215,15 +215,19 @@ const getProductsAdmin = async (req, res) => {
       LEFT JOIN ImageList i ON p."ProductID" = i."ProductID"
       WHERE p."ProductType" = ${type}
       ORDER BY p."SubType" ASC,p."ProductID" ASC
-      LIMIT ${limit} OFFSET ${offset}
+      LIMIT ${limit + 1} OFFSET ${offset}
     `;
+
+    const hasNextPage = products.length > limit;
+    const data = hasNextPage ? products.slice(0, limit) : products;
 
     res.status(200).json({
       success: true,
-      currentPage: page,
-      limit: limit,
-      count: products.length,
-      data: products,
+      page,
+      limit,
+      hasNextPage,
+      nextPage: hasNextPage ? page + 1 : null,
+      data,
     });
   } catch (error) {
     console.error("❌ Lỗi phân trang:", error);
