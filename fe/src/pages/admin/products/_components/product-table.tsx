@@ -67,10 +67,13 @@ export default function ProductTable({ type }: { type: string }) {
     isPending,
     fetchNextPage,
     isFetchingNextPage,
+    isError,
+    error,
   } = useAdminProductDetail({ type });
 
   return (
     <div ref={ref}>
+      {isError && <h1>{error.message}</h1>}
       {!inView || isPending ? (
         <TableSkeleton />
       ) : (
