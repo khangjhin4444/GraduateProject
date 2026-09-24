@@ -59,9 +59,9 @@ export function refreshAuth(): Promise<{
         setInfo({
           id: data.user.id,
           cartQuantity: Number(data.user.cartQuantity),
-          fullName: data.user.Name,
-          phoneNumber: data.user.Phone,
-          address: data.user.Address,
+          fullName: data.user.Name ?? "",
+          phoneNumber: data.user.Phone ?? "",
+          address: data.user.Address ?? "",
           role: data.user.role,
         }),
       );

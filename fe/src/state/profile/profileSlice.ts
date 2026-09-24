@@ -3,9 +3,9 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 interface profileState {
   id: number;
   cartQuantity: number;
-  fullName: string;
-  phoneNumber: string;
-  address: string;
+  fullName: string | undefined;
+  phoneNumber: string | undefined;
+  address: string | undefined;
   role: "admin" | "user";
 }
 
