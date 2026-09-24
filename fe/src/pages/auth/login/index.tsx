@@ -60,7 +60,8 @@ export default function Page() {
           role: response.user.role,
         }),
       );
-      navigate("/home");
+      if (response.user.role === "admin") navigate("/admin/dashboard");
+      else navigate("/home");
     } catch (error: unknown) {
       if (isAxiosError<LoginErrorResponse>(error)) {
         const errorMessage = error.response?.data.message || error.message;
