@@ -164,11 +164,35 @@ router.post("/refresh", async (req, res) => {
   try {
     // 1. Verify JWT signature trước
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    await sql`
+      DELETE FROM "refresh_token_replays"
+      WHERE "ExpiresAt" <= NOW()
+    `;
+
     const cachedRefresh = refreshReplayCache.get(refreshToken);
     if (cachedRefresh && cachedRefresh.expiresAt > Date.now()) {
       return sendRefreshResponse(res, cachedRefresh.result);
     }
     if (cachedRefresh) refreshReplayCache.delete(refreshToken);
+
+    const persistedReplay = await sql`
+      SELECT "AccessToken", "RefreshToken", "UserData", "RemainingSessionMs"
+      FROM "refresh_token_replays"
+      WHERE "Token" = ${refreshToken} AND "ExpiresAt" > NOW()
+    `;
+    if (persistedReplay.length > 0) {
+      const replayResult = {
+        accessToken: persistedReplay[0].AccessToken,
+        refreshToken: persistedReplay[0].RefreshToken,
+        user: persistedReplay[0].UserData,
+        remainingSessionMs: Number(persistedReplay[0].RemainingSessionMs),
+      };
+      refreshReplayCache.set(refreshToken, {
+        expiresAt: Date.now() + REFRESH_REPLAY_TTL_MS,
+        result: replayResult,
+      });
+      return sendRefreshResponse(res, replayResult);
+    }
 
     const activeRefreshLock = refreshLocks.get(refreshToken);
     if (activeRefreshLock) {
@@ -184,6 +208,7 @@ router.post("/refresh", async (req, res) => {
       releaseRefreshLock = resolve;
     });
     refreshLocks.set(refreshToken, refreshLock);
+
     refreshReleases.set(refreshToken, releaseRefreshLock);
     const releaseLock = () => {
       if (refreshLocks.get(refreshToken) === refreshLock) {
@@ -200,6 +225,7 @@ router.post("/refresh", async (req, res) => {
     `;
 
     if (tokenRecord.length === 0) {
+      console.log("Khong tim thay refresh trong DB");
       const replayedRefresh = refreshReplayCache.get(refreshToken);
       if (replayedRefresh && replayedRefresh.expiresAt > Date.now()) {
         releaseLock();
@@ -317,6 +343,35 @@ router.post("/refresh", async (req, res) => {
         role: role,
       },
     };
+    try {
+      await sql`
+        INSERT INTO "refresh_token_replays"
+          ("Token", "AccessToken", "RefreshToken", "UserData", "RemainingSessionMs", "ExpiresAt")
+        VALUES
+          (${refreshToken}, ${refreshResult.accessToken}, ${refreshResult.refreshToken},
+           ${JSON.stringify(refreshResult.user)}::jsonb, ${refreshResult.remainingSessionMs},
+           NOW() + INTERVAL '5 seconds')
+        ON CONFLICT ("Token") DO UPDATE SET
+          "AccessToken" = EXCLUDED."AccessToken",
+          "RefreshToken" = EXCLUDED."RefreshToken",
+          "UserData" = EXCLUDED."UserData",
+          "RemainingSessionMs" = EXCLUDED."RemainingSessionMs",
+          "ExpiresAt" = EXCLUDED."ExpiresAt"
+      `;
+    } catch (replayError) {
+      console.error("Failed to persist refresh replay", replayError);
+    }
+    setTimeout(async () => {
+      try {
+        await sql`
+          DELETE FROM "refresh_token_replays"
+          WHERE "Token" = ${refreshToken}
+            AND "ExpiresAt" <= NOW()
+        `;
+      } catch (cleanupError) {
+        console.error("Failed to clean refresh replay", cleanupError);
+      }
+    }, REFRESH_REPLAY_TTL_MS);
     refreshReplayCache.set(refreshToken, {
       expiresAt: Date.now() + REFRESH_REPLAY_TTL_MS,
       result: refreshResult,

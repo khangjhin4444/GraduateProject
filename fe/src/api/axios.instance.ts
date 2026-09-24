@@ -98,12 +98,12 @@ privateApi.interceptors.response.use(
       const result = await refreshAuth(); // dùng chung singleton promise với loader
 
       if (result.success) {
-        const newToken = store.getState().token;
+        const newToken = store.getState().token.accessToken;
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return privateApi(originalRequest);
       }
 
-      if (result.expiredSession) {
+      if (result.expiredSession || result.shouldLogin) {
         window.location.href = "/login";
       }
       return Promise.reject(error);
