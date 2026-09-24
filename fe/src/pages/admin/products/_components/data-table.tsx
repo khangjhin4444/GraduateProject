@@ -61,13 +61,16 @@ export function DataTable<TData extends RowData>({
   return (
     <div>
       <div className="overflow-hidden rounded-md border">
-        <Table>
+        <Table className="table-fixed min-w-262.5 w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      style={{ width: header.column.columnDef.size ?? 150 }}
+                    >
                       {header.isPlaceholder ? null : (
                         <table.FlexRender header={header} />
                       )}
@@ -81,11 +84,16 @@ export function DataTable<TData extends RowData>({
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
+                  className="group"
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      className="whitespace-normal align-middle"
+                      style={{ width: cell.column.columnDef.size ?? 150 }}
+                    >
                       <table.FlexRender cell={cell} />
                     </TableCell>
                   ))}
@@ -95,7 +103,7 @@ export function DataTable<TData extends RowData>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center group"
                 >
                   No results.
                 </TableCell>

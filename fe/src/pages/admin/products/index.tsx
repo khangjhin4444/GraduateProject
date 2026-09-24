@@ -2,11 +2,11 @@ import ProductTable from "./_components/product-table";
 
 export default function Page() {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 px-5">
       <ProductTable type="KeyboardKit" />
-      {/* <ProductTable type="Prebuild" />
+      <ProductTable type="Prebuild" />
       <ProductTable type="Keycap" />
-      <ProductTable type="Switch" /> */}
+      <ProductTable type="Switch" />
     </div>
   );
 }

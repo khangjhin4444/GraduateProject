@@ -16,6 +16,7 @@ export function formatSubtype(value: string) {
     tactile: "Tactile",
     clicky: "Clicky",
     silent: "Silent",
+    KeyboardKit: "Keyboard Kit",
   };
 
   return labels[value] ?? value;
