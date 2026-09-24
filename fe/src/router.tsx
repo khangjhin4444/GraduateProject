@@ -18,11 +18,11 @@ import HasHeaderLayout from "./pages/HasHeader/layout";
 import NotFoundPage from "./components/NotFound";
 import ForbiddenPage from "./components/Forbidden";
 import AdminLayout from "./pages/admin/layout";
+import LoadingPage from "./components/LoadingPage";
 // import ProductByCategory from "./pages/HasHeader/productByCategory";
 // import ProductByKeyword from "./pages/HasHeader/productByKeyword";
 // import Cart from "./pages/HasHeader/cart";
 // import Checkout from "./pages/checkout";
-import LoadingPage from "./components/LoadingPage";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
@@ -43,21 +43,6 @@ function RootLayout() {
       <ScrollRestoration />
     </>
   );
-}
-
-async function rootLoader() {
-  const token = store.getState().token;
-  const role = store.getState().profile.role;
-  if (token.accessToken !== "") {
-    return null;
-  }
-
-  await refreshAuth();
-  if (role === "admin") {
-    console.log("vao");
-    redirect("/admin/dashboard");
-  }
-  return null;
 }
 
 function withAuth(
@@ -98,7 +83,6 @@ export const router = createBrowserRouter([
   {
     Component: RootLayout,
     hydrateFallbackElement: <LoadingPage />,
-    loader: rootLoader,
     children: [
       {
         path: "/",
@@ -142,7 +126,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "/collection/:type/:sub?",
-            loader: withAuth(({ params }) => {
+            loader: ({ params }) => {
               const type = params.type;
               const sub = params.sub;
               if (!type) return redirect("/home");
@@ -155,7 +139,7 @@ export const router = createBrowserRouter([
                 return redirect("/not-found");
               document.title = `${formatSubtype(type)} Collection`;
               return { type, sub };
-            }),
+            },
             lazy: lazyLoad(() => import("@/pages/HasHeader/productByCategory")),
             // Component: ProductByCategory,
           },

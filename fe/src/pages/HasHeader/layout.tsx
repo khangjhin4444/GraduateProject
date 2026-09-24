@@ -1,9 +1,20 @@
+import { useEffect } from "react";
 import { Outlet } from "react-router";
 import Header from "@/components/Header/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import Footer from "@/components/Footer";
+import { refreshAuth } from "@/lib/authRefresh";
+import { useAppSelector } from "@/state/hooks";
 
 export default function Layout() {
+  const { accessToken, authChecked } = useAppSelector((state) => state.token);
+
+  useEffect(() => {
+    if (accessToken === "" && !authChecked) {
+      void refreshAuth();
+    }
+  }, [accessToken, authChecked]);
+
   return (
     <SidebarProvider className="flex-col relative">
       <Header></Header>
