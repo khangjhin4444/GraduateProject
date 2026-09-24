@@ -15,8 +15,6 @@ const { isDatabaseUnavailableError } = require("../auth/refreshError");
 const router = express.Router();
 
 const sql = neon(process.env.DATABASE_URL);
-const refreshLocks = new Map();
-const refreshReleases = new Map();
 const refreshReplayCache = new Map();
 const REFRESH_REPLAY_TTL_MS = 5000;
 
@@ -39,6 +37,23 @@ const sendRefreshResponse = (res, result) => {
     accessToken: result.accessToken,
     user: result.user,
   });
+};
+
+const getPersistedReplay = async (refreshToken) => {
+  const rows = await sql`
+    SELECT "AccessToken", "RefreshToken", "UserData", "RemainingSessionMs"
+    FROM "refresh_token_replays"
+    WHERE "Token" = ${refreshToken} AND "ExpiresAt" > NOW()
+  `;
+
+  if (rows.length === 0) return null;
+
+  return {
+    accessToken: rows[0].AccessToken,
+    refreshToken: rows[0].RefreshToken,
+    user: rows[0].UserData,
+    remainingSessionMs: Number(rows[0].RemainingSessionMs),
+  };
 };
 
 // API ĐĂNG KÝ
@@ -175,48 +190,15 @@ router.post("/refresh", async (req, res) => {
     }
     if (cachedRefresh) refreshReplayCache.delete(refreshToken);
 
-    const persistedReplay = await sql`
-      SELECT "AccessToken", "RefreshToken", "UserData", "RemainingSessionMs"
-      FROM "refresh_token_replays"
-      WHERE "Token" = ${refreshToken} AND "ExpiresAt" > NOW()
-    `;
-    if (persistedReplay.length > 0) {
-      const replayResult = {
-        accessToken: persistedReplay[0].AccessToken,
-        refreshToken: persistedReplay[0].RefreshToken,
-        user: persistedReplay[0].UserData,
-        remainingSessionMs: Number(persistedReplay[0].RemainingSessionMs),
-      };
+    const persistedReplay = await getPersistedReplay(refreshToken);
+    if (persistedReplay) {
+      const replayResult = persistedReplay;
       refreshReplayCache.set(refreshToken, {
         expiresAt: Date.now() + REFRESH_REPLAY_TTL_MS,
         result: replayResult,
       });
       return sendRefreshResponse(res, replayResult);
     }
-
-    const activeRefreshLock = refreshLocks.get(refreshToken);
-    if (activeRefreshLock) {
-      await activeRefreshLock;
-      const replayedRefresh = refreshReplayCache.get(refreshToken);
-      if (replayedRefresh && replayedRefresh.expiresAt > Date.now()) {
-        return sendRefreshResponse(res, replayedRefresh.result);
-      }
-    }
-
-    let releaseRefreshLock;
-    const refreshLock = new Promise((resolve) => {
-      releaseRefreshLock = resolve;
-    });
-    refreshLocks.set(refreshToken, refreshLock);
-
-    refreshReleases.set(refreshToken, releaseRefreshLock);
-    const releaseLock = () => {
-      if (refreshLocks.get(refreshToken) === refreshLock) {
-        refreshLocks.delete(refreshToken);
-        refreshReleases.delete(refreshToken);
-        releaseRefreshLock();
-      }
-    };
 
     // 2. Kiểm tra token có tồn tại trong DB không
     const tokenRecord = await sql`
@@ -228,8 +210,17 @@ router.post("/refresh", async (req, res) => {
       console.log("Khong tim thay refresh trong DB");
       const replayedRefresh = refreshReplayCache.get(refreshToken);
       if (replayedRefresh && replayedRefresh.expiresAt > Date.now()) {
-        releaseLock();
         return sendRefreshResponse(res, replayedRefresh.result);
+      }
+
+      const persistedReplayAfterRotation =
+        await getPersistedReplay(refreshToken);
+      if (persistedReplayAfterRotation) {
+        refreshReplayCache.set(refreshToken, {
+          expiresAt: Date.now() + REFRESH_REPLAY_TTL_MS,
+          result: persistedReplayAfterRotation,
+        });
+        return sendRefreshResponse(res, persistedReplayAfterRotation);
       }
 
       // ⚠️ Token không còn trong DB — có 2 tình huống xảy ra:
@@ -250,9 +241,6 @@ router.post("/refresh", async (req, res) => {
       `;
 
       if (activeToken.length > 0) {
-        // ✅ Case A: Có token mới đã được tạo → concurrent request hợp lệ
-        // Trả 409 để NextAuth/client biết refresh đang xảy ra, thử lại sau
-        releaseLock();
         return res.status(409).json({
           success: false,
           message: "Token đang được làm mới, vui lòng thử lại.",
@@ -265,7 +253,6 @@ router.post("/refresh", async (req, res) => {
       await sql`
         DELETE FROM "refresh_tokens" WHERE "user_id" = ${decoded.userId}
       `;
-      releaseLock();
       return res.status(403).json({
         success: false,
         message: "Refresh token đã bị thu hồi! Phát hiện tái sử dụng token.",
@@ -279,7 +266,6 @@ router.post("/refresh", async (req, res) => {
         DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
       `;
       res.clearCookie("refreshToken", getRefreshCookieOptions(0));
-      releaseLock();
       return res.status(403).json({
         success: false,
         message: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
@@ -290,7 +276,6 @@ router.post("/refresh", async (req, res) => {
     const user =
       await sql`SELECT * FROM "user" WHERE "UserID" = ${decoded.userId}`;
     if (user.length === 0) {
-      releaseLock();
       return res.status(400).json({ message: "Wrong Username or Password" });
     }
 
@@ -319,16 +304,6 @@ router.post("/refresh", async (req, res) => {
       { expiresIn: getTokenTtlSeconds(remainingSessionMs) },
     );
 
-    // 5. Xóa token cũ và lưu token mới atomically.
-    await sql.transaction([
-      sql`
-        DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
-      `,
-      sql`
-        INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
-        VALUES (${decoded.userId}, ${newRefreshToken}, ${sessionExpiresAt})
-      `,
-    ]);
     const refreshResult = {
       refreshToken: newRefreshToken,
       remainingSessionMs,
@@ -343,24 +318,59 @@ router.post("/refresh", async (req, res) => {
         role: role,
       },
     };
-    try {
-      await sql`
-        INSERT INTO "refresh_token_replays"
-          ("Token", "AccessToken", "RefreshToken", "UserData", "RemainingSessionMs", "ExpiresAt")
-        VALUES
-          (${refreshToken}, ${refreshResult.accessToken}, ${refreshResult.refreshToken},
-           ${JSON.stringify(refreshResult.user)}::jsonb, ${refreshResult.remainingSessionMs},
-           NOW() + INTERVAL '5 seconds')
-        ON CONFLICT ("Token") DO UPDATE SET
-          "AccessToken" = EXCLUDED."AccessToken",
-          "RefreshToken" = EXCLUDED."RefreshToken",
-          "UserData" = EXCLUDED."UserData",
-          "RemainingSessionMs" = EXCLUDED."RemainingSessionMs",
-          "ExpiresAt" = EXCLUDED."ExpiresAt"
-      `;
-    } catch (replayError) {
-      console.error("Failed to persist refresh replay", replayError);
+
+    const [, rotationResult] = await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(hashtextextended(${refreshToken}, 0))`,
+      sql`
+        WITH locked_token AS (
+          SELECT "token"
+          FROM "refresh_tokens"
+          WHERE "token" = ${refreshToken} AND "expires_at" > NOW()
+          FOR UPDATE
+        ), deleted_token AS (
+          DELETE FROM "refresh_tokens"
+          WHERE "token" IN (SELECT "token" FROM locked_token)
+          RETURNING "token"
+        ), inserted_token AS (
+          INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
+          SELECT ${decoded.userId}, ${newRefreshToken}, ${sessionExpiresAt}
+          WHERE EXISTS (SELECT 1 FROM deleted_token)
+          RETURNING "token"
+        ), inserted_replay AS (
+          INSERT INTO "refresh_token_replays"
+            ("Token", "AccessToken", "RefreshToken", "UserData", "RemainingSessionMs", "ExpiresAt")
+          SELECT
+            ${refreshToken}, ${refreshResult.accessToken}, ${refreshResult.refreshToken},
+            ${JSON.stringify(refreshResult.user)}::jsonb,
+            ${refreshResult.remainingSessionMs}, NOW() + INTERVAL '5 seconds'
+          WHERE EXISTS (SELECT 1 FROM inserted_token)
+          ON CONFLICT ("Token") DO UPDATE SET
+            "AccessToken" = EXCLUDED."AccessToken",
+            "RefreshToken" = EXCLUDED."RefreshToken",
+            "UserData" = EXCLUDED."UserData",
+            "RemainingSessionMs" = EXCLUDED."RemainingSessionMs",
+            "ExpiresAt" = EXCLUDED."ExpiresAt"
+        )
+        SELECT EXISTS (SELECT 1 FROM inserted_token) AS "rotated"
+      `,
+    ]);
+
+    if (!rotationResult[0]?.rotated) {
+      const replayedRefresh = await getPersistedReplay(refreshToken);
+      if (replayedRefresh) {
+        refreshReplayCache.set(refreshToken, {
+          expiresAt: Date.now() + REFRESH_REPLAY_TTL_MS,
+          result: replayedRefresh,
+        });
+        return sendRefreshResponse(res, replayedRefresh);
+      }
+
+      return res.status(409).json({
+        success: false,
+        message: "Token đang được làm mới, vui lòng thử lại.",
+      });
     }
+
     setTimeout(async () => {
       try {
         await sql`
@@ -380,15 +390,8 @@ router.post("/refresh", async (req, res) => {
       () => refreshReplayCache.delete(refreshToken),
       REFRESH_REPLAY_TTL_MS,
     );
-    releaseLock();
     return sendRefreshResponse(res, refreshResult);
   } catch (err) {
-    const releaseRefreshLock = refreshReleases.get(refreshToken);
-    if (releaseRefreshLock) {
-      refreshLocks.delete(refreshToken);
-      refreshReleases.delete(refreshToken);
-      releaseRefreshLock();
-    }
     console.log(err);
     const databaseUnavailable = isDatabaseUnavailableError(err);
     return res.status(databaseUnavailable ? 503 : 403).json({

@@ -3,13 +3,13 @@ import {
   type RelevantProductEntity,
   type VariantEntity,
 } from "@/features/product/schema/product.schema";
-import { useMutation, useQuery } from "@tanstack/react-query";
+// import { useMutation, useQuery } from "@tanstack/react-query";
 
 import React, { useState } from "react";
 import { toast } from "sonner";
 
-import { useAppDispatch, useAppSelector } from "@/state/hooks";
-import { updateCartQuantity } from "@/state/profile/profileSlice";
+// import { useAppDispatch, useAppSelector } from "@/state/hooks";
+// import { updateCartQuantity } from "@/state/profile/profileSlice";
 import { useParams } from "react-router";
 import useProductDetail from "@/hooks/useProductDetail";
 import { Blocks, config, customRender } from "@/shared/components/BlockRender";
@@ -19,8 +19,8 @@ import useRelevant from "@/hooks/useRelevant";
 import { RelevantProductCard } from "./RelevantProductCard";
 import ProductSkeleton from "@/shared/components/ProductSkeleton";
 export default function Page() {
-  const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
-  const dispatch = useAppDispatch();
+  // const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
+  // const dispatch = useAppDispatch();
   const { id } = useParams();
   const { data } = useProductDetail(Number(id!));
   const productData = data.data;
