@@ -24,7 +24,7 @@ import { LoaderCircle } from "lucide-react";
 interface DataTableProps<TData extends RowData> {
   columns: ColumnDef<DataTableFeatures, TData>[];
   data: TData[];
-  fetchNextPage: () => void;
+  fetchNextPage: () => Promise<{ isError: boolean }>;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
 }
@@ -46,6 +46,7 @@ export function DataTable<TData extends RowData>({
     columns,
     state: { pagination },
     onPaginationChange: setPagination,
+    autoResetPageIndex: false,
   });
   const pageIndex = pagination.pageIndex;
   const pageCount = table.getPageCount();
@@ -132,14 +133,20 @@ export function DataTable<TData extends RowData>({
             }
 
             if (hasNextPage && !isFetchingNextPage) {
-              await fetchNextPage();
+              const result = await fetchNextPage();
+              if (result.isError) {
+                return;
+              }
+
               setPagination((current) => ({
                 ...current,
                 pageIndex: current.pageIndex + 1,
               }));
             }
           }}
-          disabled={!table.getCanNextPage() && !hasNextPage}
+          disabled={
+            (!table.getCanNextPage() && !hasNextPage) || isFetchingNextPage
+          }
         >
           Next
         </Button>
