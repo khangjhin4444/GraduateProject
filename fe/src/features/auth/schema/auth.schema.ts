@@ -11,9 +11,9 @@ export const LoginSchema = z.object({
   user: z.object({
     id: z.number(),
     cartQuantity: z.string(),
-    Name: z.string(),
-    Phone: z.string(),
-    Address: z.string(),
+    Name: z.string().nullable(),
+    Phone: z.string().nullable(),
+    Address: z.string().nullable(),
     role: z.enum(["user", "admin"]),
   }),
 });
