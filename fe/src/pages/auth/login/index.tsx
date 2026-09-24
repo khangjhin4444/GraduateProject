@@ -54,9 +54,9 @@ export default function Page() {
         setInfo({
           id: response.user.id,
           cartQuantity: Number(response.user.cartQuantity),
-          fullName: response.user.Name,
-          phoneNumber: response.user.Phone,
-          address: response.user.Address,
+          fullName: response.user.Name ?? "",
+          phoneNumber: response.user.Phone ?? "",
+          address: response.user.Address ?? "",
           role: response.user.role,
         }),
       );
