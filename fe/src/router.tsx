@@ -17,6 +17,7 @@ import AuthLayout from "./pages/auth/layout";
 import HasHeaderLayout from "./pages/HasHeader/layout";
 import NotFoundPage from "./components/NotFound";
 import ForbiddenPage from "./components/Forbidden";
+import AdminLayout from "./pages/admin/layout";
 // import ProductByCategory from "./pages/HasHeader/productByCategory";
 // import ProductByKeyword from "./pages/HasHeader/productByKeyword";
 // import Cart from "./pages/HasHeader/cart";
@@ -100,6 +101,10 @@ export const router = createBrowserRouter([
         loader: () => redirect("/home"),
       },
       {
+        path: "/admin",
+        loader: () => redirect("/admin/dasboard"),
+      },
+      {
         Component: HasHeaderLayout,
         children: [
           {
@@ -167,22 +172,28 @@ export const router = createBrowserRouter([
             // Component: Checkout,
           },
           {
-            path: "/admin",
-            loader: withAuth(() => {}, { roles: ["admin"] }),
+            Component: AdminLayout,
             children: [
               {
-                path: "dashboard",
-                lazy: lazyLoad(() => import("./pages/admin/dashboard")),
+                path: "/admin",
+                loader: withAuth(() => {}, { roles: ["admin"] }),
+                children: [
+                  {
+                    index: true,
+                    path: "dashboard",
+                    lazy: lazyLoad(() => import("./pages/admin/dashboard")),
+                  },
+                  {
+                    path: "products",
+                    lazy: lazyLoad(() => import("./pages/admin/products")),
+                  },
+                  {
+                    path: "orders",
+                    lazy: lazyLoad(() => import("./pages/admin/orders")),
+                  },
+                  { path: "*", Component: NotFoundPage },
+                ],
               },
-              {
-                path: "products",
-                lazy: lazyLoad(() => import("./pages/admin/products")),
-              },
-              {
-                path: "orders",
-                lazy: lazyLoad(() => import("./pages/admin/orders")),
-              },
-              { path: "*", Component: NotFoundPage },
             ],
           },
         ],
