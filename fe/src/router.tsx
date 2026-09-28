@@ -72,7 +72,7 @@ function withAuth(
     if (options?.roles) {
       const role = store.getState().profile.role;
       if (!options.roles.includes(role)) {
-        throw redirect("/forbbiden");
+        throw redirect("/forbidden");
       }
     }
     return loader ? loader(args) : null;
@@ -90,7 +90,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/admin",
-        loader: () => redirect("/admin/dasboard"),
+        loader: () => redirect("/admin/dashboard"),
       },
       {
         Component: HasHeaderLayout,
@@ -163,7 +163,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: "/admin",
-                loader: withAuth(() => { }, { roles: ["admin"] }),
+                loader: withAuth(() => {}, { roles: ["admin"] }),
                 children: [
                   {
                     index: true,
@@ -198,6 +198,6 @@ export const router = createBrowserRouter([
     ],
   },
   { path: "/not-found", Component: NotFoundPage },
-  { path: "/forbbiden", Component: ForbiddenPage },
+  { path: "/forbidden", Component: ForbiddenPage },
   { path: "*", Component: NotFoundPage },
 ]);
