@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload, X } from "lucide-react";
+import { Edit, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "./ImageUploader";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -28,6 +28,9 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditorJsInput, type EditorJsInputHandle } from "./EditorJsInput";
 import { Label } from "@/components/ui/label";
+import { uploadImageToImgBB } from "@/utils/upload-image";
+import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
+import { EditorDataSchema } from "@/features/admin/schema/admin.schema";
 
 const PRODUCT_TYPES: { value: string; label: string }[] = [
   { value: "KeyboardKit", label: "Keyboard Kit" },
@@ -53,23 +56,11 @@ const VariantSchema = z.object({
     .number({ message: "Stock is required" })
     .min(1, { message: "Stock must be at least 1" }),
   file: z.file({ message: "Image is required" }),
-  url: z.string(),
+  main_image: z.string(),
 });
 type Variant = z.infer<typeof VariantSchema>;
 
-const EditorBlockSchema = z.object({
-  id: z.string().optional(),
-  type: z.string(),
-  data: z.record(z.string(), z.unknown()),
-});
-
-const EditorDataSchema = z.object({
-  time: z.number().optional(),
-  blocks: z.array(EditorBlockSchema).min(1, {
-    message: "Please enter a product description",
-  }),
-  version: z.string().optional(),
-});
+export type ProductDescription = z.infer<typeof EditorDataSchema>;
 
 const ProductFormSchema = z.object({
   name: z
@@ -82,6 +73,7 @@ const ProductFormSchema = z.object({
   variants: z
     .array(VariantSchema)
     .min(1, { message: "At least one variant is required" }),
+  extraImages: z.array(z.file()),
 });
 
 type ProductForm = z.infer<typeof ProductFormSchema>;
@@ -119,33 +111,98 @@ export function ProductFormDialog({
           price: 0,
           stock: 0,
           file: undefined,
-          url: "",
+          main_image: "",
         },
       ],
+      extraImages: [],
     },
   });
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "variants",
   });
+  const extraImages = form.watch("extraImages");
+
+  const handleAddExtraImage = (newFile: File) => {
+    const currentImages = form.getValues("extraImages");
+    form.setValue("extraImages", [...currentImages, newFile], {
+      shouldValidate: true, // Kích hoạt validate
+      shouldDirty: true,
+    });
+  };
+
+  const handleRemoveExtraImage = (indexToRemove: number) => {
+    const currentImages = form.getValues("extraImages");
+    form.setValue(
+      "extraImages",
+      currentImages.filter((_, index) => index !== indexToRemove),
+      { shouldValidate: true, shouldDirty: true },
+    );
+  };
+
   const [type, setType] = useState<string>(initType);
 
   const saveMutation = useMutation({
-    mutationFn: async () => handleSave(),
+    mutationFn: async (data: ProductForm) => handleSave(data),
     onSuccess: () => {
       onOpenChange(false);
       onSaved(type);
       toast.success("Product saved successfully!");
     },
   });
-  const handleSave = async () => {
-    // TODO: Implement save logic (upload images, call API)
+  const handleSave = async (data: ProductForm) => {
+    const colors = data.variants.map((v) => v.color.trim().toLowerCase());
+    const uniqueColors = new Set(colors);
+    const isUnique = uniqueColors.size === data.variants.length;
+    if (!isUnique) {
+      toast.error("Variant colors must be unique.");
+      throw new Error("Validation failed: duplicate colors");
+    }
+    const uploadToImgBB = async (fileToUpload: File): Promise<string> => {
+      try {
+        const formData = new FormData();
+        formData.append("image", fileToUpload);
+
+        const response = await uploadImageToImgBB(formData);
+        return response.data.url;
+      } catch (error) {
+        console.log(error);
+        throw new Error("Lỗi từ server ImgBB");
+      }
+    };
+    const mainImageURLs = await Promise.all(
+      data.variants.map(async (v) => {
+        if (v.file) {
+          return await uploadToImgBB(v.file);
+        }
+        return null;
+      }),
+    );
+    data.variants.forEach((v, i) => {
+      v.main_image = mainImageURLs[i]!;
+    });
+
+    let extraImageURLs: string[] = [];
+    if (data.extraImages.length > 0) {
+      extraImageURLs = await Promise.all(
+        extraImages.map(async (f) => {
+          return await uploadToImgBB(f);
+        }),
+      );
+    }
+    const payload = {
+      name: data.name,
+      description: data.description,
+      productType: data.type,
+      subType: data.subtype,
+      variants: data.variants,
+      extraImages: extraImageURLs,
+    };
+    AdminUsecase.addProduct(payload);
   };
 
   function onSubmit(data: ProductForm) {
-    console.log(data.description);
-    console.log(data);
-    saveMutation.mutate();
+    saveMutation.mutate(data);
   }
 
   return (
@@ -300,7 +357,6 @@ export function ProductFormDialog({
                 </Field>
               </div>
             </div>
-
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-base">Variants</Label>
@@ -315,7 +371,7 @@ export function ProductFormDialog({
                       price: 0,
                       stock: 0,
                       file: undefined as any,
-                      url: "",
+                      main_image: "",
                     })
                   }
                 >
@@ -452,6 +508,52 @@ export function ProductFormDialog({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-base">Additional images</Label>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-2">
+                <label className="relative block w-20 h-20">
+                  <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-secondary rounded-xl">
+                    <Upload className="h-5 w-5" />
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleAddExtraImage(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {extraImages.map((file, i) => (
+                  <div key={i} className="relative group">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={"Extra image preview"}
+                      className="object-cover rounded-md h-20 w-20"
+                    />
+                    <button
+                      type="button"
+                      className="absolute -top-1 -right-1 rounded-full bg-destructive text-destructive-foreground p-0.5 opacity-0 group-hover:opacity-100 transition"
+                      onClick={async () => {
+                        handleRemoveExtraImage(i);
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {extraImages.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No extra images yet.
+                  </p>
+                )}
               </div>
             </div>
           </div>
