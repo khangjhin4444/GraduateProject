@@ -44,6 +44,17 @@ function RootLayout() {
     </>
   );
 }
+async function rootLoader({ request }: { request: Request }) {
+  if (store.getState().token.accessToken === "") {
+    await refreshAuth();
+  }
+  const role = store.getState().profile.role;
+  const url = new URL(request.url);
+  if (role == "admin" && !url.pathname.startsWith("/admin")) {
+    throw redirect("/admin");
+  }
+  return null;
+}
 
 function withAuth(
   loader?: LoaderFunction,
@@ -72,7 +83,7 @@ function withAuth(
     if (options?.roles) {
       const role = store.getState().profile.role;
       if (!options.roles.includes(role)) {
-        throw redirect("/forbbiden");
+        throw redirect("/forbidden");
       }
     }
     return loader ? loader(args) : null;
@@ -82,15 +93,17 @@ function withAuth(
 export const router = createBrowserRouter([
   {
     Component: RootLayout,
+    loader: rootLoader,
     hydrateFallbackElement: <LoadingPage />,
     children: [
       {
         path: "/",
         loader: () => redirect("/home"),
+        element: null,
       },
       {
         path: "/admin",
-        loader: () => redirect("/admin/dasboard"),
+        loader: () => redirect("/admin/dashboard"),
       },
       {
         Component: HasHeaderLayout,
@@ -163,7 +176,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: "/admin",
-                loader: withAuth(() => { }, { roles: ["admin"] }),
+                loader: withAuth(() => {}, { roles: ["admin"] }),
                 children: [
                   {
                     index: true,
@@ -198,6 +211,6 @@ export const router = createBrowserRouter([
     ],
   },
   { path: "/not-found", Component: NotFoundPage },
-  { path: "/forbbiden", Component: ForbiddenPage },
+  { path: "/forbidden", Component: ForbiddenPage },
   { path: "*", Component: NotFoundPage },
 ]);
