@@ -1,15 +1,18 @@
 "use client";
-import { columns } from "./column";
+import { createColumns } from "./column";
 import { DataTable } from "./data-table";
 import { useInView } from "react-intersection-observer";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-// import { ProductFormDialog } from "./ProductFormDialog";
 import useAdminProductDetail from "@/hooks/useAdminProductDetail";
 import { ProductFormDialog } from "./ProductFormDialog";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  EditProductFormDialog,
+  type EditProductData,
+} from "./EditProductFormDialog";
 
 function TableSkeleton() {
   return (
@@ -62,6 +65,9 @@ function TableSkeleton() {
 
 export default function ProductTable({ type }: { type: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editProductData, setEditProductData] =
+    useState<EditProductData | null>(null);
   const qc = useQueryClient();
   const { ref, inView } = useInView({
     triggerOnce: true, // Chỉ kích hoạt 1 lần duy nhất khi nhìn thấy
@@ -73,9 +79,39 @@ export default function ProductTable({ type }: { type: string }) {
     fetchNextPage,
     isFetchingNextPage,
     isError,
+
     error,
   } = useAdminProductDetail({ type });
 
+  const handleEdit = (productId: number) => {
+    const allRows = products?.pages.flatMap((page) => page.data) ?? [];
+
+    const matchingRows = allRows.filter((r) => r.ProductID === productId);
+
+    if (matchingRows.length === 0) return;
+
+    const first = matchingRows[0];
+    const productData: EditProductData = {
+      ProductID: first.ProductID,
+      Name: first.Name,
+      Description: first.Description,
+      ProductType: first.ProductType,
+      SubType: first.SubType,
+      variants: matchingRows.map((r) => ({
+        VariantID: r.VariantID,
+        Color: r.Color,
+        Price: r.Price,
+        Stock: r.Stock,
+        MainImage: r.MainImage,
+      })),
+      images: first.ExtraImages,
+    };
+
+    setEditProductData(productData);
+    setEditDialogOpen(true);
+  };
+
+  const columns = createColumns(handleEdit);
   return (
     <div ref={ref}>
       {isError && <h1>{error.message}</h1>}
@@ -115,9 +151,23 @@ export default function ProductTable({ type }: { type: string }) {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSaved={(type: string) => {
-          qc.invalidateQueries({ queryKey: ["products-table", type] });
+          qc.invalidateQueries({ queryKey: ["admin-products", type] });
         }}
       />
+      {editProductData && (
+        <EditProductFormDialog
+          key={`edit-${editProductData.ProductID}`}
+          productData={editProductData}
+          open={editDialogOpen}
+          onOpenChange={(open) => {
+            setEditDialogOpen(open);
+            if (!open) setEditProductData(null);
+          }}
+          onSaved={(type: string) => {
+            qc.invalidateQueries({ queryKey: ["admin-products", type] });
+          }}
+        />
+      )}
     </div>
   );
 }
