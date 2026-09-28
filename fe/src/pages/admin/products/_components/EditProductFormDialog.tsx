@@ -56,7 +56,7 @@ const EditVariantSchema = z.object({
     .min(1, { message: "Price must be at least 1" }),
   stock: z
     .number({ message: "Stock is required" })
-    .min(1, { message: "Stock must be at least 1" }),
+    .min(0, { message: "Stock cannot be negative" }),
   file: z.file().optional(), // New file (optional if keeping existing image)
   existingImage: z.string().optional(), // Existing URL from DB
 });
