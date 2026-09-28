@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { AdminProductEntity } from "@/features/admin/schema/admin.schema";
 
 function DeleteButton() {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -37,7 +38,13 @@ function DeleteButton() {
   );
 }
 
-export function ProductActions() {
+export function ProductActions({
+  row,
+  onEdit,
+}: {
+  row: AdminProductEntity;
+  onEdit: (productId: number) => void;
+}) {
   return (
     <div className="flex items-center justify-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
       <Button
@@ -46,11 +53,14 @@ export function ProductActions() {
         variant="ghost"
         aria-label="Edit product"
         title="Edit product"
-        onClick={() => undefined}
+        onClick={() => {
+          onEdit(row.ProductID);
+        }}
         className="cursor-pointer"
       >
         <Pencil />
       </Button>
+
       <DeleteButton />
     </div>
   );
