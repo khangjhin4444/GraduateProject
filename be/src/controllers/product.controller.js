@@ -396,7 +396,7 @@ const addProductAdmin = async (req, res) => {
   try {
     const result = await sql`
             INSERT INTO "product" ("Name", "Description", "ProductType", "SubType")
-            VALUES (${name}, ${description}, ${productType}, ${subType})
+            VALUES (${name}, ${JSON.stringify(description)}, ${productType}, ${subType})
             RETURNING "ProductID"
           `;
     const newProductID = result[0].ProductID;
