@@ -487,6 +487,148 @@ const addProductAdmin = async (req, res) => {
   }
 };
 
+const editProductAdmin = async (req, res) => {
+  const { uploadMultipleToImgBB, uploadToImgBB } = require("../utils/uploadImage");
+
+  try {
+    const productId = req.params.id;
+    const {
+      name,
+      description,
+      productType,
+      subType,
+      variants: variantsJson,
+      existingExtraImages: existingExtraImagesJson,
+    } = req.body;
+
+    const variants = JSON.parse(variantsJson);
+    const parsedDescription = JSON.parse(description);
+    const existingExtraImages = existingExtraImagesJson
+      ? JSON.parse(existingExtraImagesJson)
+      : [];
+
+    // Validate required fields
+    if (
+      !name ||
+      !parsedDescription ||
+      !productType ||
+      !subType ||
+      !variants ||
+      variants.some((v) => !v.color || v.price <= 0 || v.stock < 0)
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid product information" });
+    }
+
+    // Validate unique colors
+    const colors = variants.map((v) => v.color.trim().toLowerCase());
+    const uniqueColors = new Set(colors);
+    if (uniqueColors.size !== variants.length) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Variant colors must be unique." });
+    }
+
+    // Get uploaded files from multer
+    const variantImageFiles = req.files?.variantImages || [];
+    const extraImageFiles = req.files?.extraImages || [];
+
+    // Process variant images: some variants have existing URLs, some have new files
+    // New file uploads are ordered — we track which variants need new uploads
+    let newFileIndex = 0;
+    const variantImageURLs = [];
+    for (const v of variants) {
+      if (v.existingImage) {
+        // Keep existing image URL
+        variantImageURLs.push(v.existingImage);
+      } else {
+        // Upload new image
+        if (newFileIndex >= variantImageFiles.length) {
+          return res.status(400).json({
+            success: false,
+            message: "Missing variant image file",
+          });
+        }
+        try {
+          const file = variantImageFiles[newFileIndex];
+          const url = await uploadToImgBB(file.buffer, file.originalname);
+          variantImageURLs.push(url);
+          newFileIndex++;
+        } catch (uploadError) {
+          return res.status(500).json({
+            success: false,
+            message: `Failed to upload variant image: ${uploadError.message}`,
+          });
+        }
+      }
+    }
+
+    // Upload new extra images to ImgBB
+    let newExtraImageURLs = [];
+    if (extraImageFiles.length > 0) {
+      try {
+        newExtraImageURLs = await uploadMultipleToImgBB(extraImageFiles);
+      } catch (uploadError) {
+        return res.status(500).json({
+          success: false,
+          message: `Failed to upload extra image: ${uploadError.message}`,
+        });
+      }
+    }
+
+    // Combine existing + new extra images
+    const allExtraImageURLs = [...existingExtraImages, ...newExtraImageURLs];
+
+    // Update product info
+    await sql`
+      UPDATE "product"
+      SET "Name" = ${name},
+          "Description" = ${JSON.stringify(parsedDescription)},
+          "ProductType" = ${productType},
+          "SubType" = ${subType}
+      WHERE "ProductID" = ${productId}
+    `;
+
+    // Delete all existing variants and re-insert
+    await sql`
+      DELETE FROM "product_variants" WHERE "ProductID" = ${productId}
+    `;
+    const insertVariantQueries = variants.map(
+      (v, i) => sql`
+        INSERT INTO "product_variants" ("ProductID", "Color", "Price", "Stock", "MainImage")
+        VALUES (${productId}, ${v.color}, ${v.price}, ${v.stock}, ${variantImageURLs[i]})
+      `,
+    );
+    await sql.transaction(insertVariantQueries);
+
+    // Delete all existing extra images and re-insert
+    await sql`
+      DELETE FROM "product_images" WHERE "ProductID" = ${productId}
+    `;
+    if (allExtraImageURLs.length > 0) {
+      const insertImageQueries = allExtraImageURLs.map(
+        (imageUrl) => sql`
+          INSERT INTO "product_images" ("ProductID", "ImageUrl")
+          VALUES (${productId}, ${imageUrl})
+        `,
+      );
+      await sql.transaction(insertImageQueries);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+    });
+  } catch (error) {
+    console.error("❌ Error editing product:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update product",
+    });
+  }
+};
+
 module.exports = {
   getProductByID,
   getProducts,
@@ -495,5 +637,6 @@ module.exports = {
   getProductsAdmin,
   updateProductVariantAdmin,
   addProductAdmin,
+  editProductAdmin,
   getProductByKeyword,
 };

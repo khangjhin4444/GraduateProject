@@ -7,5 +7,7 @@ export const AdminUsecase = {
     AdminService.getProductDetail({ type, page }),
   addProduct: (formData: FormData) =>
     AdminService.addProduct(formData),
+  editProduct: (productId: number, formData: FormData) =>
+    AdminService.editProduct(productId, formData),
 };
 

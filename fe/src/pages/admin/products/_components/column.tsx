@@ -11,82 +11,85 @@ const columnHelper = createColumnHelper<
   AdminProductEntity
 >();
 
-export const columns = columnHelper.columns([
-  columnHelper.accessor("Name", {
-    size: 250,
-    header: () => <div className="text-left font-semibold text-md">Name</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="min-w-0 whitespace-normal break-all text-left font-medium text-sm md:text-md">
-          {row.getValue("Name")}
-        </div>
-      );
+export const createColumns = (onEdit: (productId: number) => void) =>
+  columnHelper.columns([
+    columnHelper.accessor("Name", {
+      size: 250,
+      header: () => <div className="text-left font-semibold text-md">Name</div>,
+      cell: ({ row }) => {
+        return (
+          <div className="min-w-0 whitespace-normal break-all text-left font-medium text-sm md:text-md">
+            {row.getValue("Name")}
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("ProductType", {
+      size: 100,
+      header: () => (
+        <div className="text-left font-semibold text-md">Product Type</div>
+      ),
+      cell: ({ row }) => {
+        return (
+          <div className="text-left font-normal text-sm md:text-md">
+            {formatSubtype(row.getValue("ProductType"))}
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("SubType", {
+      size: 130,
+      header: () => (
+        <div className="text-left font-semibold text-md">Sub Type</div>
+      ),
+      cell: ({ row }) => {
+        return (
+          <div className="text-left font-normal text-sm md:text-md">
+            {formatSubtype(row.getValue("SubType"))}
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("Color", {
+      size: 100,
+      header: () => (
+        <div className="text-left font-semibold text-md">Variant</div>
+      ),
+      cell: ({ row }) => {
+        return (
+          <div className="text-left font-normal text-sm md:text-md">
+            {row.getValue("Color")}
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("Price", {
+      size: 140,
+      header: () => <div className="text-right font-semibold text-md">Price</div>,
+      cell: ({ row }) => {
+        return (
+          <div className="text-right font-semibold text-sm md:text-md">
+            {priceFormatter.format(row.getValue<number>("Price"))}
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("Stock", {
+      size: 80,
+      header: () => <div className="text-right font-semibold text-md">Stock</div>,
+      cell: ({ row }) => {
+        return (
+          <div className="text-right font-semibold text-sm md:text-md">
+            {row.getValue("Stock")}
+          </div>
+        );
+      },
+    }),
+    {
+      id: "actions",
+      size: 100,
+      cell: ({ row }: { row: any }) => (
+        <ProductActions row={row.original} onEdit={onEdit} />
+      ),
     },
-  }),
-  columnHelper.accessor("ProductType", {
-    size: 100,
-    header: () => (
-      <div className="text-left font-semibold text-md">Product Type</div>
-    ),
-    cell: ({ row }) => {
-      return (
-        <div className="text-left font-normal text-sm md:text-md">
-          {formatSubtype(row.getValue("ProductType"))}
-        </div>
-      );
-    },
-  }),
-  columnHelper.accessor("SubType", {
-    size: 130,
-    header: () => (
-      <div className="text-left font-semibold text-md">Sub Type</div>
-    ),
-    cell: ({ row }) => {
-      return (
-        <div className="text-left font-normal text-sm md:text-md">
-          {formatSubtype(row.getValue("SubType"))}
-        </div>
-      );
-    },
-  }),
-  columnHelper.accessor("Color", {
-    size: 100,
-    header: () => (
-      <div className="text-left font-semibold text-md">Variant</div>
-    ),
-    cell: ({ row }) => {
-      return (
-        <div className="text-left font-normal text-sm md:text-md">
-          {row.getValue("Color")}
-        </div>
-      );
-    },
-  }),
-  columnHelper.accessor("Price", {
-    size: 140,
-    header: () => <div className="text-right font-semibold text-md">Price</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-right font-semibold text-sm md:text-md">
-          {priceFormatter.format(row.getValue<number>("Price"))}
-        </div>
-      );
-    },
-  }),
-  columnHelper.accessor("Stock", {
-    size: 80,
-    header: () => <div className="text-right font-semibold text-md">Stock</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-right font-semibold text-sm md:text-md">
-          {row.getValue("Stock")}
-        </div>
-      );
-    },
-  }),
-  {
-    id: "actions",
-    size: 100,
-    cell: () => <ProductActions />,
-  },
-]);
+  ]);
