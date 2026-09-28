@@ -66,7 +66,7 @@ type EditVariant = z.infer<typeof EditVariantSchema>;
 // For edit: extra images can be existing URLs or new Files
 type ExtraImageItem =
   | { type: "existing"; url: string }
-  | { type: "new"; file: File };
+  | { type: "new"; file: File; previewUrl: string };
 
 const EditProductFormSchema = z.object({
   name: z
@@ -155,12 +155,31 @@ export function EditProductFormDialog({
       productData.images.map((url) => ({ type: "existing" as const, url })),
     );
   }, [productData.images]);
-
+  useEffect(() => {
+    // Hàm return trong useEffect sẽ chạy khi component unmount
+    return () => {
+      extraImages.forEach((img) => {
+        if (img.type === "new" && img.previewUrl) {
+          URL.revokeObjectURL(img.previewUrl);
+        }
+      });
+    };
+  }, [form]);
   const handleAddExtraImage = (newFile: File) => {
-    setExtraImages((prev) => [...prev, { type: "new", file: newFile }]);
+    const previewUrl = URL.createObjectURL(newFile);
+    setExtraImages((prev) => [
+      ...prev,
+      { type: "new", file: newFile, previewUrl },
+    ]);
   };
 
   const handleRemoveExtraImage = (indexToRemove: number) => {
+    if (
+      extraImages[indexToRemove].type === "new" &&
+      extraImages[indexToRemove].previewUrl
+    ) {
+      URL.revokeObjectURL(extraImages[indexToRemove].previewUrl);
+    }
     setExtraImages((prev) =>
       prev.filter((_, index) => index !== indexToRemove),
     );
@@ -430,7 +449,7 @@ export function EditProductFormDialog({
                     >
                       <div className="block md:flex items-start gap-3">
                         <div>
-                          {existingImage &&
+                          {/* {existingImage &&
                           !form.watch(`variants.${idx}.file`) ? (
                             <div className="flex flex-col gap-2 max-w-sm p-4 border rounded-lg bg-white shadow-sm">
                               <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-50">
@@ -461,7 +480,18 @@ export function EditProductFormDialog({
                                 form.setValue(`variants.${idx}.file`, file);
                               }}
                             />
-                          )}
+                          )} */}
+                          <ImageUploader
+                            key={idx}
+                            value={existingImage ?? undefined}
+                            onFileChange={(file) => {
+                              form.setValue(`variants.${idx}.file`, file, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+                              form.trigger("variants");
+                            }}
+                          />
                           {form.formState.errors.variants?.[idx]?.file
                             ?.message &&
                             !existingImage && (
@@ -605,9 +635,7 @@ export function EditProductFormDialog({
                   <div key={i} className="relative group">
                     <img
                       src={
-                        item.type === "existing"
-                          ? item.url
-                          : URL.createObjectURL(item.file)
+                        item.type === "existing" ? item.url : item.previewUrl
                       }
                       alt={"Extra image preview"}
                       className="object-cover rounded-md h-20 w-20"
