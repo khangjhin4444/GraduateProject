@@ -7,6 +7,9 @@ import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { ProductFormDialog } from "./ProductFormDialog";
 import useAdminProductDetail from "@/hooks/useAdminProductDetail";
+import { ProductFormDialog } from "./ProductFormDialog";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 function TableSkeleton() {
   return (
@@ -58,6 +61,8 @@ function TableSkeleton() {
 }
 
 export default function ProductTable({ type }: { type: string }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const qc = useQueryClient();
   const { ref, inView } = useInView({
     triggerOnce: true, // Chỉ kích hoạt 1 lần duy nhất khi nhìn thấy
     rootMargin: "300px 0px", // Khách cuộn gần tới nơi cách 200px là đã âm thầm load trước
@@ -82,7 +87,12 @@ export default function ProductTable({ type }: { type: string }) {
             <h2 className="font-bold text-xl mb-4">
               {type === "KeyboardKit" ? "Keyboard Kit" : type}
             </h2>
-            <Button>
+
+            <Button
+              onClick={() => {
+                setDialogOpen(true);
+              }}
+            >
               <span>
                 <Plus />
               </span>
@@ -99,14 +109,15 @@ export default function ProductTable({ type }: { type: string }) {
           />
         </div>
       )}
-      {/* <ProductFormDialog
+      <ProductFormDialog
+        key={Date()}
         initType={type}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSaved={(type: string) => {
           qc.invalidateQueries({ queryKey: ["products-table", type] });
         }}
-      /> */}
+      />
     </div>
   );
 }
