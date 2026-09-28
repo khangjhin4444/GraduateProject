@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   Dialog,
@@ -10,8 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -24,7 +22,12 @@ import { toast } from "sonner";
 import { ImageUploader } from "./ImageUploader";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
-import { uploadImageToImgBB } from "@/app/action/upload-image";
+import { uploadImageToImgBB } from "@/utils/upload-image";
+import { z } from "zod";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { EditorJsInput, type EditorJsInputHandle } from "./EditorJsInput";
+import { Label } from "@/components/ui/label";
 
 const PRODUCT_TYPES: { value: string; label: string }[] = [
   { value: "KeyboardKit", label: "Keyboard Kit" },
@@ -40,14 +43,42 @@ const SUBTYPES: Record<string, string[]> = {
   Switch: ["Linear", "Tactile", "Clicky", "Silent"],
 };
 
-export type Variant = {
-  id: number;
-  color: string;
-  price: number;
-  stock: number;
-  file: File | null;
-  url: string;
-};
+const VariantSchema = z.object({
+  id: z.number(),
+  color: z.string().min(1, { message: "Color is required" }),
+  price: z.number({ message: "Price is required" }).min(1, { message: "Price must be at least 1" }),
+  stock: z.number({ message: "Stock is required" }).min(1, { message: "Stock must be at least 1" }),
+  file: z.file({ message: "Image is required" }),
+  url: z.string(),
+});
+type Variant = z.infer<typeof VariantSchema>;
+
+const EditorBlockSchema = z.object({
+  id: z.string().optional(),
+  type: z.string(),
+  data: z.record(z.string(), z.unknown()),
+});
+
+const EditorDataSchema = z.object({
+  time: z.number().optional(),
+  blocks: z.array(EditorBlockSchema).min(1, {
+    message: "Please enter a product description",
+  }),
+  version: z.string().optional(),
+});
+
+const ProductFormSchema = z.object({
+  name: z
+    .string()
+    .min(1, { message: "Please fill this field" })
+    .max(120, { message: "Product's name must be at most 120 characters" }),
+  type: z.enum(["KeyboardKit", "Prebuild", "Keycap", "Switch"]),
+  subtype: z.string(),
+  description: EditorDataSchema,
+  variants: z.array(VariantSchema).min(1, { message: "At least one variant is required" }),
+});
+
+type ProductForm = z.infer<typeof ProductFormSchema>;
 
 export function ProductFormDialog({
   initType,
@@ -60,61 +91,39 @@ export function ProductFormDialog({
   onOpenChange: (o: boolean) => void;
   onSaved: (type: string) => void;
 }) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [type, setType] = useState<string>(initType);
-  const [subtype, setSubtype] = useState<string>(
-    SUBTYPES[initType as keyof typeof SUBTYPES][0],
-  );
-  const [extraImages, setExtraImages] = useState<File[]>([]);
-
-  const [variants, setVariants] = useState<Variant[]>([
-    {
-      id: Date.now(),
-      color: "",
-      price: 0,
-      stock: 0,
-      file: null,
-      url: "",
-    },
-  ]);
-  const handleAddVariant = () => {
-    setVariants([
-      ...variants,
-      {
-        id: Date.now(),
-        color: "",
-        price: 0,
-        stock: 0,
-        file: null,
-        url: "",
+  const editorRef = useRef<EditorJsInputHandle>(null);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
+  const form = useForm<ProductForm>({
+    resolver: zodResolver(ProductFormSchema),
+    mode: "onChange",
+    reValidateMode: "onSubmit",
+    defaultValues: {
+      name: "",
+      type: "KeyboardKit",
+      subtype: "Alice",
+      description: {
+        time: 0,
+        blocks: [],
+        version: "2.31.7",
       },
-    ]);
-    setExtraImages([]);
-  };
-  // useEffect(() => {
-  //   if (!open) return;
+      variants: [
+        {
+          id: 0,
+          color: "",
+          price: 0,
+          stock: 0,
+          file: undefined,
+          url: "",
+        },
+      ],
+    },
+  });
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "variants",
+  });
+  const [type, setType] = useState<string>(initType);
 
-  //   setName("");
-  //   setDescription("");
-  //   setType(initType);
-  //   setSubtype("75%");
-  //   setVariants([
-  //     {
-  //       id: Date.now(),
-  //       color: "",
-  //       price: 0,
-  //       stock: 0,
-  //       file: null,
-  //       url: "",
-  //     },
-  //   ]);
-  //   setExtraImages([]);
-  // }, [open]);
-  // useEffect(() => {
-  //   setSubtype(SUBTYPES[type as keyof typeof SUBTYPES][0]);
-  // }, [type]);
-  const singleVariant = variants.length === 1;
   const saveMutation = useMutation({
     mutationFn: async () => handleSave(),
     onSuccess: () => {
@@ -124,83 +133,45 @@ export function ProductFormDialog({
     },
   });
   const handleSave = async () => {
-    if (
-      !name ||
-      !description ||
-      !type ||
-      !subtype ||
-      variants.some((v) => !v.color || v.price <= 0 || v.stock < 0 || !v.file)
-    ) {
-      toast.error("Please fill in all required fields.");
-      throw new Error("Validation failed");
-    }
-    const colors = variants.map((v) => v.color.trim().toLowerCase());
-    const uniqueColors = new Set(colors);
-    const isUnique = uniqueColors.size === variants.length;
-    if (!isUnique) {
-      toast.error("Variant colors must be unique.");
-      throw new Error("Validation failed: duplicate colors");
-    }
-    const uploadToImgBB = async (fileToUpload: File): Promise<string> => {
-      try {
-        const formData = new FormData();
-        formData.append("image", fileToUpload);
-
-        const response = await uploadImageToImgBB(formData);
-        return response.data.url;
-      } catch (error) {
-        console.log(error);
-        throw new Error("Lỗi từ server ImgBB");
-      }
-    };
-    const mainImageURLs = await Promise.all(
-      variants.map(async (v) => {
-        if (v.file) {
-          return await uploadToImgBB(v.file);
-        }
-        return null;
-      }),
-    );
-
-    let extraImageURLs: string[] = [];
-    if (extraImages.length > 0) {
-      extraImageURLs = await Promise.all(
-        extraImages.map(async (f) => {
-          return await uploadToImgBB(f);
-        }),
-      );
-    }
-    const updatedVariants = variants.map((v, i) => ({
-      ...v,
-      url: mainImageURLs[i]!,
-    }));
-    setVariants(updatedVariants);
-    const finalVariants = variants.map((v, i) => ({
-      color: v.color,
-      price: v.price,
-      stock: v.stock,
-      main_image: mainImageURLs[i]!,
-    }));
-
-    const payload = {
-      name: name,
-      description: description,
-      productType: type,
-      subType: subtype,
-      variants: finalVariants,
-      extraImages: extraImageURLs,
-    };
-    AdminUsecase.addProduct(payload);
+    // TODO: Implement save logic (upload images, call API)
   };
+
+  function onSubmit(data: ProductForm) {
+    console.log(data.description);
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl w-full max-h-[90vh] overflow-y-auto p-6">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            saveMutation.mutate();
-          }}
-        >
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          // Imperatively save editor data before RHF validation
+          try {
+            const editorData = await editorRef.current?.save();
+            if (editorData) {
+              form.setValue("description", editorData, { shouldValidate: false });
+            }
+          } catch (err) {
+            console.error("Editor save failed:", err);
+          }
+          // Now trigger RHF validation + submit
+          const onValid = (data: ProductForm) => {
+            setDescriptionError(null);
+            // saveMutation.mutate();
+            onSubmit(data);
+          };
+          const onInvalid = (errors: any) => {
+            // Surface description error from Zod
+            if (errors.description) {
+              setDescriptionError(
+                errors.description.blocks?.message ?? errors.description.message ?? "Please enter a product description"
+              );
+            } else {
+              setDescriptionError(null);
+            }
+          };
+          await form.handleSubmit(onValid, onInvalid)();
+        }}>
           <DialogHeader>
             <DialogTitle>{"New product"}</DialogTitle>
             <DialogDescription>
@@ -211,79 +182,108 @@ export function ProductFormDialog({
           <div className="space-y-5">
             <div className="grid gap-4 grid-cols-3">
               <div className="space-y-2">
-                <Field>
-                  <FieldLabel>
-                    Name<span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Input
-                    value={name}
-                    required
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Product name"
-                    maxLength={120}
-                  />
-                </Field>
+                <Controller
+                  name="name"
+                  control={form.control}
+                  render={({ field, fieldState }) => {
+                    return (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel>
+                          Name<span className="text-destructive">*</span>
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          aria-invalid={fieldState.invalid}
+                          placeholder="Product name"
+                        />
+                        {fieldState.error && (
+                          <p className="text-[12px] text-red-500 font-semibold ml-3 pt-2">
+                            {fieldState.error.message}
+                          </p>
+                        )}
+                      </Field>
+                    );
+                  }}
+                />
               </div>
               <div className="space-y-2">
-                <Field>
-                  <FieldLabel>Type</FieldLabel>
-                  <Select
-                    value={type}
-                    onValueChange={(v) => {
-                      console.log("Type: ", v);
-                      setType(v);
-                      console.log("Subtype before: ", subtype);
-                      console.log(
-                        "Subtype change:",
-                        SUBTYPES[v as keyof typeof SUBTYPES][0],
-                      );
-                      setSubtype(SUBTYPES[v as keyof typeof SUBTYPES][0]);
-                      console.log("Subtype after: ", subtype);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRODUCT_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
+                <Controller
+                  name="type"
+                  control={form.control}
+                  render={({ field }) => {
+                    return (
+                      <Field>
+                        <FieldLabel>Type</FieldLabel>
+                        <Select
+                          {...field}
+                          value={type}
+                          onValueChange={(v) => {
+                            field.onChange(v);
+                            setType(v);
+                            form.setValue(
+                              "subtype",
+                              SUBTYPES[v as keyof typeof SUBTYPES][0],
+                            );
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PRODUCT_TYPES.map((t) => (
+                              <SelectItem key={t.value} value={t.value}>
+                                {t.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    );
+                  }}
+                />
               </div>
               <div className="space-y-2 ">
-                <Field>
-                  <FieldLabel>Subtype</FieldLabel>
-                  <Select onValueChange={setSubtype} value={subtype}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUBTYPES[type as keyof typeof SUBTYPES]?.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
+                <Controller
+                  control={form.control}
+                  name="subtype"
+                  render={({ field }) => {
+                    return (
+                      <Field>
+                        <FieldLabel>Subtype</FieldLabel>
+                        <Select
+                          {...field}
+                          onValueChange={(v) => field.onChange(v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SUBTYPES[type as keyof typeof SUBTYPES]?.map(
+                              (s) => (
+                                <SelectItem key={s} value={s}>
+                                  {s}
+                                </SelectItem>
+                              ),
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    );
+                  }}
+                />
               </div>
-              <div className="space-y-2 sm:col-span-3">
-                <Field>
+              <div className="space-y-2 col-span-3">
+                <Field
+                  data-invalid={!!descriptionError}>
                   <FieldLabel>
                     Description<span className="text-destructive">*</span>
                   </FieldLabel>
-                  <Textarea
-                    rows={3}
-                    required
-                    placeholder="Product description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    maxLength={2000}
-                  />
+                  <EditorJsInput ref={editorRef} />
+                  {descriptionError && (
+                    <p className="text-[12px] text-red-500 font-semibold ml-3 pt-2">
+                      {descriptionError}
+                    </p>
+                  )}
                 </Field>
               </div>
             </div>
@@ -295,84 +295,119 @@ export function ProductFormDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => handleAddVariant()}
+                  onClick={() =>
+                    append({
+                      id: Date.now(),
+                      color: "",
+                      price: 0,
+                      stock: 0,
+                      file: undefined as any,
+                      url: "",
+                    })
+                  }
                 >
                   <Plus className="h-4 w-4" /> Add variant
                 </Button>
               </div>
+              {form.formState.errors.variants?.root && (
+                <p className="text-[12px] text-red-500 font-semibold ml-3">
+                  {form.formState.errors.variants.root.message}
+                </p>
+              )}
               <div className="space-y-3">
-                {variants.map((v, idx) => (
+                {fields.map((field, idx) => (
                   <div
-                    key={idx}
+                    key={field.id}
                     className="rounded-lg border p-3 space-y-3 bg-muted/30"
                   >
-                    <div className="flex items-start gap-3">
-                      <label className="relative cursor-pointer">
-                        <ImageUploader idx={idx} setVariants={setVariants} />
-                        <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-md opacity-0 hover:opacity-100 transition text-xs">
-                          <Upload className="h-4 w-4" />
-                        </span>
-                      </label>
+                    <div className="block md:flex items-start gap-3">
+                      <div>
+                        <ImageUploader
+                          idx={idx}
+                          onFileChange={(file) => {
+                            form.setValue(`variants.${idx}.file`, file);
+                          }}
+                        />
+                        {form.formState.errors.variants?.[idx]?.file?.message && (
+                          <p className="text-[12px] text-red-500 font-semibold mt-1">
+                            {form.formState.errors.variants[idx].file.message}
+                          </p>
+                        )}
+                      </div>
 
                       <div className="flex-1 grid gap-2 sm:grid-cols-3">
                         <div className="space-y-1">
-                          <Label className="text-xs">
-                            Color<span className="text-destructive">*</span>
-                          </Label>
-                          <Input
-                            required
-                            value={v.color}
-                            onChange={(e) =>
-                              setVariants((prev) =>
-                                prev.map((x, i) =>
-                                  i === idx
-                                    ? { ...x, color: e.target.value }
-                                    : x,
-                                ),
-                              )
-                            }
-                            placeholder="Black"
+                          <Controller
+                            control={form.control}
+                            name={`variants.${idx}.color`}
+                            render={({ field, fieldState }) => (
+                              <>
+                                <Label className="text-xs">
+                                  Color<span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                  {...field}
+                                  aria-invalid={fieldState.invalid}
+                                  placeholder="Black"
+                                />
+                                {fieldState.error && (
+                                  <p className="text-[12px] text-red-500 font-semibold">
+                                    {fieldState.error.message}
+                                  </p>
+                                )}
+                              </>
+                            )}
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">
-                            Price<span className="text-destructive">*</span>
-                          </Label>
-                          <Input
-                            required
-                            type="number"
-                            step="0.01"
-                            // value={v.price}
-                            placeholder="0"
-                            onChange={(e) =>
-                              setVariants((prev) =>
-                                prev.map((x, i) =>
-                                  i === idx
-                                    ? { ...x, price: Number(e.target.value) }
-                                    : x,
-                                ),
-                              )
-                            }
+                          <Controller
+                            control={form.control}
+                            name={`variants.${idx}.price`}
+                            render={({ field, fieldState }) => (
+                              <>
+                                <Label className="text-xs">
+                                  Price<span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0"
+                                  value={field.value || ""}
+                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                                  aria-invalid={fieldState.invalid}
+                                />
+                                {fieldState.error && (
+                                  <p className="text-[12px] text-red-500 font-semibold">
+                                    {fieldState.error.message}
+                                  </p>
+                                )}
+                              </>
+                            )}
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">
-                            Stock<span className="text-destructive">*</span>
-                          </Label>
-                          <Input
-                            required
-                            type="number"
-                            placeholder="0"
-                            // value={v.stock}
-                            onChange={(e) =>
-                              setVariants((prev) =>
-                                prev.map((x, i) =>
-                                  i === idx
-                                    ? { ...x, stock: Number(e.target.value) }
-                                    : x,
-                                ),
-                              )
-                            }
+                          <Controller
+                            control={form.control}
+                            name={`variants.${idx}.stock`}
+                            render={({ field, fieldState }) => (
+                              <>
+                                <Label className="text-xs">
+                                  Stock<span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                  type="number"
+                                  placeholder="0"
+                                  value={field.value || ""}
+                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                                  aria-invalid={fieldState.invalid}
+                                />
+                                {fieldState.error && (
+                                  <p className="text-[12px] text-red-500 font-semibold">
+                                    {fieldState.error.message}
+                                  </p>
+                                )}
+                              </>
+                            )}
                           />
                         </div>
                       </div>
@@ -380,12 +415,8 @@ export function ProductFormDialog({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        disabled={variants.length === 1}
-                        onClick={() =>
-                          setVariants((prev) =>
-                            prev.filter((_, i) => i !== idx),
-                          )
-                        }
+                        disabled={fields.length === 1}
+                        onClick={() => remove(idx)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -394,74 +425,22 @@ export function ProductFormDialog({
                 ))}
               </div>
             </div>
-
-            {singleVariant && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base">Additional images</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Available because the product has a single variant.
-                    </p>
-                  </div>
-                  <label>
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <span>
-                        <Upload className="h-4 w-4" /> Upload
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        setExtraImages((prev) => (f ? [...prev, f] : prev));
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {extraImages.map((file, i) => (
-                    <div key={i} className="relative group">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={"Extra image preview"}
-                        className="object-cover rounded-md h-20 w-20"
-                      />
-                      <button
-                        type="button"
-                        className="absolute -top-1 -right-1 rounded-full bg-destructive text-destructive-foreground p-0.5 opacity-0 group-hover:opacity-100 transition"
-                        onClick={async () => {
-                          setExtraImages((prev) =>
-                            prev.filter((_, idx) => idx !== i),
-                          );
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {extraImages.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      No extra images yet.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="bg-transparent">
             <Button
               variant="outline"
               type="button"
               onClick={() => onOpenChange(false)}
+              className="cursor-pointer"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={saveMutation.isPending}>
+            <Button
+              type="submit"
+              disabled={saveMutation.isPending}
+              className="cursor-pointer"
+            >
               {saveMutation.isPending ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
