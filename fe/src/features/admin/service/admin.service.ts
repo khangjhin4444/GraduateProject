@@ -1,6 +1,7 @@
 import { privateApi } from "@/api/axios.instance";
 import {
   AdminProductResponseSchema,
+  type AddProductAdminResponseEntity,
   type AdminProductResponseEntity,
 } from "../schema/admin.schema";
 
@@ -12,11 +13,15 @@ type GetProductDetail = ({
   page: number;
 }) => Promise<AdminProductResponseEntity>;
 
+type AddProductAdmin = (
+  formData: FormData,
+) => Promise<AddProductAdminResponseEntity>;
+
 type AdminServiceType = {
   getProductDetail: GetProductDetail;
   // deleteProductAdmin: DeleteProductAdmin;
   // updateProductVariantAdmin: UpdateProductVariantAdmin;
-  // addProduct: AddProductAdmin;
+  addProduct: AddProductAdmin;
   // getAdminOrders: GetAdminOrders;
   // cancelAdminOrder: CancelAdminOrder;
   // proceedAdminOrder: ProceedAdminOrder;
@@ -41,4 +46,18 @@ export const AdminService: AdminServiceType = {
     });
     return response.data as AdminProductResponseEntity;
   },
+  addProduct: async (formData: FormData) => {
+    const response = await privateApi.request({
+      method: "POST",
+      url: "/api/products/admin/new",
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      data: formData,
+      timeout: 120000, // 2 phút — upload nhiều ảnh có thể mất thời gian
+    });
+
+    return response.data as AddProductAdminResponseEntity;
+  },
 };
+

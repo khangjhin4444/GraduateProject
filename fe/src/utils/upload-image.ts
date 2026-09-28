@@ -1,7 +1,7 @@
 "use server";
 
 export async function uploadImageToImgBB(formData: FormData) {
-  const apiKey = import.meta.env.IMGBB_API_KEY;
+  const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
 
   if (!apiKey) {
     throw new Error("Missing ImgBB API Key");
@@ -18,7 +18,6 @@ export async function uploadImageToImgBB(formData: FormData) {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Upload failed", error);
-    throw new Error("Image upload failed");
+    throw new Error((error as Error).message);
   }
 }

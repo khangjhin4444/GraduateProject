@@ -1,6 +1,11 @@
-import { AdminService } from "../service/admin.service";
+import {
+  AdminService,
+} from "../service/admin.service";
 
 export const AdminUsecase = {
   getProductDetail: ({ type, page }: { type: string; page: number }) =>
     AdminService.getProductDetail({ type, page }),
+  addProduct: (formData: FormData) =>
+    AdminService.addProduct(formData),
 };
+

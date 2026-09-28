@@ -370,59 +370,120 @@ const updateProductVariantAdmin = async (req, res) => {
 };
 
 const addProductAdmin = async (req, res) => {
-  const { name, description, productType, subType, variants, extraImages } =
-    req.body;
-  console.log(name, description, productType, subType, variants, extraImages);
-  if (
-    !name ||
-    !description ||
-    !productType ||
-    !subType ||
-    !variants ||
-    variants.some((v) => !v.color || v.price <= 0 || v.stock < 0)
-  ) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid product information" });
-  }
-  const colors = variants.map((v) => v.color.trim().toLowerCase());
-  const uniqueColors = new Set(colors);
-  const isUnique = uniqueColors.size === variants.length;
-  if (!isUnique) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Variant colors must be unique." });
-  }
-  try {
-    const result = await sql`
-            INSERT INTO "product" ("Name", "Description", "ProductType", "SubType")
-            VALUES (${name}, ${description}, ${productType}, ${subType})
-            RETURNING "ProductID"
-          `;
-    const newProductID = result[0].ProductID;
-    const insertQueries = variants.map(
-      (v) => sql`
-            INSERT INTO "product_variants" ("ProductID", "Color", "Price", "Stock", "MainImage")
-            VALUES (${newProductID}, ${v.color}, ${v.price}, ${v.stock}, ${v.main_image})
-          `,
-    );
+  const {
+    uploadMultipleToImgBB,
+    uploadToImgBB,
+  } = require("../utils/uploadImage");
 
-    await sql.transaction(insertQueries);
-    if (extraImages) {
-      const insertQueries = extraImages.map(
-        (image) => sql`
+  try {
+    const {
+      name,
+      description,
+      productType,
+      subType,
+      variants: variantsJson,
+    } = req.body;
+    const variants = JSON.parse(variantsJson);
+    const parsedDescription = JSON.parse(description);
+
+    // Validate required fields
+    console.log(name, description, productType, subType, variants);
+    if (
+      !name ||
+      !parsedDescription ||
+      !productType ||
+      !subType ||
+      !variants ||
+      variants.some((v) => !v.color || v.price <= 0 || v.stock < 0)
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid product information" });
+    }
+
+    // Validate unique colors
+    const colors = variants.map((v) => v.color.trim().toLowerCase());
+    const uniqueColors = new Set(colors);
+    if (uniqueColors.size !== variants.length) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Variant colors must be unique." });
+    }
+
+    // Get uploaded files from multer
+    const variantImageFiles = req.files?.variantImages || [];
+    const extraImageFiles = req.files?.extraImages || [];
+
+    // Validate variant image count matches variants
+    if (variantImageFiles.length !== variants.length) {
+      return res.status(400).json({
+        success: false,
+        message: `Expected ${variants.length} variant image(s), but received ${variantImageFiles.length}`,
+      });
+    }
+
+    // Upload variant images to ImgBB
+    let variantImageURLs;
+    try {
+      variantImageURLs = await uploadMultipleToImgBB(variantImageFiles);
+    } catch (uploadError) {
+      return res.status(500).json({
+        success: false,
+        message: `Failed to upload variant image: ${uploadError.message}`,
+      });
+    }
+
+    // Upload extra images to ImgBB
+    let extraImageURLs = [];
+    if (extraImageFiles.length > 0) {
+      try {
+        extraImageURLs = await uploadMultipleToImgBB(extraImageFiles);
+      } catch (uploadError) {
+        return res.status(500).json({
+          success: false,
+          message: `Failed to upload extra image: ${uploadError.message}`,
+        });
+      }
+    }
+
+    // Insert product into database
+    const result = await sql`
+      INSERT INTO "product" ("Name", "Description", "ProductType", "SubType")
+      VALUES (${name}, ${JSON.stringify(parsedDescription)}, ${productType}, ${subType})
+      RETURNING "ProductID"
+    `;
+    const newProductID = result[0].ProductID;
+
+    // Insert variants with uploaded image URLs
+    const insertVariantQueries = variants.map(
+      (v, i) => sql`
+        INSERT INTO "product_variants" ("ProductID", "Color", "Price", "Stock", "MainImage")
+        VALUES (${newProductID}, ${v.color}, ${v.price}, ${v.stock}, ${variantImageURLs[i]})
+      `,
+    );
+    await sql.transaction(insertVariantQueries);
+
+    // Insert extra images
+    if (extraImageURLs.length > 0) {
+      const insertImageQueries = extraImageURLs.map(
+        (imageUrl) => sql`
           INSERT INTO "product_images" ("ProductID", "ImageUrl")
-          VALUES (${newProductID}, ${image})
+          VALUES (${newProductID}, ${imageUrl})
         `,
       );
-      await sql.transaction(insertQueries);
+      await sql.transaction(insertImageQueries);
     }
+
     res.status(200).json({
       success: true,
       message: "Add Product success",
     });
   } catch (error) {
-    console.log(error);
+    console.error("❌ Error adding product:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to save product",
+    });
   }
 };
 

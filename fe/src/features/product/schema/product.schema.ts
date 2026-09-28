@@ -1,4 +1,18 @@
 import { z } from "zod";
+
+const EditorBlockSchema = z.object({
+  id: z.string().optional(),
+  type: z.string(),
+  data: z.record(z.string(), z.unknown()),
+});
+
+export const EditorDataSchema = z.object({
+  time: z.number().optional(),
+  blocks: z.array(EditorBlockSchema).min(1, {
+    message: "Please enter a product description",
+  }),
+  version: z.string().optional(),
+});
 export const VariantSchema = z.object({
   VariantID: z.number(),
   Color: z.string(),
@@ -10,7 +24,7 @@ export const ProductDetailSchema = z.object({
   ProductID: z.number(),
   Name: z.string(),
   ProductType: z.string(),
-  Description: z.string(),
+  Description: EditorDataSchema,
   SubType: z.string(),
   images: z.array(z.string()),
   variants: z.array(VariantSchema).min(1),
@@ -31,7 +45,7 @@ export const ProductSchema = z.object({
   ProductID: z.number(),
   Name: z.string(),
   ProductType: z.string(),
-  Description: z.string(),
+  Description: EditorDataSchema,
   SubType: z.string(),
   MainImage: z.string(),
   Price: z.string(),
@@ -41,7 +55,7 @@ export const ProductSchema = z.object({
 export const RelevantProductSchema = z.object({
   ProductID: z.number(),
   Name: z.string(),
-  Description: z.string(),
+  Description: EditorDataSchema,
   MainImage: z.string(),
   Price: z.string(),
 });
