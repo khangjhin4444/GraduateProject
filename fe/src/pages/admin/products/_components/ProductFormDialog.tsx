@@ -187,7 +187,7 @@ export function ProductFormDialog({
     let extraImageURLs: string[] = [];
     if (data.extraImages.length > 0) {
       extraImageURLs = await Promise.all(
-        extraImages.map(async (f) => {
+        data.extraImages.map(async (f) => {
           return await uploadToImgBB(f);
         }),
       );
