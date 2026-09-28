@@ -44,6 +44,17 @@ function RootLayout() {
     </>
   );
 }
+async function rootLoader({ request }: { request: Request }) {
+  if (store.getState().token.accessToken === "") {
+    await refreshAuth();
+  }
+  const role = store.getState().profile.role;
+  const url = new URL(request.url);
+  if (role == "admin" && !url.pathname.startsWith("/admin")) {
+    throw redirect("/admin");
+  }
+  return null;
+}
 
 function withAuth(
   loader?: LoaderFunction,
@@ -82,11 +93,13 @@ function withAuth(
 export const router = createBrowserRouter([
   {
     Component: RootLayout,
+    loader: rootLoader,
     hydrateFallbackElement: <LoadingPage />,
     children: [
       {
         path: "/",
         loader: () => redirect("/home"),
+        element: null,
       },
       {
         path: "/admin",
