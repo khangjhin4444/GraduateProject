@@ -5,8 +5,6 @@ import {
   type AdminProductResponseEntity,
 } from "../schema/admin.schema";
 
-import type { ProductDescription } from "@/pages/admin/products/_components/ProductFormDialog";
-
 type GetProductDetail = ({
   type,
   page,
@@ -14,22 +12,9 @@ type GetProductDetail = ({
   type: string;
   page: number;
 }) => Promise<AdminProductResponseEntity>;
-type PayloadVariant = {
-  color: string;
-  stock: number;
-  price: number;
-  main_image: string;
-};
-export type AddProductAdminPayload = {
-  name: string;
-  description: ProductDescription;
-  productType: string;
-  subType: string;
-  variants: PayloadVariant[];
-  extraImages: string[];
-};
+
 type AddProductAdmin = (
-  payload: AddProductAdminPayload,
+  formData: FormData,
 ) => Promise<AddProductAdminResponseEntity>;
 
 type AdminServiceType = {
@@ -61,16 +46,18 @@ export const AdminService: AdminServiceType = {
     });
     return response.data as AdminProductResponseEntity;
   },
-  addProduct: async (payload: AddProductAdminPayload) => {
+  addProduct: async (formData: FormData) => {
     const response = await privateApi.request({
       method: "POST",
       url: "/api/products/admin/new",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "multipart/form-data",
       },
-      data: payload,
+      data: formData,
+      timeout: 120000, // 2 phút — upload nhiều ảnh có thể mất thời gian
     });
 
     return response.data as AddProductAdminResponseEntity;
   },
 };
+

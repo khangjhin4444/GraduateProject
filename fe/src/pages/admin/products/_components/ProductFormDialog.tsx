@@ -21,16 +21,14 @@ import { Edit, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "./ImageUploader";
 import { Field, FieldLabel } from "@/components/ui/field";
-// import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
-// import { uploadImageToImgBB } from "@/utils/upload-image";
 import { z } from "zod";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditorJsInput, type EditorJsInputHandle } from "./EditorJsInput";
 import { Label } from "@/components/ui/label";
-import { uploadImageToImgBB } from "@/utils/upload-image";
 import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
 import { EditorDataSchema } from "@/features/admin/schema/admin.schema";
+import { AxiosError } from "axios";
 
 const PRODUCT_TYPES: { value: string; label: string }[] = [
   { value: "KeyboardKit", label: "Keyboard Kit" },
@@ -150,7 +148,11 @@ export function ProductFormDialog({
       toast.success("Product saved successfully!");
     },
     onError: (error) => {
-      toast.error(error.message);
+      if (error instanceof AxiosError && error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error(error.message);
+      }
     },
   });
   const handleSave = async (data: ProductForm) => {
@@ -161,46 +163,35 @@ export function ProductFormDialog({
       toast.error("Variant colors must be unique.");
       throw new Error("Validation failed: duplicate colors");
     }
-    const uploadToImgBB = async (fileToUpload: File): Promise<string> => {
-      try {
-        const formData = new FormData();
-        formData.append("image", fileToUpload);
 
-        const response = await uploadImageToImgBB(formData);
-        return response.data.url;
-      } catch (error: unknown) {
-        throw new Error((error as Error).message);
+    // Build FormData to send files + data to backend
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("productType", data.type);
+    formData.append("subType", data.subtype);
+    formData.append("description", JSON.stringify(data.description));
+
+    // Append variant metadata as JSON (without file/main_image)
+    const variantsMeta = data.variants.map((v) => ({
+      color: v.color,
+      price: v.price,
+      stock: v.stock,
+    }));
+    formData.append("variants", JSON.stringify(variantsMeta));
+
+    // Append variant images in order
+    data.variants.forEach((v) => {
+      if (v.file) {
+        formData.append("variantImages", v.file);
       }
-    };
-    const mainImageURLs = await Promise.all(
-      data.variants.map(async (v) => {
-        if (v.file) {
-          return await uploadToImgBB(v.file);
-        }
-        return null;
-      }),
-    );
-    data.variants.forEach((v, i) => {
-      v.main_image = mainImageURLs[i]!;
     });
 
-    let extraImageURLs: string[] = [];
-    if (data.extraImages.length > 0) {
-      extraImageURLs = await Promise.all(
-        data.extraImages.map(async (f) => {
-          return await uploadToImgBB(f);
-        }),
-      );
-    }
-    const payload = {
-      name: data.name,
-      description: data.description,
-      productType: data.type,
-      subType: data.subtype,
-      variants: data.variants,
-      extraImages: extraImageURLs,
-    };
-    await AdminUsecase.addProduct(payload);
+    // Append extra images
+    data.extraImages.forEach((f) => {
+      formData.append("extraImages", f);
+    });
+
+    await AdminUsecase.addProduct(formData);
   };
 
   function onSubmit(data: ProductForm) {
@@ -293,6 +284,7 @@ export function ProductFormDialog({
                           onValueChange={(v) => {
                             field.onChange(v);
                             setType(v!);
+
                             form.setValue(
                               "subtype",
                               SUBTYPES[v as keyof typeof SUBTYPES][0],
@@ -325,6 +317,7 @@ export function ProductFormDialog({
                         <FieldLabel>Subtype</FieldLabel>
                         <Select
                           {...field}
+                          value={field.value}
                           onValueChange={(v) => field.onChange(v)}
                         >
                           <SelectTrigger>
