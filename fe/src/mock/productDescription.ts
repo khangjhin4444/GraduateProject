@@ -85,3 +85,44 @@ export const ProductDescription = {
   ],
   version: "2.28.0",
 };
+
+export const ProductDescription2 = {
+  time: 1790243238242,
+  blocks: [
+    {
+      id: "F4I0sA0fzP",
+      type: "List",
+      data: {
+        style: "ordered",
+        meta: {
+          counterType: "numeric"
+        },
+        items: [
+          {
+            content: "item1",
+            meta: {},
+            items: [
+              {
+                content: "item2",
+                meta: {},
+                items: []
+              },
+              {
+                content: "item3",
+                meta: {},
+                items: [
+                  {
+                    content: "item4",
+                    meta: {},
+                    items: []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  version: "2.31.7"
+}

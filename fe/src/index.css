@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+
 .header-link {
   position: relative;
   color: var(--foreground);
@@ -170,10 +171,32 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
+}
+
+.editor-js-input .codex-editor,
+.editor-js-input .codex-editor__redactor,
+.editor-js-input .ce-block,
+.editor-js-input .ce-block__content,
+.editor-js-input .ce-toolbar__content {
+  width: 100%;
+  max-width: none;
+}
+
+.editor-js-input .codex-editor__redactor {
+  min-height: 120px;
+  padding-bottom: 250px !important;
+}
+
+.editor-js-input .ce-block__content,
+.editor-js-input .ce-toolbar__content {
+  margin-left: 20px;
+  margin-right: 20px;
 }

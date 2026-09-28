@@ -11,6 +11,7 @@ import {
   sortFn_alphanumeric,
   sortFn_text,
   tableFeatures,
+  columnSizingFeature,
 } from "@tanstack/react-table";
 
 // New in v9: declare the features this table uses — anything you don't
@@ -21,6 +22,7 @@ export const features = tableFeatures({
   rowPaginationFeature,
   rowSelectionFeature,
   rowSortingFeature,
+  columnSizingFeature,
   filteredRowModel: createFilteredRowModel(),
   paginatedRowModel: createPaginatedRowModel(),
   sortedRowModel: createSortedRowModel(),

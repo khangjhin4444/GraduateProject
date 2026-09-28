@@ -122,7 +122,6 @@ export const router = createBrowserRouter([
               return null;
             }),
             Component: ProductDetail,
-            hydrateFallbackElement: <p>Loading</p>,
           },
           {
             path: "/collection/:type/:sub?",
@@ -164,7 +163,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: "/admin",
-                loader: withAuth(() => {}, { roles: ["admin"] }),
+                loader: withAuth(() => { }, { roles: ["admin"] }),
                 children: [
                   {
                     index: true,
