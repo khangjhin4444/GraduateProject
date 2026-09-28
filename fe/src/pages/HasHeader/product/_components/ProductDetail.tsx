@@ -13,11 +13,12 @@ import { toast } from "sonner";
 import { useParams } from "react-router";
 import useProductDetail from "@/hooks/useProductDetail";
 import { Blocks, customRender } from "@/shared/components/BlockRender";
-import { ProductDescription } from "@/mock/productDescription";
+
 import Quantity from "./Quantity";
 import useRelevant from "@/hooks/useRelevant";
 import { RelevantProductCard } from "./RelevantProductCard";
 import ProductSkeleton from "@/shared/components/ProductSkeleton";
+import type { DataProp } from "editorjs-blocks-react-renderer";
 export default function Page() {
   // const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
   // const dispatch = useAppDispatch();
@@ -264,20 +265,21 @@ export default function Page() {
         </div>
         <div className="w-full mt-10">
           <Blocks
-            data={ProductDescription}
+            data={productData.Description as DataProp}
             config={{
               header: {
-                className: "font-semibold text:lg md:text-xl text-foreground mb-2",
+                className:
+                  "font-semibold text:lg md:text-xl text-foreground mb-2",
               },
               paragraph: {
                 className: "text-md md:text-lg text-foreground mb-2",
               },
               image: {
-                className: "mx-auto w-3/4 md:w-2/3 object-cover flex justify-center mt-5",
+                className:
+                  "mx-auto w-3/4 md:w-2/3 object-cover flex justify-center mt-5",
               },
               list: {
-                className:
-                  "ml-6 text-sm md:text-md lg:text-lg text-foreground",
+                className: "ml-6 text-sm md:text-md lg:text-lg text-foreground",
               },
               nestedList: {
                 className:
@@ -299,21 +301,20 @@ export default function Page() {
           </h3>
           {isRelevantLoading && <ProductSkeleton></ProductSkeleton>}
           <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-3 px-4 mb-12">
-
             {relevantProducts && relevantProducts.length > 0
               ? relevantProducts.map((relProduct: RelevantProductEntity) => (
-                <RelevantProductCard
-                  key={relProduct.ProductID}
-                  product={relProduct}
-                  type={productData.ProductType}
-                ></RelevantProductCard>
-              ))
+                  <RelevantProductCard
+                    key={relProduct.ProductID}
+                    product={relProduct}
+                    type={productData.ProductType}
+                  ></RelevantProductCard>
+                ))
               : // Nếu fetch xong mà mảng rỗng (không có SP liên quan)
-              !isRelevantLoading && (
-                <div className="text-gray-500 italic">
-                  No relevant products found.
-                </div>
-              )}
+                !isRelevantLoading && (
+                  <div className="text-gray-500 italic">
+                    No relevant products found.
+                  </div>
+                )}
           </div>
         </div>
       </section>
