@@ -612,7 +612,7 @@ const editProductAdmin = async (req, res) => {
         `,
       ),
     ];
-    await sql.transaction(productQueries);
+    await sql.transaction(updateProductQueries);
     res.status(200).json({
       success: true,
       message: "Product updated successfully",
