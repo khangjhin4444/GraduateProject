@@ -149,6 +149,9 @@ export function ProductFormDialog({
       onSaved(type);
       toast.success("Product saved successfully!");
     },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
   const handleSave = async (data: ProductForm) => {
     const colors = data.variants.map((v) => v.color.trim().toLowerCase());
@@ -165,9 +168,8 @@ export function ProductFormDialog({
 
         const response = await uploadImageToImgBB(formData);
         return response.data.url;
-      } catch (error) {
-        console.log(error);
-        throw new Error("Lỗi từ server ImgBB");
+      } catch (error: unknown) {
+        throw new Error((error as Error).message);
       }
     };
     const mainImageURLs = await Promise.all(

@@ -18,7 +18,6 @@ export async function uploadImageToImgBB(formData: FormData) {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Upload failed", error);
-    throw new Error("Image upload failed");
+    throw new Error((error as Error).message);
   }
 }
