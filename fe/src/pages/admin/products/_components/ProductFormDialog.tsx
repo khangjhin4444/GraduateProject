@@ -20,9 +20,9 @@ import {
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "./ImageUploader";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
-import { uploadImageToImgBB } from "@/utils/upload-image";
+import { Field, FieldLabel } from "@/components/ui/field";
+// import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
+// import { uploadImageToImgBB } from "@/utils/upload-image";
 import { z } from "zod";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,8 +46,12 @@ const SUBTYPES: Record<string, string[]> = {
 const VariantSchema = z.object({
   id: z.number(),
   color: z.string().min(1, { message: "Color is required" }),
-  price: z.number({ message: "Price is required" }).min(1, { message: "Price must be at least 1" }),
-  stock: z.number({ message: "Stock is required" }).min(1, { message: "Stock must be at least 1" }),
+  price: z
+    .number({ message: "Price is required" })
+    .min(1, { message: "Price must be at least 1" }),
+  stock: z
+    .number({ message: "Stock is required" })
+    .min(1, { message: "Stock must be at least 1" }),
   file: z.file({ message: "Image is required" }),
   url: z.string(),
 });
@@ -75,7 +79,9 @@ const ProductFormSchema = z.object({
   type: z.enum(["KeyboardKit", "Prebuild", "Keycap", "Switch"]),
   subtype: z.string(),
   description: EditorDataSchema,
-  variants: z.array(VariantSchema).min(1, { message: "At least one variant is required" }),
+  variants: z
+    .array(VariantSchema)
+    .min(1, { message: "At least one variant is required" }),
 });
 
 type ProductForm = z.infer<typeof ProductFormSchema>;
@@ -96,7 +102,7 @@ export function ProductFormDialog({
   const form = useForm<ProductForm>({
     resolver: zodResolver(ProductFormSchema),
     mode: "onChange",
-    reValidateMode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: {
       name: "",
       type: "KeyboardKit",
@@ -138,40 +144,48 @@ export function ProductFormDialog({
 
   function onSubmit(data: ProductForm) {
     console.log(data.description);
+    console.log(data);
+    saveMutation.mutate();
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl w-full max-h-[90vh] overflow-y-auto p-6">
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          // Imperatively save editor data before RHF validation
-          try {
-            const editorData = await editorRef.current?.save();
-            if (editorData) {
-              form.setValue("description", editorData, { shouldValidate: false });
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            // Imperatively save editor data before RHF validation
+            try {
+              const editorData = await editorRef.current?.save();
+              if (editorData) {
+                form.setValue("description", editorData, {
+                  shouldValidate: false,
+                });
+              }
+            } catch (err) {
+              console.error("Editor save failed:", err);
             }
-          } catch (err) {
-            console.error("Editor save failed:", err);
-          }
-          // Now trigger RHF validation + submit
-          const onValid = (data: ProductForm) => {
-            setDescriptionError(null);
-            // saveMutation.mutate();
-            onSubmit(data);
-          };
-          const onInvalid = (errors: any) => {
-            // Surface description error from Zod
-            if (errors.description) {
-              setDescriptionError(
-                errors.description.blocks?.message ?? errors.description.message ?? "Please enter a product description"
-              );
-            } else {
+            // Now trigger RHF validation + submit
+            const onValid = (data: ProductForm) => {
               setDescriptionError(null);
-            }
-          };
-          await form.handleSubmit(onValid, onInvalid)();
-        }}>
+              // saveMutation.mutate();
+              onSubmit(data);
+            };
+            const onInvalid = (errors: any) => {
+              // Surface description error from Zod
+              if (errors.description) {
+                setDescriptionError(
+                  errors.description.blocks?.message ??
+                    errors.description.message ??
+                    "Please enter a product description",
+                );
+              } else {
+                setDescriptionError(null);
+              }
+            };
+            await form.handleSubmit(onValid, onInvalid)();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{"New product"}</DialogTitle>
             <DialogDescription>
@@ -219,7 +233,7 @@ export function ProductFormDialog({
                           value={type}
                           onValueChange={(v) => {
                             field.onChange(v);
-                            setType(v);
+                            setType(v!);
                             form.setValue(
                               "subtype",
                               SUBTYPES[v as keyof typeof SUBTYPES][0],
@@ -273,8 +287,7 @@ export function ProductFormDialog({
                 />
               </div>
               <div className="space-y-2 col-span-3">
-                <Field
-                  data-invalid={!!descriptionError}>
+                <Field data-invalid={!!descriptionError}>
                   <FieldLabel>
                     Description<span className="text-destructive">*</span>
                   </FieldLabel>
@@ -328,7 +341,8 @@ export function ProductFormDialog({
                             form.setValue(`variants.${idx}.file`, file);
                           }}
                         />
-                        {form.formState.errors.variants?.[idx]?.file?.message && (
+                        {form.formState.errors.variants?.[idx]?.file
+                          ?.message && (
                           <p className="text-[12px] text-red-500 font-semibold mt-1">
                             {form.formState.errors.variants[idx].file.message}
                           </p>
@@ -343,7 +357,8 @@ export function ProductFormDialog({
                             render={({ field, fieldState }) => (
                               <>
                                 <Label className="text-xs">
-                                  Color<span className="text-destructive">*</span>
+                                  Color
+                                  <span className="text-destructive">*</span>
                                 </Label>
                                 <Input
                                   {...field}
@@ -366,14 +381,21 @@ export function ProductFormDialog({
                             render={({ field, fieldState }) => (
                               <>
                                 <Label className="text-xs">
-                                  Price<span className="text-destructive">*</span>
+                                  Price
+                                  <span className="text-destructive">*</span>
                                 </Label>
                                 <Input
                                   type="number"
                                   step="0.01"
                                   placeholder="0"
                                   value={field.value || ""}
-                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      e.target.value
+                                        ? Number(e.target.value)
+                                        : 0,
+                                    )
+                                  }
                                   aria-invalid={fieldState.invalid}
                                 />
                                 {fieldState.error && (
@@ -392,13 +414,20 @@ export function ProductFormDialog({
                             render={({ field, fieldState }) => (
                               <>
                                 <Label className="text-xs">
-                                  Stock<span className="text-destructive">*</span>
+                                  Stock
+                                  <span className="text-destructive">*</span>
                                 </Label>
                                 <Input
                                   type="number"
                                   placeholder="0"
                                   value={field.value || ""}
-                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      e.target.value
+                                        ? Number(e.target.value)
+                                        : 0,
+                                    )
+                                  }
                                   aria-invalid={fieldState.invalid}
                                 />
                                 {fieldState.error && (
