@@ -47,5 +47,16 @@ router.post(
   productController.addProductAdmin,
 );
 
+router.put(
+  "/admin/edit/:id",
+  verifyToken,
+  verifyAdmin,
+  upload.fields([
+    { name: "variantImages", maxCount: 20 },
+    { name: "extraImages", maxCount: 20 },
+  ]),
+  productController.editProductAdmin,
+);
+
 module.exports = router;
 
