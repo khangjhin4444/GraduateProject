@@ -55,7 +55,7 @@ export const ProductSchema = z.object({
 export const RelevantProductSchema = z.object({
   ProductID: z.number(),
   Name: z.string(),
-  Description: EditorBlockSchema,
+  Description: EditorDataSchema,
   MainImage: z.string(),
   Price: z.string(),
 });
