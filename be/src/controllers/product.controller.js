@@ -488,7 +488,10 @@ const addProductAdmin = async (req, res) => {
 };
 
 const editProductAdmin = async (req, res) => {
-  const { uploadMultipleToImgBB, uploadToImgBB } = require("../utils/uploadImage");
+  const {
+    uploadMultipleToImgBB,
+    uploadToImgBB,
+  } = require("../utils/uploadImage");
 
   try {
     const productId = req.params.id;
@@ -581,41 +584,35 @@ const editProductAdmin = async (req, res) => {
     const allExtraImageURLs = [...existingExtraImages, ...newExtraImageURLs];
 
     // Update product info
-    await sql`
+    const updateProductQueries = [
+      sql`
       UPDATE "product"
       SET "Name" = ${name},
           "Description" = ${JSON.stringify(parsedDescription)},
           "ProductType" = ${productType},
           "SubType" = ${subType}
       WHERE "ProductID" = ${productId}
-    `;
-
-    // Delete all existing variants and re-insert
-    await sql`
+    `,
+      sql`
       DELETE FROM "product_variants" WHERE "ProductID" = ${productId}
-    `;
-    const insertVariantQueries = variants.map(
-      (v, i) => sql`
+    `,
+      ...variants.map(
+        (v, i) => sql`
         INSERT INTO "product_variants" ("ProductID", "Color", "Price", "Stock", "MainImage")
         VALUES (${productId}, ${v.color}, ${v.price}, ${v.stock}, ${variantImageURLs[i]})
       `,
-    );
-    await sql.transaction(insertVariantQueries);
-
-    // Delete all existing extra images and re-insert
-    await sql`
+      ),
+      sql`
       DELETE FROM "product_images" WHERE "ProductID" = ${productId}
-    `;
-    if (allExtraImageURLs.length > 0) {
-      const insertImageQueries = allExtraImageURLs.map(
+    `,
+      ...allExtraImageURLs.map(
         (imageUrl) => sql`
           INSERT INTO "product_images" ("ProductID", "ImageUrl")
           VALUES (${productId}, ${imageUrl})
         `,
-      );
-      await sql.transaction(insertImageQueries);
-    }
-
+      ),
+    ];
+    await sql.transaction(productQueries);
     res.status(200).json({
       success: true,
       message: "Product updated successfully",
