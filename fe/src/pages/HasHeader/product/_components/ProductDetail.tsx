@@ -12,7 +12,7 @@ import { toast } from "sonner";
 // import { updateCartQuantity } from "@/state/profile/profileSlice";
 import { useParams } from "react-router";
 import useProductDetail from "@/hooks/useProductDetail";
-import { Blocks, config, customRender } from "@/shared/components/BlockRender";
+import { Blocks, customRender } from "@/shared/components/BlockRender";
 import { ProductDescription } from "@/mock/productDescription";
 import Quantity from "./Quantity";
 import useRelevant from "@/hooks/useRelevant";
@@ -265,7 +265,30 @@ export default function Page() {
         <div className="w-full mt-10">
           <Blocks
             data={ProductDescription}
-            config={config}
+            config={{
+              header: {
+                className: "font-semibold text:lg md:text-xl text-foreground mb-2",
+              },
+              paragraph: {
+                className: "text-md md:text-lg text-foreground mb-2",
+              },
+              image: {
+                className: "mx-auto w-3/4 md:w-2/3 object-cover flex justify-center mt-5",
+              },
+              list: {
+                className:
+                  "ml-6 text-sm md:text-md lg:text-lg text-foreground",
+              },
+              nestedList: {
+                className:
+                  "ml-6 list-inside list-disc text-sm md:text-md lg:text-lg text-foreground",
+              },
+              embed: {
+                className: "mx-auto mt-5 w-full max-w-3xl",
+                rel: "noopener noreferrer",
+                sandbox: "allow-scripts allow-same-origin",
+              },
+            }}
             renderers={customRender}
           ></Blocks>
         </div>
@@ -274,24 +297,23 @@ export default function Page() {
           <h3 className="text-xl md:text-2xl lg:text-3xl font-bold my-6">
             Relevant Products
           </h3>
-
+          {isRelevantLoading && <ProductSkeleton></ProductSkeleton>}
           <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-3 px-4 mb-12">
-            {isRelevantLoading && <ProductSkeleton></ProductSkeleton>}
 
             {relevantProducts && relevantProducts.length > 0
               ? relevantProducts.map((relProduct: RelevantProductEntity) => (
-                  <RelevantProductCard
-                    key={relProduct.ProductID}
-                    product={relProduct}
-                    type={productData.ProductType}
-                  ></RelevantProductCard>
-                ))
+                <RelevantProductCard
+                  key={relProduct.ProductID}
+                  product={relProduct}
+                  type={productData.ProductType}
+                ></RelevantProductCard>
+              ))
               : // Nếu fetch xong mà mảng rỗng (không có SP liên quan)
-                !isRelevantLoading && (
-                  <div className="text-gray-500 italic">
-                    No relevant products found.
-                  </div>
-                )}
+              !isRelevantLoading && (
+                <div className="text-gray-500 italic">
+                  No relevant products found.
+                </div>
+              )}
           </div>
         </div>
       </section>
