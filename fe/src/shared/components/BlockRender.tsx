@@ -1,28 +1,4 @@
 import BlocksModule from "editorjs-blocks-react-renderer";
-export const config = {
-  header: {
-    className: "font-semibold text:lg md:text-xl text-foreground mb-2",
-  },
-  paragraph: {
-    className: "text-md md:text-lg text-foreground mb-2",
-  },
-  image: {
-    className: "mx-auto w-3/4 md:w-2/3 object-cover flex justify-center mt-5",
-  },
-  list: {
-    className:
-      "ml-6 list-inside list-disc text-sm md:text-md lg:text-lg text-foreground",
-  },
-  nestedList: {
-    className:
-      "ml-6 list-inside list-disc text-sm md:text-md lg:text-lg text-foreground",
-  },
-  embed: {
-    className: "mx-auto mt-5 w-full max-w-3xl",
-    rel: "noopener noreferrer",
-    sandbox: "allow-scripts allow-same-origin",
-  },
-};
 
 type NestedListItem = {
   content: string;
@@ -41,24 +17,53 @@ function NestedList({
   data: NestedListData;
   className?: string;
 }) {
-  const ListTag = data.style === "ordered" ? "ol" : "ul";
+  const isOrdered = data.style === "ordered";
+  const ListTag = isOrdered ? "ol" : "ul";
 
-  const renderItems = (items: NestedListItem[]) => (
-    <ListTag className={className}>
-      {items.map((item, index) => (
-        <li key={`${item.content}-${index}`}>
-          {item.content}
-          {item.items && item.items.length > 0 && renderItems(item.items)}
-        </li>
-      ))}
+  const renderItems = (items: NestedListItem[], isRoot: boolean, prefix: string = "") => (
+    <ListTag
+      className={`
+        ${isOrdered ? "list-none" : "list-disc list-inside"}
+        ${isRoot ? className : "ml-6 mt-1"}
+      `}
+    >
+      {items.map((item, index) => {
+        if (!isOrdered) {
+          return (
+            <li key={`${item.content}-${index}`} className="mb-1">
+              <span dangerouslySetInnerHTML={{ __html: item.content }} />
+              {item.items && item.items.length > 0 && renderItems(item.items, false, "")}
+            </li>
+          );
+        }
+
+        const currentNumber = `${prefix}${index + 1}`;
+
+        return (
+          <li key={`${item.content}-${index}`} className="mb-1 flex items-start">
+
+            <span className="mr-2 shrink-0 font-medium text-foreground">
+              {currentNumber}.
+            </span>
+
+            <div className="flex-1">
+              <span dangerouslySetInnerHTML={{ __html: item.content }} />
+
+              {item.items && item.items.length > 0 &&
+                renderItems(item.items, false, `${currentNumber}.`)
+              }
+            </div>
+          </li>
+        );
+      })}
     </ListTag>
   );
 
-  return renderItems(data.items);
+  return renderItems(data.items, true, "");
 }
 
 export const customRender = {
-  nestedList: NestedList,
+  List: NestedList,
 };
 
 export const Blocks =
