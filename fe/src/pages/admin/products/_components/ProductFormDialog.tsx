@@ -200,7 +200,7 @@ export function ProductFormDialog({
       variants: data.variants,
       extraImages: extraImageURLs,
     };
-    AdminUsecase.addProduct(payload);
+    await AdminUsecase.addProduct(payload);
   };
 
   function onSubmit(data: ProductForm) {
