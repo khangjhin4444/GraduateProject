@@ -387,7 +387,7 @@ export function ProductFormDialog({
                     <div className="block md:flex items-start gap-3">
                       <div>
                         <ImageUploader
-                          idx={idx}
+                          key={idx}
                           onFileChange={(file) => {
                             form.setValue(`variants.${idx}.file`, file);
                           }}

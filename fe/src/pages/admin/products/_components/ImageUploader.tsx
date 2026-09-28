@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 
 export function ImageUploader({
   onFileChange,
-  idx,
+  value,
 }: {
   onFileChange: (file: File) => void;
-  idx: number;
+  value?: string;
 }) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(value ?? null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -17,12 +17,15 @@ export function ImageUploader({
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
-
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
   return (
-    <div
-      className="flex flex-col gap-4 max-w-sm p-4 border rounded-lg bg-white shadow-sm"
-      key={idx}
-    >
+    <div className="flex flex-col gap-4 max-w-3xs p-4 border rounded-lg bg-white shadow-sm">
       <Input
         type="file"
         accept="image/*"
@@ -30,9 +33,8 @@ export function ImageUploader({
         className="cursor-pointer"
       />
 
-      {/* Khu vực hiển thị ảnh xem trước (Preview) */}
       {previewUrl && (
-        <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-50">
+        <div className="relative w-full h-full border rounded-md overflow-hidden bg-gray-50">
           <img src={previewUrl} alt="Preview" className="object-contain" />
         </div>
       )}
