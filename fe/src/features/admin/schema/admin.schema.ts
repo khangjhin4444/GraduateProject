@@ -83,6 +83,15 @@ export const EditProductAdminResponseSchema = z.object({
   message: z.string(),
 });
 
+export const DeleteProductAdminResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type DeleteProductAdminResponseEntity = z.infer<
+  typeof DeleteProductAdminResponseSchema
+>;
+
 export type AddProductAdminResponseEntity = z.infer<
   typeof AddProductAdminResponseSchema
 >;
