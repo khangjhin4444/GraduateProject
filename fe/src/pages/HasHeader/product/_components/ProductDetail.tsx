@@ -1,27 +1,20 @@
-// import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
 import {
   type RelevantProductEntity,
   type VariantEntity,
 } from "@/features/product/schema/product.schema";
-// import { useMutation, useQuery } from "@tanstack/react-query";
-
 import React, { useState } from "react";
 import { toast } from "sonner";
-
-// import { useAppDispatch, useAppSelector } from "@/state/hooks";
-// import { updateCartQuantity } from "@/state/profile/profileSlice";
 import { useParams } from "react-router";
 import useProductDetail from "@/hooks/useProductDetail";
 import { Blocks, customRender } from "@/shared/components/BlockRender";
-
 import Quantity from "./Quantity";
 import useRelevant from "@/hooks/useRelevant";
 import { RelevantProductCard } from "./RelevantProductCard";
 import ProductSkeleton from "@/shared/components/ProductSkeleton";
 import type { DataProp } from "editorjs-blocks-react-renderer";
+import { useAddToCart } from "@/hooks/useAddToCart";
+
 export default function Page() {
-  // const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
-  // const dispatch = useAppDispatch();
   const { id } = useParams();
   const { data } = useProductDetail(Number(id!));
   const productData = data.data;
@@ -49,26 +42,7 @@ export default function Page() {
     (variant) => variant.MainImage,
   );
   const productImages = variantImages.concat(productData.images);
-  // const addToCartMutation = useMutation({
-  //   mutationFn: async (payload: { VariantID: number; Quantity: number }) => {
-  //     return CartUsecase.addToCart(payload); // Trả kết quả về cho onSuccess xử lý
-  //   },
-  //   onMutate: async (payload) => {
-  //     const previousCartQuantity = cartQuantity;
-  //     const optimisticQuantiy = Number(previousCartQuantity) + payload.Quantity;
-  //     dispatch(updateQuantity(optimisticQuantiy));
-  //     return { previousCartQuantity };
-  //   },
-  //   onError: async (err, payload, contex) => {
-  //     if (contex?.previousCartQuantity !== undefined) {
-  //       dispatch(updateQuantity(contex.previousCartQuantity));
-  //     }
-  //     throw new Error(err.message || "Error when add to cart");
-  //   },
-  //   onSuccess: async (data) => {
-  //     dispatch(updateQuantity(data.newQuantity!));
-  //   },
-  // });
+  const addToCartMutation = useAddToCart();
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { left, top, width, height } =
       e.currentTarget.getBoundingClientRect();
@@ -100,20 +74,20 @@ export default function Page() {
       setQuantity(1); // Ép về 1
       return;
     }
-    // const addToCartPromise = addToCartMutation.mutateAsync({
-    //   VariantID: activeVariant.VariantID,
-    //   Quantity: qty,
-    // });
+    const addToCartPromise = addToCartMutation.mutateAsync({
+      variantId: activeVariant.VariantID,
+      quantity: qty,
+    });
 
-    // toast.promise(addToCartPromise, {
-    //   loading: "Adding to Cart...",
-    //   success: (data) => {
-    //     return data.message;
-    //   },
-    //   error: (err) => {
-    //     return err.message;
-    //   },
-    // });
+    toast.promise(addToCartPromise, {
+      loading: "Adding to Cart...",
+      success: (data) => {
+        return data.message;
+      },
+      error: (err) => {
+        return err.message;
+      },
+    });
   };
 
   const handleBuyNow = () => {
