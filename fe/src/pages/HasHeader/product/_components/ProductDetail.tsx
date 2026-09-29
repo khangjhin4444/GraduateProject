@@ -219,9 +219,10 @@ export default function Page() {
           <div className="flex flex-col xl:flex-row gap-4">
             <button
               onClick={() => handleAddToCart()}
+              disabled={addToCartMutation.isPending}
               className="px-8 py-4 flex-1 rounded-lg font-bold cursor-pointer text-xl group relative isolate overflow-hidden bg-background border-primary border-2 text-primary hover:bg-background hover:text-primary-foreground before:absolute before:inset-0 before:-z-10 before:origin-left before:scale-x-0 before:bg-primary before:transition-transform before:duration-300 before:ease-out hover:before:scale-x-100"
             >
-              ADD TO CART
+              {addToCartMutation.isPending ? "ADDING..." : "ADD TO CART"}
             </button>
             <button
               onClick={handleBuyNow}
