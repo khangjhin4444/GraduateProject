@@ -10,7 +10,7 @@ const CartItemSchema = z.object({
   CartItemID: z.number(),
   Quantity: z.number(),
   MainImage: z.string(),
-  Price: z.number(),
+  Price: z.string(),
   Name: z.string(),
   Color: z.string(),
   Stock: z.number(),
