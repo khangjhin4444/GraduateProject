@@ -12,7 +12,7 @@ const getCart = async (req, res) => {
 
     // Lấy danh sách sản phẩm trong giỏ kèm thông tin biến thể ảnh và giá
     const cartItems = await sql`
-      SELECT ci."CartItemID", ci."Quantity", pv."MainImage", pv."Price", p."Name", pv."Color", pv."Stock", pv."VariantID"
+      SELECT ci."CartItemID", ci."Quantity", pv."MainImage", pv."Price", p."Name", p."ProductType", p."SubType", pv."Color", pv."Stock", pv."VariantID"
       FROM "cart" c
       JOIN "cart_items" ci ON c."CartID" = ci."CartID"
       JOIN "product_variants" pv ON ci."VariantID" = pv."VariantID"
@@ -20,9 +20,13 @@ const getCart = async (req, res) => {
       WHERE c."UserID" = ${currentUserId}
     `;
 
-    res.status(200).json({ items: cartItems });
+    res.status(200).json({
+      success: true,
+      message: "Get cart items success",
+      items: cartItems,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 const addToCart = async (req, res) => {
