@@ -4,6 +4,8 @@ import {
   type AddProductAdminResponseEntity,
   type EditProductAdminResponseEntity,
   type AdminProductResponseEntity,
+  type DeleteProductAdminResponseEntity,
+  DeleteProductAdminResponseSchema,
 } from "../schema/admin.schema";
 
 type GetProductDetail = ({
@@ -23,9 +25,13 @@ type EditProductAdmin = (
   formData: FormData,
 ) => Promise<EditProductAdminResponseEntity>;
 
+type DeleteProductAdmin = (
+  variantId: number,
+) => Promise<DeleteProductAdminResponseEntity>;
+
 type AdminServiceType = {
   getProductDetail: GetProductDetail;
-  // deleteProductAdmin: DeleteProductAdmin;
+  deleteProduct: DeleteProductAdmin;
   // updateProductVariantAdmin: UpdateProductVariantAdmin;
   addProduct: AddProductAdmin;
   editProduct: EditProductAdmin;
@@ -78,5 +84,13 @@ export const AdminService: AdminServiceType = {
     });
 
     return response.data as EditProductAdminResponseEntity;
+  },
+  deleteProduct: async (variantId: number) => {
+    const response = await privateApi.request({
+      method: "DELETE",
+      url: `/api/products/admin/${variantId}`,
+      responseSchema: DeleteProductAdminResponseSchema,
+    });
+    return response.data as DeleteProductAdminResponseEntity;
   },
 };
