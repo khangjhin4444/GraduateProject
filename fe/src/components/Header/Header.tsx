@@ -140,7 +140,9 @@ export default function Header() {
           <div className="flex-1  flex-row items-center gap-7 flex justify-center">
             <button
               aria-label="cart-btn"
-              onClick={() => {}}
+              onClick={() => {
+                navigate("/cart");
+              }}
               className="relative cursor-pointer"
             >
               <ShoppingCart className="w-8 h-8 text-foreground" />
