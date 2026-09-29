@@ -23,11 +23,10 @@ export const useAddToCart = () => {
       dispatch(updateCartQuantity(optimisticQuantity));
       return { previousCartQuantity };
     },
-    onError: (err, _, context) => {
+    onError: (_, __, context) => {
       if (context?.previousCartQuantity !== undefined) {
         dispatch(updateCartQuantity(context.previousCartQuantity));
       }
-      throw new Error(err.message || "Error when add to cart");
     },
     onSuccess: (data) => {
       dispatch(updateCartQuantity(Number(data.newQuantity!)));
