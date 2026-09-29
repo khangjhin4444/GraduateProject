@@ -144,7 +144,6 @@ const changeItemQuantity = async (req, res) => {
     const variantRecord = await sql`
       SELECT "Stock" FROM "product_variants" WHERE "VariantID" = ${VariantID}
     `;
-
     if (variantRecord.length === 0) {
       return res.status(404).json({
         success: false,
@@ -175,15 +174,15 @@ const changeItemQuantity = async (req, res) => {
         SET "Quantity" = ${Quantity}
         WHERE "CartItemID" = ${existingItem[0].CartItemID}
       `;
-    const newQuantity =
-      await sql`SELECT COALESCE(SUM("Quantity"), 0) AS "TotalQuantity"
-                            FROM "cart_items"
-                            WHERE "CartID" = ${cartId};`;
+    // const newQuantity =
+    //   await sql`SELECT COALESCE(SUM("Quantity"), 0) AS "TotalQuantity"
+    //                         FROM "cart_items"
+    //                         WHERE "CartID" = ${cartId};`;
     // 6. Hoàn tất
     return res.status(200).json({
       success: true,
       message: "Changed Cart quantity!",
-      newQuantity: newQuantity[0].TotalQuantity,
+      // newQuantity: newQuantity[0].TotalQuantity,
     });
   } catch (errpr) {
     console.error("Lỗi khi thêm vào giỏ hàng:", error);
