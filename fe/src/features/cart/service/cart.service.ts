@@ -1,5 +1,9 @@
 import { privateApi } from "@/api/axios.instance";
-import type { AddToCartResponseEntity } from "../schema/cart.schema";
+import {
+  GetCartResponseSchema,
+  type AddToCartResponseEntity,
+  type GetCartResponseEntity,
+} from "../schema/cart.schema";
 
 type AddToCart = ({
   variantId,
@@ -9,8 +13,11 @@ type AddToCart = ({
   quantity: number;
 }) => Promise<AddToCartResponseEntity>;
 
+type GetCart = () => Promise<GetCartResponseEntity>;
+
 type CartService = {
   addToCart: AddToCart;
+  getCart: GetCart;
 };
 
 export const CartService: CartService = {
@@ -30,5 +37,13 @@ export const CartService: CartService = {
       },
     });
     return response.data as AddToCartResponseEntity;
+  },
+  getCart: async () => {
+    const response = await privateApi.request({
+      method: "GET",
+      url: "/api/cart",
+      responseSchema: GetCartResponseSchema,
+    });
+    return response.data as GetCartResponseEntity;
   },
 };
