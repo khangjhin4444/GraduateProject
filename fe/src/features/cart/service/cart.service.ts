@@ -1,7 +1,8 @@
 import { privateApi } from "@/api/axios.instance";
-import type {
-  AddToCartResponseEntity,
-  GetCartResponseEntity,
+import {
+  GetCartResponseSchema,
+  type AddToCartResponseEntity,
+  type GetCartResponseEntity,
 } from "../schema/cart.schema";
 
 type AddToCart = ({
@@ -41,6 +42,7 @@ export const CartService: CartService = {
     const response = await privateApi.request({
       method: "GET",
       url: "/api/cart",
+      responseSchema: GetCartResponseSchema,
     });
     return response.data as GetCartResponseEntity;
   },
