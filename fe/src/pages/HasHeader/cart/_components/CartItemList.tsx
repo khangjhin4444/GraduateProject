@@ -7,8 +7,11 @@ export default function CartItemList() {
   return (
     <section className="mt-10 block lg:flex items-start gap-10">
       <div className="block lg:flex-2">
-        {cart.items.map((item) => (
-          <div className="w-full block sm:flex mb-5 p-4 border-border border rounded-2xl sm:h-50 gap-10">
+        {cart.items.map((item, index) => (
+          <div
+            key={index}
+            className="w-full block sm:flex mb-5 p-4 border-border border rounded-2xl sm:h-50 gap-10"
+          >
             <div className="block sm:flex-1 h-full">
               <img
                 src={item.MainImage}
