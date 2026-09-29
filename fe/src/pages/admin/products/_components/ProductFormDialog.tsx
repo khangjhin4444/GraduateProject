@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit, Plus, Trash2, Upload, X } from "lucide-react";
+import { Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "./ImageUploader";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -56,7 +56,6 @@ const VariantSchema = z.object({
   file: z.file({ message: "Image is required" }),
   main_image: z.string(),
 });
-type Variant = z.infer<typeof VariantSchema>;
 
 export type ProductDescription = z.infer<typeof EditorDataSchema>;
 

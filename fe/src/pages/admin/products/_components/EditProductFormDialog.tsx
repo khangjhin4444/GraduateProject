@@ -27,10 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { EditorJsInput, type EditorJsInputHandle } from "./EditorJsInput";
 import { Label } from "@/components/ui/label";
 import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
-import {
-  EditorDataSchema,
-  type AdminProductEntity,
-} from "@/features/admin/schema/admin.schema";
+import { EditorDataSchema } from "@/features/admin/schema/admin.schema";
 import { AxiosError } from "axios";
 
 const PRODUCT_TYPES: { value: string; label: string }[] = [
@@ -60,8 +57,6 @@ const EditVariantSchema = z.object({
   file: z.file().optional(), // New file (optional if keeping existing image)
   existingImage: z.string().optional(), // Existing URL from DB
 });
-
-type EditVariant = z.infer<typeof EditVariantSchema>;
 
 // For edit: extra images can be existing URLs or new Files
 type ExtraImageItem =
