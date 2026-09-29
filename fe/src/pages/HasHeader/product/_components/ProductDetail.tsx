@@ -13,6 +13,8 @@ import { RelevantProductCard } from "./RelevantProductCard";
 import ProductSkeleton from "@/shared/components/ProductSkeleton";
 import type { DataProp } from "editorjs-blocks-react-renderer";
 import { useAddToCart } from "@/hooks/useAddToCart";
+import { clsx } from "clsx";
+import { getHexColor } from "@/utils/colors";
 
 export default function Page() {
   const { id } = useParams();
@@ -177,34 +179,47 @@ export default function Page() {
           <h1 className="text-4xl font-bold mb-4 text-foreground tracking-tight">
             {productData.Name}
           </h1>
-          <h2 className="text-3xl text-accent font-extrabold mb-6 tracking-normal">
+          <h2 className="text-3xl text-accent font-extrabold mb-10 tracking-normal">
             {formatCurrency(activeVariant?.Price || 0)}
           </h2>
 
           {productData.variants.length > 0 && (
-            <div className="mb-8">
-              <div className="text-2xl mb-4 flex items-center gap-4 font-semibold">
+            <div className="mb-4">
+              <div className="text-lg mb-4 flex items-end gap-4 font-normal text-muted-foreground">
                 Variants:
-                <span className="text-xl text-muted-foreground">
+                <span className="font-medium text-foreground text-lg">
+                  {" "}
+                  {selectedVariant?.Color}
+                </span>
+                <span className="text-lg text-muted-foreground">
                   Stock: {activeVariant?.Stock || 0}
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                {productData.variants.map((variant, index) => (
-                  <button
-                    key={index}
-                    disabled={variant.Stock <= 0}
-                    onClick={() => handleVariantClick(variant)}
-                    className={`px-4 py-2 w-32 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      activeVariant?.VariantID === variant.VariantID
-                        ? "border-primary bg-blue-50 text-primary font-bold"
-                        : "border-border text-foreground hover:border-gray-400"
-                    }`}
-                  >
-                    {variant.Color}
-                  </button>
-                ))}
+              <div className="flex flex-wrap justify-start items-center gap-2 min-h-10">
+                {productData.variants.map((variant, index) => {
+                  const isSelected = activeVariant?.Color === variant.Color;
+
+                  return (
+                    <button
+                      key={`${productData.ProductID}-${index}`}
+                      title={variant.Color} // Tooltip hiện tên màu khi hover
+                      onClick={(e) => {
+                        e.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài thẻ Card
+                        handleVariantClick(variant);
+                      }}
+                      className={clsx(
+                        "w-10 h-10 rounded-full border border-foreground transition-all",
+                        isSelected
+                          ? "ring-2 ring-black ring-offset-2 scale-100"
+                          : "hover:scale-110 opacity-80 hover:opacity-100",
+                      )}
+                      style={{
+                        backgroundColor: getHexColor(variant.Color),
+                      }}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -270,9 +285,9 @@ export default function Page() {
           ></Blocks>
         </div>
 
-        <div>
-          <h3 className="text-xl md:text-2xl lg:text-3xl font-bold my-6">
-            Relevant Products
+        <div className="mt-10">
+          <h3 className="text-xl md:text-2xl lg:text-3xl font-semibold mb-6">
+            You may also like
           </h3>
           {isRelevantLoading && <ProductSkeleton></ProductSkeleton>}
           <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-3 px-4 mb-12">
