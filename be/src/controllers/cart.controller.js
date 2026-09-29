@@ -184,7 +184,7 @@ const changeItemQuantity = async (req, res) => {
       message: "Changed Cart quantity!",
       // newQuantity: newQuantity[0].TotalQuantity,
     });
-  } catch (errpr) {
+  } catch (error) {
     console.error("Lỗi khi thêm vào giỏ hàng:", error);
     return res
       .status(500)
