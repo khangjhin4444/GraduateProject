@@ -24,6 +24,15 @@ export const GetCartResponseSchema = z.object({
   message: z.string(),
   items: z.array(CartItemSchema),
 });
+
+export const ChangeItemQuantityResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type ChangeItemQuantityResponseEntity = z.infer<
+  typeof ChangeItemQuantityResponseSchema
+>;
 export type AddToCartResponseEntity = z.infer<typeof AddToCartResponseSchema>;
 export type CartItemEntity = z.infer<typeof CartItemSchema>;
 export type GetCartResponseEntity = z.infer<typeof GetCartResponseSchema>;

@@ -9,4 +9,11 @@ export const CartUsecase = {
     quantity: number;
   }) => CartService.addToCart({ variantId, quantity }),
   getCart: () => CartService.getCart(),
+  changeItemQuantity: ({
+    variantId,
+    quantity,
+  }: {
+    variantId: number;
+    quantity: number;
+  }) => CartService.changeItemQuantity({ variantId, quantity }),
 };
