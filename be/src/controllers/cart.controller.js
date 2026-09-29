@@ -93,7 +93,7 @@ const addToCart = async (req, res) => {
       if (newQuantity > currentStock) {
         return res.status(400).json({
           success: false,
-          message: `Product already in Cart. Total quantity exceed (${currentStock}).`,
+          message: `Product already in Cart (${existingItem[0].Quantity}). Total quantity exceed (${currentStock}).`,
         });
       }
 
