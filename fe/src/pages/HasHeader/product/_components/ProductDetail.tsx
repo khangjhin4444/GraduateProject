@@ -211,7 +211,7 @@ export default function Page() {
                       className={clsx(
                         "w-10 h-10 rounded-full border border-foreground transition-all",
                         isSelected
-                          ? "ring-2 ring-black ring-offset-2 scale-100"
+                          ? "ring-3 ring-ring ring-offset-1 scale-100"
                           : "hover:scale-110 opacity-80 hover:opacity-100",
                       )}
                       style={{
