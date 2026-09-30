@@ -1,8 +1,41 @@
 import { useCart } from "@/hooks/useCart";
 import { Link } from "react-router";
 import CartItem from "./CartItem";
+import { useState } from "react";
+import OrderSummary from "./OrderSummary";
 export default function CartItemList() {
   const { data: cart } = useCart();
+  const [selectedItems, setSelectedItems] = useState(
+    cart.items.map((item) => {
+      if (item.Stock >= item.Quantity) {
+        return {
+          ...item,
+          isChecked: true,
+        };
+      } else {
+        return {
+          ...item,
+          isChecked: false,
+        };
+      }
+    }),
+  );
+  function handleToggleCheck(cartItemID: number) {
+    setSelectedItems((prev) =>
+      prev.map((item) =>
+        item.CartItemID === cartItemID
+          ? { ...item, isChecked: !item.isChecked }
+          : item,
+      ),
+    );
+  }
+  function handleQuantityChange(cartItemID: number, Quantity: number) {
+    setSelectedItems((prev) =>
+      prev.map((item) =>
+        item.CartItemID === cartItemID ? { ...item, Quantity: Quantity } : item,
+      ),
+    );
+  }
   const cartQuantity = cart.items.reduce(
     (total, item) => total + item.Quantity,
     0,
@@ -33,7 +66,7 @@ export default function CartItemList() {
               Browse the catalog and add something you like.
             </p>
             <Link
-              to="/collection"
+              to="/collection/keyboardkit"
               className="mt-5 inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
             >
               Browse products
@@ -43,11 +76,18 @@ export default function CartItemList() {
       ) : (
         <section className="mt-10 block lg:flex items-start gap-10 mb-10">
           <div className="block lg:flex-2">
-            {cart.items.map((item) => (
-              <CartItem item={item} key={item.CartItemID} />
+            {selectedItems.map((item) => (
+              <CartItem
+                item={item}
+                key={item.CartItemID}
+                handleToggleCheck={handleToggleCheck}
+                handleQuantityChangeParent={handleQuantityChange}
+              />
             ))}
           </div>
-          <div className="block sm:flex-1">checkout</div>
+          <div className="block sm:flex-1">
+            <OrderSummary selectedItems={selectedItems}></OrderSummary>
+          </div>
         </section>
       )}
     </div>

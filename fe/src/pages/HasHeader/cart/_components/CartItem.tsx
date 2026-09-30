@@ -1,7 +1,9 @@
+import { Checkbox } from "@/components/ui/checkbox";
 import type { CartItemEntity } from "@/features/cart/schema/cart.schema";
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
 import { useAppDispatch } from "@/state/hooks";
 import { changeCartQuantityByDelta } from "@/state/profile/profileSlice";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -9,7 +11,15 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
 
-export default function CartItem({ item }: { item: CartItemEntity }) {
+export default function CartItem({
+  item,
+  handleToggleCheck,
+  handleQuantityChangeParent,
+}: {
+  item: CartItemEntity & { isChecked: boolean };
+  handleToggleCheck: (cartItemID: number) => void;
+  handleQuantityChangeParent: (cartItemID: number, Quantity: number) => void;
+}) {
   const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState<number>(item.Quantity);
@@ -31,11 +41,13 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     onError: (error: AxiosError) => {
       debounced.cancel(); // bỏ các thay đổi đang chờ
       setOptimistic(syncedRef.current); // rollback qua cùng đường -> badge tự đúng
+      handleQuantityChangeParent(item.CartItemID, syncedRef.current);
       toast.error(error.message);
       return;
     },
     onSuccess: (_, payload) => {
       syncedRef.current = payload.quantity;
+      handleQuantityChangeParent(item.CartItemID, payload.quantity);
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
@@ -47,10 +59,12 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
       debounced.cancel();
       setIsDelete(true);
       setOptimistic(0);
+      handleQuantityChangeParent(item.CartItemID, 0);
     },
     onError: (error: AxiosError) => {
       setOptimistic(syncedRef.current);
       toast.error(error.message);
+      handleQuantityChangeParent(item.CartItemID, syncedRef.current);
       setIsDelete(false);
       return;
     },
@@ -87,9 +101,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     },
     [debounced],
   );
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
-  };
+
   const currentStock = item.Stock;
   // const currentStock = 0;
   if (currentStock < quantity) {
@@ -119,6 +131,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     }
 
     setOptimistic(next);
+    handleQuantityChangeParent(item.CartItemID, next);
     debounced();
   };
   return (
@@ -169,7 +182,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
                 onBlur={() => {
                   if (quantity < 1) setQuantity(latestRef.current);
                 }}
-                className="w-full text-center text-xl sm:text-lg"
+                className="w-full text-center text-xl sm:text-lg select-none"
               />
               <button
                 disabled={!canIncrease}
@@ -194,6 +207,13 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
                   <Trash2 />
                 </button>
               </div>
+              <Checkbox
+                className="w-7 h-7 border-2 border-border"
+                checked={item.isChecked}
+                onClick={() => {
+                  handleToggleCheck(item.CartItemID);
+                }}
+              />
               <div>
                 <span className="text-sm text-muted-foreground">
                   {formatCurrency(Number(item.Price))} EACH
