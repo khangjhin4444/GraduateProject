@@ -72,7 +72,10 @@ publicApi.interceptors.response.use((response: AxiosResponse) => {
   }
   return response;
 });
-
+interface BackendErrorResponse {
+  success: boolean;
+  message: string;
+}
 privateApi.interceptors.response.use(
   (response: AxiosResponse) => {
     const schema = response.config.responseSchema;
@@ -91,7 +94,7 @@ privateApi.interceptors.response.use(
     }
     return response;
   },
-  async (error: AxiosError<any>) => {
+  async (error: AxiosError<BackendErrorResponse>) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
