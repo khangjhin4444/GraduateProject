@@ -16,6 +16,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
   const latestRef = useRef(item.Quantity);
   const syncedRef = useRef(item.Quantity);
   const inFlightRef = useRef(false);
+  const [isDelete, setIsDelete] = useState(false);
 
   const setOptimistic = (next: number) => {
     const delta = next - latestRef.current;
@@ -38,6 +39,26 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
+
+  const deleteCartItemMutation = useMutation({
+    mutationFn: ({ variantId }: { variantId: number }) =>
+      CartUsecase.deleteCartItem({ variantId }),
+    onMutate: () => {
+      debounced.cancel();
+      setIsDelete(true);
+      setOptimistic(0);
+    },
+    onError: (error: AxiosError) => {
+      setOptimistic(syncedRef.current);
+      toast.error(error.message);
+      setIsDelete(false);
+      return;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
+
   const doSync = async () => {
     if (inFlightRef.current) return; // đang có request, xong sẽ tự kiểm tra lại
     const target = latestRef.current;
@@ -101,78 +122,91 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     debounced();
   };
   return (
-    <div className="w-full block sm:flex mb-5 p-4 border-border border rounded-2xl gap-4 shadow-lg relative">
-      {currentStock === 0 && (
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
-          <div className="border-4 border-accent/80 text-accent/80 text-2xl md:text-3xl font-bold uppercase tracking-widest px-6 py-2 rounded-xl rotate-[-10deg] bg-background/80 shadow-lg">
-            Out of Stock
+    <div>
+      {!isDelete && (
+        <div className="w-full block sm:flex mb-5 p-4 border-border border rounded-2xl gap-4 shadow-lg relative min-h-60">
+          {currentStock === 0 && (
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
+              <div className="border-4 border-accent/80 text-accent/80 text-2xl md:text-3xl font-bold uppercase tracking-widest px-6 py-2 rounded-xl rotate-[-10deg] bg-background/80 shadow-lg">
+                Out of Stock
+              </div>
+            </div>
+          )}
+          <div className="block sm:flex-1 min-h-full w-full">
+            <img
+              src={item.MainImage}
+              className="w-full h-full object-cover rounded-3xl"
+            />
           </div>
-        </div>
-      )}
-      <div className="block sm:flex-1 h-full">
-        <img
-          src={item.MainImage}
-          className="w-full h-full object-cover rounded-3xl"
-        />
-      </div>
-      <div className="block sm:flex-2">
-        <h2 className="font-semibold text-md md:text-lg lg:text-xl mb-2">
-          {item.Name}
-        </h2>
-        <div>
-          <span className="bg-muted px-4 py-1 rounded-3xl text-muted-foreground mr-2 text-sm">
-            {item.ProductType}
-          </span>
-          <span className="bg-muted px-4 py-1 rounded-3xl text-muted-foreground text-sm">
-            {item.SubType}
-          </span>
-        </div>
-        <p className="mt-5 text-foreground mb-5">Variant: {item.Color}</p>
-        <div className="flex justify-center items-center w-1/2  border-2 border-border py-2 px-3 rounded-2xl ">
-          <button
-            disabled={!canDecrease}
-            onClick={() => handleQuantityChange("decrease")}
-            className={`${canDecrease ? "cursor-pointer" : "cursor-not-allowed"} text-muted-foreground hover:text-foreground`}
-          >
-            <Minus />
-          </button>
-          <input
-            type="number"
-            max={currentStock}
-            value={quantity}
-            onChange={(e) => handleQuantityChange("input", e.target.value)}
-            onBlur={() => {
-              if (quantity < 1) setQuantity(latestRef.current);
-            }}
-            className="w-full text-center"
-          />
-          <button
-            disabled={!canIncrease}
-            onClick={() => handleQuantityChange("increase")}
-            className={`${canIncrease ? "cursor-pointer" : "cursor-not-allowed"} text-muted-foreground hover:text-foreground`}
-          >
-            <Plus />
-          </button>
-        </div>
-      </div>
-      <div className="block sm:flex-1 ">
-        <div className="flex flex-col justify-between items-end h-full w-full">
-          <div className="text-red-500 relative z-20">
-            <button className="cursor-pointer">
-              <Trash2 />
-            </button>
+          <div className="block sm:flex-2 mt-4 sm:mt-0">
+            <h2 className="font-semibold text-xl md:text-lg lg:text-xl mb-2">
+              {item.Name}
+            </h2>
+            <div>
+              <span className="bg-muted px-4 py-1 rounded-3xl text-muted-foreground mr-2 text-sm">
+                {item.ProductType}
+              </span>
+              <span className="bg-muted px-4 py-1 rounded-3xl text-muted-foreground text-sm">
+                {item.SubType}
+              </span>
+            </div>
+            <p className="mt-5 text-foreground text-lg mb-5">
+              Variant: {item.Color}
+            </p>
+            <div className="flex justify-center items-center w-1/2  border-2 border-border py-2 px-3 rounded-2xl ">
+              <button
+                disabled={!canDecrease}
+                onClick={() => handleQuantityChange("decrease")}
+                className={`${canDecrease ? "cursor-pointer" : "cursor-not-allowed"} text-muted-foreground hover:text-foreground`}
+              >
+                <Minus />
+              </button>
+              <input
+                type="number"
+                max={currentStock}
+                value={quantity}
+                onChange={(e) => handleQuantityChange("input", e.target.value)}
+                onBlur={() => {
+                  if (quantity < 1) setQuantity(latestRef.current);
+                }}
+                className="w-full text-center text-xl sm:text-lg"
+              />
+              <button
+                disabled={!canIncrease}
+                onClick={() => handleQuantityChange("increase")}
+                className={`${canIncrease ? "cursor-pointer" : "cursor-not-allowed"} text-muted-foreground hover:text-foreground`}
+              >
+                <Plus />
+              </button>
+            </div>
           </div>
-          <div className="items-end">
-            <span className="text-sm text-muted-foreground">
-              {formatCurrency(Number(item.Price))} EACH
-            </span>
-            <br />
-            <div className="text-accent font-semibold text-right text-lg">
-              {formatCurrency(Number(item.Price) * quantity)}
+          <div className="block sm:flex-1 ">
+            <div className="flex sm:flex-col justify-between items-end h-full w-full flex-row-reverse mt-3 sm:mt-0">
+              <div className="text-red-500 relative z-20">
+                <button
+                  className="cursor-pointer flex gap-2 border-2 border-red-500 rounded-2xl p-2 sm:border-none sm:rounded-none sm:gap-0"
+                  disabled={changeItemQuantityMutation.isPending}
+                  onClick={() =>
+                    deleteCartItemMutation.mutate({ variantId: item.VariantID })
+                  }
+                >
+                  <span className="sm:hidden font-semibold">Delete</span>
+                  <Trash2 />
+                </button>
+              </div>
+              <div>
+                <span className="text-sm text-muted-foreground">
+                  {formatCurrency(Number(item.Price))} EACH
+                </span>
+                <br />
+                <div className="text-accent font-semibold text-right text-lg">
+                  {formatCurrency(Number(item.Price) * quantity)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
