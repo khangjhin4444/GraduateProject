@@ -105,7 +105,7 @@ export function ProductFormDialog({
     reValidateMode: "onChange",
     defaultValues: {
       name: "",
-      type: "KeyboardKit",
+      type: initType as "KeyboardKit" | "Prebuild" | "Keycap" | "Switch",
       subtype: SUBTYPES[initType][0],
       description: {
         time: 0,
