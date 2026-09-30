@@ -134,6 +134,10 @@ export function ProductFormDialog({
     name: "extraImages",
   });
 
+  const [revalidateType, setRevalidateType] = useState<
+    "KeyboardKit" | "Prebuild" | "Keycap" | "Switch"
+  >(initType as "KeyboardKit" | "Prebuild" | "Keycap" | "Switch");
+
   const handleAddExtraImage = (newFile: File) => {
     const currentImages = form.getValues("extraImages");
     form.setValue("extraImages", [...currentImages, newFile], {
@@ -155,7 +159,7 @@ export function ProductFormDialog({
     mutationFn: async (data: ProductForm) => handleSave(data),
     onSuccess: () => {
       onOpenChange(false);
-      onSaved(initType);
+      onSaved(revalidateType);
       toast.success("Product saved successfully!");
     },
     onError: (error) => {
@@ -294,6 +298,7 @@ export function ProductFormDialog({
                           value={field.value}
                           onValueChange={(v) => {
                             field.onChange(v);
+                            setRevalidateType(v!);
                             const defaultSubtype =
                               SUBTYPES[v as keyof typeof SUBTYPES][0];
                             form.setValue("subtype", defaultSubtype);
