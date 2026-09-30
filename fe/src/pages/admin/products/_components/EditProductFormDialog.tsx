@@ -126,7 +126,9 @@ export function EditProductFormDialog({
 }) {
   const editorRef = useRef<EditorJsInputHandle>(null);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
-  const [extraImages, setExtraImages] = useState<ExtraImageItem[]>([]);
+  const [extraImages, setExtraImages] = useState<ExtraImageItem[]>(() =>
+    productData.images.map((url) => ({ type: "existing" as const, url })),
+  );
 
   const [type, setType] = useState<string>(productData.ProductType);
 
@@ -155,12 +157,6 @@ export function EditProductFormDialog({
     name: "variants",
   });
 
-  // Initialize extra images from product data
-  useEffect(() => {
-    setExtraImages(
-      productData.images.map((url) => ({ type: "existing" as const, url })),
-    );
-  }, [productData.images]);
   useEffect(() => {
     // Hàm return trong useEffect sẽ chạy khi component unmount
     return () => {
