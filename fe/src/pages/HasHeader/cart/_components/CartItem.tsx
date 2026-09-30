@@ -70,6 +70,11 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
   };
   const currentStock = item.Stock;
+  // const currentStock = 0;
+  if (currentStock < quantity) {
+    latestRef.current = currentStock;
+    doSync();
+  }
 
   const canIncrease = !!(quantity < currentStock);
   const canDecrease = !!(quantity > 1);
@@ -96,7 +101,14 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     debounced();
   };
   return (
-    <div className="w-full block sm:flex mb-5 p-4 border-border border rounded-2xl gap-4 shadow-lg">
+    <div className="w-full block sm:flex mb-5 p-4 border-border border rounded-2xl gap-4 shadow-lg relative">
+      {currentStock === 0 && (
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
+          <div className="border-4 border-accent/80 text-accent/80 text-2xl md:text-3xl font-bold uppercase tracking-widest px-6 py-2 rounded-xl rotate-[-10deg] bg-background/80 shadow-lg">
+            Out of Stock
+          </div>
+        </div>
+      )}
       <div className="block sm:flex-1 h-full">
         <img
           src={item.MainImage}
@@ -145,8 +157,10 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
       </div>
       <div className="block sm:flex-1 ">
         <div className="flex flex-col justify-between items-end h-full w-full">
-          <div className="text-red-500">
-            <Trash2 />
+          <div className="text-red-500 relative z-20">
+            <button className="cursor-pointer">
+              <Trash2 />
+            </button>
           </div>
           <div className="items-end">
             <span className="text-sm text-muted-foreground">
