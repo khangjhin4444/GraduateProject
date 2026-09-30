@@ -66,7 +66,7 @@ export default function CartItemList() {
               Browse the catalog and add something you like.
             </p>
             <Link
-              to="/collection"
+              to="/collection/keyboardkit"
               className="mt-5 inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
             >
               Browse products
