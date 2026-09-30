@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { CartItemEntity } from "@/features/cart/schema/cart.schema";
+import { useAppSelector } from "@/state/hooks";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useNavigate } from "react-router";
 
@@ -10,10 +11,7 @@ export default function OrderSummary({
   selectedItems: Array<CartItemEntity & { isChecked: boolean }>;
 }) {
   const navigate = useNavigate();
-  const count = selectedItems.reduce(
-    (count, item) => (item.isChecked ? count + item.Quantity : count),
-    0,
-  );
+  const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
   const Subtotal = selectedItems.reduce(
     (total, item) =>
       item.isChecked ? total + Number(item.Price) * item.Quantity : total,
@@ -25,7 +23,8 @@ export default function OrderSummary({
         <h2 className="text-lg font-semibold mb-2">Order Summary</h2>
         <div className="flex justify-between items-center mb-3">
           <p className="text-muted-foreground">
-            Subtotal {`(${count} ${count > 1 ? "items" : "item"})`}
+            Subtotal{" "}
+            {`(${cartQuantity} ${cartQuantity > 1 ? "items" : "item"})`}
           </p>
           <span className="text-foreground font-medium text-lg">
             {formatCurrency(Subtotal)}
@@ -44,7 +43,7 @@ export default function OrderSummary({
       </div>
       <Button
         className="py-7 text-xl bg-primary text-primary-foreground cursor-pointer hover:zoom-105"
-        disabled={count === 0}
+        disabled={cartQuantity === 0}
       >
         Proceed to Checkout
       </Button>

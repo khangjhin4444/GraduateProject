@@ -47,7 +47,7 @@ export default function CartItem({
     },
     onSuccess: (_, payload) => {
       syncedRef.current = payload.quantity;
-      handleQuantityChangeParent(item.CartItemID, payload.quantity);
+      // handleQuantityChangeParent(item.CartItemID, payload.quantity);
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });

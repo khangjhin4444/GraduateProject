@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import CartItem from "./CartItem";
 import { useState } from "react";
 import OrderSummary from "./OrderSummary";
+import { useAppSelector } from "@/state/hooks";
 export default function CartItemList() {
   const { data: cart } = useCart();
   const [checkedOverrides, setCheckedOverrides] = useState<
@@ -27,14 +28,11 @@ export default function CartItemList() {
   function handleQuantityChange(cartItemID: number, Quantity: number) {
     setQuantityOverrides((prev) => ({ ...prev, [cartItemID]: Quantity }));
   }
-  const cartQuantity = cart.items.reduce(
-    (total, item) => total + item.Quantity,
-    0,
-  );
+  const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
   console.log(cart);
   return (
     <div>
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center ">
         <p>
           You have {cartQuantity} {cartQuantity > 1 ? "items" : "item"} to
           checkout
@@ -76,7 +74,7 @@ export default function CartItemList() {
               />
             ))}
           </div>
-          <div className="block sm:flex-1">
+          <div className="block sm:flex-1 sm:sticky top-50">
             <OrderSummary selectedItems={selectedItems}></OrderSummary>
           </div>
         </section>
