@@ -30,6 +30,15 @@ export const ChangeItemQuantityResponseSchema = z.object({
   message: z.string(),
 });
 
+export const DeleteCartItemResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type DeleteCartItemResponseEntity = z.infer<
+  typeof DeleteCartItemResponseSchema
+>;
+
 export type ChangeItemQuantityResponseEntity = z.infer<
   typeof ChangeItemQuantityResponseSchema
 >;

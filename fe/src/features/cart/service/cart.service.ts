@@ -1,9 +1,11 @@
 import { privateApi } from "@/api/axios.instance";
 import {
   ChangeItemQuantityResponseSchema,
+  DeleteCartItemResponseSchema,
   GetCartResponseSchema,
   type AddToCartResponseEntity,
   type ChangeItemQuantityResponseEntity,
+  type DeleteCartItemResponseEntity,
   type GetCartResponseEntity,
 } from "../schema/cart.schema";
 
@@ -25,10 +27,17 @@ type ChangeItemQuantity = ({
   quantity: number;
 }) => Promise<ChangeItemQuantityResponseEntity>;
 
+type DeleteCartItem = ({
+  variantId,
+}: {
+  variantId: number;
+}) => Promise<DeleteCartItemResponseEntity>;
+
 type CartService = {
   addToCart: AddToCart;
   getCart: GetCart;
   changeItemQuantity: ChangeItemQuantity;
+  deleteCartItem: DeleteCartItem;
 };
 
 export const CartService: CartService = {
@@ -74,5 +83,17 @@ export const CartService: CartService = {
       responseSchema: ChangeItemQuantityResponseSchema,
     });
     return response.data as ChangeItemQuantityResponseEntity;
+  },
+  deleteCartItem: async ({ variantId }: { variantId: number }) => {
+    const response = await privateApi.request({
+      method: "DELETE",
+      url: "/api/cart/delete",
+      data: {
+        VariantID: variantId,
+      },
+      responseSchema: DeleteCartItemResponseSchema,
+    });
+
+    return response.data as DeleteCartItemResponseEntity;
   },
 };
