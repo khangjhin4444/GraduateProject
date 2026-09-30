@@ -2,6 +2,7 @@ import { useCart } from "@/hooks/useCart";
 import { Link } from "react-router";
 import CartItem from "./CartItem";
 import { useState } from "react";
+import OrderSummary from "./OrderSummary";
 export default function CartItemList() {
   const { data: cart } = useCart();
   const [selectedItems, setSelectedItems] = useState(
@@ -25,6 +26,13 @@ export default function CartItemList() {
         item.CartItemID === cartItemID
           ? { ...item, isChecked: !item.isChecked }
           : item,
+      ),
+    );
+  }
+  function handleQuantityChange(cartItemID: number, Quantity: number) {
+    setSelectedItems((prev) =>
+      prev.map((item) =>
+        item.CartItemID === cartItemID ? { ...item, Quantity: Quantity } : item,
       ),
     );
   }
@@ -73,10 +81,13 @@ export default function CartItemList() {
                 item={item}
                 key={item.CartItemID}
                 handleToggleCheck={handleToggleCheck}
+                handleQuantityChangeParent={handleQuantityChange}
               />
             ))}
           </div>
-          <div className="block sm:flex-1">checkout</div>
+          <div className="block sm:flex-1">
+            <OrderSummary selectedItems={selectedItems}></OrderSummary>
+          </div>
         </section>
       )}
     </div>

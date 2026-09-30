@@ -13,9 +13,11 @@ import { useDebouncedCallback } from "use-debounce";
 export default function CartItem({
   item,
   handleToggleCheck,
+  handleQuantityChangeParent,
 }: {
   item: CartItemEntity & { isChecked: boolean };
   handleToggleCheck: (cartItemID: number) => void;
+  handleQuantityChangeParent: (cartItemID: number, Quantity: number) => void;
 }) {
   const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
@@ -38,11 +40,13 @@ export default function CartItem({
     onError: (error: AxiosError) => {
       debounced.cancel(); // bỏ các thay đổi đang chờ
       setOptimistic(syncedRef.current); // rollback qua cùng đường -> badge tự đúng
+      handleQuantityChangeParent(item.CartItemID, syncedRef.current);
       toast.error(error.message);
       return;
     },
     onSuccess: (_, payload) => {
       syncedRef.current = payload.quantity;
+      handleQuantityChangeParent(item.CartItemID, payload.quantity);
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
@@ -54,10 +58,12 @@ export default function CartItem({
       debounced.cancel();
       setIsDelete(true);
       setOptimistic(0);
+      handleQuantityChangeParent(item.CartItemID, 0);
     },
     onError: (error: AxiosError) => {
       setOptimistic(syncedRef.current);
       toast.error(error.message);
+      handleQuantityChangeParent(item.CartItemID, syncedRef.current);
       setIsDelete(false);
       return;
     },
@@ -126,6 +132,7 @@ export default function CartItem({
     }
 
     setOptimistic(next);
+    handleQuantityChangeParent(item.CartItemID, next);
     debounced();
   };
   return (
