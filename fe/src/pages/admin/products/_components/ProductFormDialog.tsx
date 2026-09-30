@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { ImageUploader } from "./ImageUploader";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { z } from "zod";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditorJsInput, type EditorJsInputHandle } from "./EditorJsInput";
 import { Label } from "@/components/ui/label";
@@ -118,7 +118,10 @@ export function ProductFormDialog({
     control: form.control,
     name: "variants",
   });
-  const extraImages = form.watch("extraImages");
+  const extraImages = useWatch({
+    control: form.control,
+    name: "extraImages",
+  });
 
   const handleAddExtraImage = (newFile: File) => {
     const currentImages = form.getValues("extraImages");
