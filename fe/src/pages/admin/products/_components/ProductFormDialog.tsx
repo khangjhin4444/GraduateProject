@@ -22,7 +22,13 @@ import { toast } from "sonner";
 import { ImageUploader } from "./ImageUploader";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { z } from "zod";
-import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  useWatch,
+  type FieldErrors,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditorJsInput, type EditorJsInputHandle } from "./EditorJsInput";
 import { Label } from "@/components/ui/label";
@@ -53,7 +59,12 @@ const VariantSchema = z.object({
   stock: z
     .number({ message: "Stock is required" })
     .min(1, { message: "Stock must be at least 1" }),
-  file: z.file({ message: "Image is required" }),
+  file: z
+    .file()
+    .optional()
+    .refine((val) => val !== undefined && val !== null, {
+      message: "Image is required",
+    }),
   main_image: z.string(),
 });
 
@@ -223,7 +234,7 @@ export function ProductFormDialog({
               // saveMutation.mutate();
               onSubmit(data);
             };
-            const onInvalid = (errors: any) => {
+            const onInvalid = (errors: FieldErrors<ProductForm>) => {
               // Surface description error from Zod
               if (errors.description) {
                 setDescriptionError(
@@ -367,7 +378,7 @@ export function ProductFormDialog({
                       color: "",
                       price: 0,
                       stock: 0,
-                      file: undefined as any,
+                      file: undefined,
                       main_image: "",
                     })
                   }
@@ -391,7 +402,10 @@ export function ProductFormDialog({
                         <ImageUploader
                           key={idx}
                           onFileChange={(file) => {
-                            form.setValue(`variants.${idx}.file`, file);
+                            form.setValue(`variants.${idx}.file`, file, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
                           }}
                         />
                         {form.formState.errors.variants?.[idx]?.file
