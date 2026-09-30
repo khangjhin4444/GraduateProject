@@ -1,8 +1,33 @@
 import { useCart } from "@/hooks/useCart";
 import { Link } from "react-router";
 import CartItem from "./CartItem";
+import { useState } from "react";
 export default function CartItemList() {
   const { data: cart } = useCart();
+  const [selectedItems, setSelectedItems] = useState(
+    cart.items.map((item) => {
+      if (item.Stock >= item.Quantity) {
+        return {
+          ...item,
+          isChecked: true,
+        };
+      } else {
+        return {
+          ...item,
+          isChecked: false,
+        };
+      }
+    }),
+  );
+  function handleToggleCheck(cartItemID: number) {
+    setSelectedItems((prev) =>
+      prev.map((item) =>
+        item.CartItemID === cartItemID
+          ? { ...item, isChecked: !item.isChecked }
+          : item,
+      ),
+    );
+  }
   const cartQuantity = cart.items.reduce(
     (total, item) => total + item.Quantity,
     0,
@@ -43,8 +68,12 @@ export default function CartItemList() {
       ) : (
         <section className="mt-10 block lg:flex items-start gap-10 mb-10">
           <div className="block lg:flex-2">
-            {cart.items.map((item) => (
-              <CartItem item={item} key={item.CartItemID} />
+            {selectedItems.map((item) => (
+              <CartItem
+                item={item}
+                key={item.CartItemID}
+                handleToggleCheck={handleToggleCheck}
+              />
             ))}
           </div>
           <div className="block sm:flex-1">checkout</div>

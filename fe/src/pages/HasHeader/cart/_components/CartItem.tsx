@@ -1,3 +1,4 @@
+import { Checkbox } from "@/components/ui/checkbox";
 import type { CartItemEntity } from "@/features/cart/schema/cart.schema";
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
 import { useAppDispatch } from "@/state/hooks";
@@ -9,7 +10,13 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
 
-export default function CartItem({ item }: { item: CartItemEntity }) {
+export default function CartItem({
+  item,
+  handleToggleCheck,
+}: {
+  item: CartItemEntity & { isChecked: boolean };
+  handleToggleCheck: (cartItemID: number) => void;
+}) {
   const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState<number>(item.Quantity);
@@ -169,7 +176,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
                 onBlur={() => {
                   if (quantity < 1) setQuantity(latestRef.current);
                 }}
-                className="w-full text-center text-xl sm:text-lg"
+                className="w-full text-center text-xl sm:text-lg select-none"
               />
               <button
                 disabled={!canIncrease}
@@ -194,6 +201,13 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
                   <Trash2 />
                 </button>
               </div>
+              <Checkbox
+                className="w-7 h-7 border-2 border-border"
+                checked={item.isChecked}
+                onClick={() => {
+                  handleToggleCheck(item.CartItemID);
+                }}
+              />
               <div>
                 <span className="text-sm text-muted-foreground">
                   {formatCurrency(Number(item.Price))} EACH
