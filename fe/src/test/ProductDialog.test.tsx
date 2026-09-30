@@ -1,11 +1,11 @@
-import { render, screen, waitFor, logRoles } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeAll } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProductFormDialog } from "@/pages/admin/products/_components/ProductFormDialog";
 
 // 1. Mock các thư viện và component không cần thiết hoặc dễ gây lỗi trong JSDOM
-vi.mock("./EditorJsInput", () => ({
+vi.mock("@/pages/admin/products/_components/EditorJsInput", () => ({
   EditorJsInput: vi.fn(() => <div data-testid="mock-editor">Editor</div>),
 }));
 
@@ -16,7 +16,6 @@ vi.mock("@/features/admin/usecase/admin.usecase", () => ({
 }));
 
 beforeAll(() => {
-  // 1. Khắc phục lỗi "không tìm thấy global" bằng vi.stubGlobal (Chuẩn Vitest)
   vi.stubGlobal(
     "ResizeObserver",
     class {
