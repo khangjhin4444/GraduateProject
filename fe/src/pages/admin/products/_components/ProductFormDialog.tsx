@@ -105,8 +105,8 @@ export function ProductFormDialog({
     reValidateMode: "onChange",
     defaultValues: {
       name: "",
-      type: "KeyboardKit",
-      subtype: "Alice",
+      type: initType as "KeyboardKit" | "Prebuild" | "Keycap" | "Switch",
+      subtype: SUBTYPES[initType][0],
       description: {
         time: 0,
         blocks: [],
@@ -134,6 +134,10 @@ export function ProductFormDialog({
     name: "extraImages",
   });
 
+  const [revalidateType, setRevalidateType] = useState<
+    "KeyboardKit" | "Prebuild" | "Keycap" | "Switch"
+  >(initType as "KeyboardKit" | "Prebuild" | "Keycap" | "Switch");
+
   const handleAddExtraImage = (newFile: File) => {
     const currentImages = form.getValues("extraImages");
     form.setValue("extraImages", [...currentImages, newFile], {
@@ -151,13 +155,11 @@ export function ProductFormDialog({
     );
   };
 
-  const [type, setType] = useState<string>(initType);
-
   const saveMutation = useMutation({
     mutationFn: async (data: ProductForm) => handleSave(data),
     onSuccess: () => {
       onOpenChange(false);
-      onSaved(type);
+      onSaved(revalidateType);
       toast.success("Product saved successfully!");
     },
     onError: (error) => {
@@ -293,15 +295,13 @@ export function ProductFormDialog({
                         <FieldLabel>Type</FieldLabel>
                         <Select
                           {...field}
-                          value={type}
+                          value={field.value}
                           onValueChange={(v) => {
                             field.onChange(v);
-                            setType(v!);
-
-                            form.setValue(
-                              "subtype",
-                              SUBTYPES[v as keyof typeof SUBTYPES][0],
-                            );
+                            setRevalidateType(v!);
+                            const defaultSubtype =
+                              SUBTYPES[v as keyof typeof SUBTYPES][0];
+                            form.setValue("subtype", defaultSubtype);
                           }}
                         >
                           <SelectTrigger>
@@ -337,13 +337,13 @@ export function ProductFormDialog({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {SUBTYPES[type as keyof typeof SUBTYPES]?.map(
-                              (s) => (
-                                <SelectItem key={s} value={s}>
-                                  {s}
-                                </SelectItem>
-                              ),
-                            )}
+                            {SUBTYPES[
+                              form.getValues("type") as keyof typeof SUBTYPES
+                            ]?.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {s}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </Field>
