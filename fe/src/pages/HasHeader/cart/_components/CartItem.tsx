@@ -104,7 +104,7 @@ export default function CartItem({
 
   const currentStock = item.Stock;
   // const currentStock = 0;
-  if (currentStock < quantity) {
+  if (currentStock < quantity && currentStock != 0) {
     latestRef.current = currentStock;
     doSync();
   }
