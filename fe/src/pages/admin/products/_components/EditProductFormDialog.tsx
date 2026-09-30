@@ -17,18 +17,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload, X } from "lucide-react";
+import { Plus, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import { ImageUploader } from "./ImageUploader";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { z } from "zod";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  type FieldErrors,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { EditorJsInput, type EditorJsInputHandle } from "./EditorJsInput";
+import {
+  EditorJsInput,
+  type EditorData,
+  type EditorJsInputHandle,
+} from "./EditorJsInput";
 import { Label } from "@/components/ui/label";
 import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
 import { EditorDataSchema } from "@/features/admin/schema/admin.schema";
 import { AxiosError } from "axios";
+import VariantItem from "./VariantItem";
 
 const PRODUCT_TYPES: { value: string; label: string }[] = [
   { value: "KeyboardKit", label: "Keyboard Kit" },
@@ -58,6 +67,8 @@ const EditVariantSchema = z.object({
   existingImage: z.string().optional(), // Existing URL from DB
 });
 
+export type EditVariantEntity = z.infer<typeof EditVariantSchema>;
+
 // For edit: extra images can be existing URLs or new Files
 type ExtraImageItem =
   | { type: "existing"; url: string }
@@ -79,7 +90,7 @@ const EditProductFormSchema = z.object({
     }),
 });
 
-type EditProductForm = z.infer<typeof EditProductFormSchema>;
+export type EditProductForm = z.infer<typeof EditProductFormSchema>;
 
 /** Data shape passed from the product table row */
 export type EditProductData = {
@@ -159,7 +170,7 @@ export function EditProductFormDialog({
         }
       });
     };
-  }, [form]);
+  });
   const handleAddExtraImage = (newFile: File) => {
     const previewUrl = URL.createObjectURL(newFile);
     setExtraImages((prev) => [
@@ -272,7 +283,7 @@ export function EditProductFormDialog({
               setDescriptionError(null);
               onSubmit(data);
             };
-            const onInvalid = (errors: any) => {
+            const onInvalid = (errors: FieldErrors<EditProductForm>) => {
               // Surface description error from Zod
               if (errors.description) {
                 setDescriptionError(
@@ -396,7 +407,7 @@ export function EditProductFormDialog({
                   </FieldLabel>
                   <EditorJsInput
                     ref={editorRef}
-                    initialData={productData.Description as any}
+                    initialData={productData.Description as EditorData}
                   />
                   {descriptionError && (
                     <p className="text-[12px] text-red-500 font-semibold ml-3 pt-2">
@@ -433,176 +444,16 @@ export function EditProductFormDialog({
                 </p>
               )}
               <div className="space-y-3">
-                {fields.map((field, idx) => {
-                  const existingImage = form.watch(
-                    `variants.${idx}.existingImage`,
-                  );
-                  return (
-                    <div
-                      key={field.id}
-                      className="rounded-lg border p-3 space-y-3 bg-muted/30"
-                    >
-                      <div className="block md:flex items-start gap-3">
-                        <div>
-                          {/* {existingImage &&
-                          !form.watch(`variants.${idx}.file`) ? (
-                            <div className="flex flex-col gap-2 max-w-sm p-4 border rounded-lg bg-white shadow-sm">
-                              <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-50">
-                                <img
-                                  src={existingImage}
-                                  alt="Current variant image"
-                                  className="object-contain w-full h-full"
-                                />
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  form.setValue(
-                                    `variants.${idx}.existingImage`,
-                                    undefined,
-                                  );
-                                }}
-                              >
-                                Change image
-                              </Button>
-                            </div>
-                          ) : (
-                            <ImageUploader
-                              idx={idx}
-                              onFileChange={(file) => {
-                                form.setValue(`variants.${idx}.file`, file);
-                              }}
-                            />
-                          )} */}
-                          <ImageUploader
-                            key={idx}
-                            value={existingImage ?? undefined}
-                            onFileChange={(file) => {
-                              form.setValue(`variants.${idx}.file`, file, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-                              form.trigger("variants");
-                            }}
-                          />
-                          {form.formState.errors.variants?.[idx]?.file
-                            ?.message &&
-                            !existingImage && (
-                              <p className="text-[12px] text-red-500 font-semibold mt-1">
-                                {
-                                  form.formState.errors.variants[idx].file
-                                    .message
-                                }
-                              </p>
-                            )}
-                        </div>
-
-                        <div className="flex-1 grid gap-2 sm:grid-cols-3">
-                          <div className="space-y-1">
-                            <Controller
-                              control={form.control}
-                              name={`variants.${idx}.color`}
-                              render={({ field, fieldState }) => (
-                                <>
-                                  <Label className="text-xs">
-                                    Color
-                                    <span className="text-destructive">*</span>
-                                  </Label>
-                                  <Input
-                                    {...field}
-                                    aria-invalid={fieldState.invalid}
-                                    placeholder="Black"
-                                  />
-                                  {fieldState.error && (
-                                    <p className="text-[12px] text-red-500 font-semibold">
-                                      {fieldState.error.message}
-                                    </p>
-                                  )}
-                                </>
-                              )}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Controller
-                              control={form.control}
-                              name={`variants.${idx}.price`}
-                              render={({ field, fieldState }) => (
-                                <>
-                                  <Label className="text-xs">
-                                    Price
-                                    <span className="text-destructive">*</span>
-                                  </Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0"
-                                    value={field.value || ""}
-                                    onChange={(e) =>
-                                      field.onChange(
-                                        e.target.value
-                                          ? Number(e.target.value)
-                                          : 0,
-                                      )
-                                    }
-                                    aria-invalid={fieldState.invalid}
-                                  />
-                                  {fieldState.error && (
-                                    <p className="text-[12px] text-red-500 font-semibold">
-                                      {fieldState.error.message}
-                                    </p>
-                                  )}
-                                </>
-                              )}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Controller
-                              control={form.control}
-                              name={`variants.${idx}.stock`}
-                              render={({ field, fieldState }) => (
-                                <>
-                                  <Label className="text-xs">
-                                    Stock
-                                    <span className="text-destructive">*</span>
-                                  </Label>
-                                  <Input
-                                    type="number"
-                                    placeholder="0"
-                                    value={field.value || ""}
-                                    onChange={(e) =>
-                                      field.onChange(
-                                        e.target.value
-                                          ? Number(e.target.value)
-                                          : 0,
-                                      )
-                                    }
-                                    aria-invalid={fieldState.invalid}
-                                  />
-                                  {fieldState.error && (
-                                    <p className="text-[12px] text-red-500 font-semibold">
-                                      {fieldState.error.message}
-                                    </p>
-                                  )}
-                                </>
-                              )}
-                            />
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={fields.length === 1}
-                          onClick={() => remove(idx)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
+                {fields.map((field, idx) => (
+                  <VariantItem
+                    key={field.id}
+                    control={form.control}
+                    fields={fields}
+                    form={form}
+                    idx={idx}
+                    remove={remove}
+                  />
+                ))}
               </div>
             </div>
             <div className="space-y-3">
