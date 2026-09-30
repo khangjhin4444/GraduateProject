@@ -36,9 +36,18 @@ const profileSlice = createSlice({
     updateCartQuantity: (state, action: PayloadAction<number>) => {
       state.cartQuantity = action.payload;
     },
+
+    changeCartQuantityByDelta: (state, action: PayloadAction<number>) => {
+      state.cartQuantity += action.payload;
+    },
   },
 });
 
-export const { setInfo, deleteInfo, updateCartQuantity } = profileSlice.actions;
+export const {
+  setInfo,
+  deleteInfo,
+  updateCartQuantity,
+  changeCartQuantityByDelta,
+} = profileSlice.actions;
 
 export default profileSlice.reducer;
