@@ -65,7 +65,9 @@ export const createColumns = (onEdit: (productId: number) => void) =>
     }),
     columnHelper.accessor("Price", {
       size: 140,
-      header: () => <div className="text-right font-semibold text-md">Price</div>,
+      header: () => (
+        <div className="text-right font-semibold text-md">Price</div>
+      ),
       cell: ({ row }) => {
         return (
           <div className="text-right font-semibold text-sm md:text-md">
@@ -76,7 +78,9 @@ export const createColumns = (onEdit: (productId: number) => void) =>
     }),
     columnHelper.accessor("Stock", {
       size: 80,
-      header: () => <div className="text-right font-semibold text-md">Stock</div>,
+      header: () => (
+        <div className="text-right font-semibold text-md">Stock</div>
+      ),
       cell: ({ row }) => {
         return (
           <div className="text-right font-semibold text-sm md:text-md">
@@ -88,8 +92,6 @@ export const createColumns = (onEdit: (productId: number) => void) =>
     {
       id: "actions",
       size: 100,
-      cell: ({ row }: { row: any }) => (
-        <ProductActions row={row.original} onEdit={onEdit} />
-      ),
+      cell: ({ row }) => <ProductActions row={row.original} onEdit={onEdit} />,
     },
   ]);
