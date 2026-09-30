@@ -226,7 +226,7 @@ export default function Page() {
 
           <Quantity
             quantity={quantity}
-            currentStock={activeVariant?.Stock!}
+            currentStock={activeVariant?.Stock}
             setQuantity={setQuantity}
           />
 
