@@ -15,6 +15,7 @@ import type { DataProp } from "editorjs-blocks-react-renderer";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { clsx } from "clsx";
 import { getHexColor } from "@/utils/colors";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 export default function Page() {
   const { id } = useParams();
@@ -58,10 +59,6 @@ export default function Page() {
   const handleVariantClick = (variant: VariantEntity) => {
     setSelectedVariant(variant);
     setSelectedImage(null);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN").format(amount) + "VND";
   };
 
   const handleAddToCart = async () => {

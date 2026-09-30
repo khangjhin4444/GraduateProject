@@ -3,6 +3,7 @@ import type { CartItemEntity } from "@/features/cart/schema/cart.schema";
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
 import { useAppDispatch } from "@/state/hooks";
 import { changeCartQuantityByDelta } from "@/state/profile/profileSlice";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -100,9 +101,7 @@ export default function CartItem({
     },
     [debounced],
   );
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
-  };
+
   const currentStock = item.Stock;
   // const currentStock = 0;
   if (currentStock < quantity) {
