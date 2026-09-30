@@ -2,7 +2,7 @@ import type { CartItemEntity } from "@/features/cart/schema/cart.schema";
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
 import { useAppDispatch } from "@/state/hooks";
 import { changeCartQuantityByDelta } from "@/state/profile/profileSlice";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
 
 export default function CartItem({ item }: { item: CartItemEntity }) {
+  const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState<number>(item.Quantity);
   const latestRef = useRef(item.Quantity);
@@ -34,6 +35,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     },
     onSuccess: (_, payload) => {
       syncedRef.current = payload.quantity;
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
   const doSync = async () => {
@@ -84,7 +86,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     else if (type === "input") {
       const n = parseInt(value ?? "", 10);
       if (isNaN(n) || n < 1) {
-        setQuantity(0);
+        setQuantity(1);
         return;
       } // chỉ đổi hiển thị, không dispatch, không gọi API
       next = Math.min(currentStock, n);
