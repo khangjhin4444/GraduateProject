@@ -106,7 +106,7 @@ export function ProductFormDialog({
     defaultValues: {
       name: "",
       type: "KeyboardKit",
-      subtype: "Alice",
+      subtype: SUBTYPES[initType][0],
       description: {
         time: 0,
         blocks: [],
