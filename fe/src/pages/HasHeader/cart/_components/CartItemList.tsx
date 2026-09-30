@@ -5,36 +5,27 @@ import { useState } from "react";
 import OrderSummary from "./OrderSummary";
 export default function CartItemList() {
   const { data: cart } = useCart();
-  const [selectedItems, setSelectedItems] = useState(
-    cart.items.map((item) => {
-      if (item.Stock >= item.Quantity) {
-        return {
-          ...item,
-          isChecked: true,
-        };
-      } else {
-        return {
-          ...item,
-          isChecked: false,
-        };
-      }
-    }),
-  );
+  const [checkedOverrides, setCheckedOverrides] = useState<
+    Record<number, boolean>
+  >({});
+  const [quantityOverrides, setQuantityOverrides] = useState<
+    Record<number, number>
+  >({});
+  const selectedItems = cart.items.map((item) => {
+    const Quantity = quantityOverrides[item.CartItemID] ?? item.Quantity;
+    const isChecked =
+      checkedOverrides[item.CartItemID] ?? item.Stock >= Quantity;
+    return { ...item, Quantity, isChecked };
+  });
   function handleToggleCheck(cartItemID: number) {
-    setSelectedItems((prev) =>
-      prev.map((item) =>
-        item.CartItemID === cartItemID
-          ? { ...item, isChecked: !item.isChecked }
-          : item,
-      ),
-    );
+    const current = selectedItems.find((i) => i.CartItemID === cartItemID);
+    setCheckedOverrides((prev) => ({
+      ...prev,
+      [cartItemID]: !current?.isChecked,
+    }));
   }
   function handleQuantityChange(cartItemID: number, Quantity: number) {
-    setSelectedItems((prev) =>
-      prev.map((item) =>
-        item.CartItemID === cartItemID ? { ...item, Quantity: Quantity } : item,
-      ),
-    );
+    setQuantityOverrides((prev) => ({ ...prev, [cartItemID]: Quantity }));
   }
   const cartQuantity = cart.items.reduce(
     (total, item) => total + item.Quantity,

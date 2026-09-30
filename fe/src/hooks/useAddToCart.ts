@@ -1,7 +1,7 @@
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
 import { useAppDispatch, useAppSelector } from "@/state/hooks";
 import { updateCartQuantity } from "@/state/profile/profileSlice";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export type AddToCartPayload = {
   variantId: number;
@@ -11,7 +11,7 @@ export type AddToCartPayload = {
 export const useAddToCart = () => {
   const dispatch = useAppDispatch();
   const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
-
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: AddToCartPayload) => {
       return CartUsecase.addToCart(payload);
@@ -30,6 +30,7 @@ export const useAddToCart = () => {
     },
     onSuccess: (data) => {
       dispatch(updateCartQuantity(Number(data.newQuantity!)));
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
 };
