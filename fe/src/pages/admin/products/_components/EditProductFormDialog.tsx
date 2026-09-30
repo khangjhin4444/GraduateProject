@@ -55,7 +55,7 @@ const SUBTYPES: Record<string, string[]> = {
 
 // For edit: variant image can be an existing URL (string) or a new File
 const EditVariantSchema = z.object({
-  id: z.number(),
+  variantId: z.number().optional(),
   color: z.string().min(1, { message: "Color is required" }),
   price: z
     .number({ message: "Price is required" })
@@ -142,7 +142,7 @@ export function EditProductFormDialog({
       subtype: productData.SubType,
       description: productData.Description,
       variants: productData.variants.map((v) => ({
-        id: v.VariantID,
+        variantId: v.VariantID,
         color: v.Color,
         price: v.Price,
         stock: v.Stock,
@@ -156,6 +156,13 @@ export function EditProductFormDialog({
     control: form.control,
     name: "variants",
   });
+  const oldVariants = fields.map((field) => {
+    return {
+      id: field.variantId,
+      color: field.color,
+    };
+  });
+  console.log(oldVariants);
 
   useEffect(() => {
     // Hàm return trong useEffect sẽ chạy khi component unmount
@@ -220,12 +227,22 @@ export function EditProductFormDialog({
     formData.append("description", JSON.stringify(data.description));
 
     // Variant metadata — include existingImage if no new file
-    const variantsMeta = data.variants.map((v) => ({
-      color: v.color,
-      price: v.price,
-      stock: v.stock,
-      existingImage: v.file ? undefined : v.existingImage,
-    }));
+    const variantsMeta = data.variants.map((v) => {
+      const checkOldVariant = oldVariants.find(
+        (element) =>
+          element.color.trim().toLowerCase() === v.color.trim().toLowerCase(),
+      );
+      if (checkOldVariant) {
+        v.variantId = checkOldVariant.id;
+      }
+      return {
+        variantId: v.variantId,
+        color: v.color,
+        price: v.price,
+        stock: v.stock,
+        existingImage: v.file ? undefined : v.existingImage,
+      };
+    });
     formData.append("variants", JSON.stringify(variantsMeta));
 
     // Append only NEW variant image files (in order, skipping existing)
@@ -421,7 +438,7 @@ export function EditProductFormDialog({
                   size="sm"
                   onClick={() =>
                     append({
-                      id: Date.now(),
+                      variantId: undefined,
                       color: "",
                       price: 0,
                       stock: 0,

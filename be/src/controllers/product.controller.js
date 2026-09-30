@@ -526,27 +526,48 @@ const editProductAdmin = async (req, res) => {
 
     // Validate unique colors
     const colors = variants.map((v) => v.color.trim().toLowerCase());
-    const uniqueColors = new Set(colors);
-    if (uniqueColors.size !== variants.length) {
+    if (new Set(colors).size !== variants.length) {
       return res
         .status(400)
         .json({ success: false, message: "Variant colors must be unique." });
+    }
+
+    // ===== Lấy variant hiện có trong DB =====
+    const existingVariants = await sql`
+      SELECT "VariantID", "Color", "MainImage"
+      FROM "product_variants"
+      WHERE "ProductID" = ${productId}
+    `;
+    const existingMap = new Map(
+      existingVariants.map((v) => [String(v.VariantID), v]),
+    );
+
+    // Validate: variantId gửi lên phải thuộc về sản phẩm này
+    const incomingIds = new Set();
+    for (const v of variants) {
+      if (v.variantId) {
+        const id = String(v.variantId);
+        if (!existingMap.has(id) || incomingIds.has(id)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid variantId: ${v.variantId}`,
+          });
+        }
+        incomingIds.add(id);
+      }
     }
 
     // Get uploaded files from multer
     const variantImageFiles = req.files?.variantImages || [];
     const extraImageFiles = req.files?.extraImages || [];
 
-    // Process variant images: some variants have existing URLs, some have new files
-    // New file uploads are ordered — we track which variants need new uploads
+    // Process variant images
     let newFileIndex = 0;
     const variantImageURLs = [];
     for (const v of variants) {
       if (v.existingImage) {
-        // Keep existing image URL
         variantImageURLs.push(v.existingImage);
       } else {
-        // Upload new image
         if (newFileIndex >= variantImageFiles.length) {
           return res.status(400).json({
             success: false,
@@ -567,7 +588,7 @@ const editProductAdmin = async (req, res) => {
       }
     }
 
-    // Upload new extra images to ImgBB
+    // Upload new extra images
     let newExtraImageURLs = [];
     if (extraImageFiles.length > 0) {
       try {
@@ -580,31 +601,51 @@ const editProductAdmin = async (req, res) => {
       }
     }
 
-    // Combine existing + new extra images
     const allExtraImageURLs = [...existingExtraImages, ...newExtraImageURLs];
 
-    // Update product info
-    const updateProductQueries = [
-      sql`
+    // ===== Xây dựng các query =====
+
+    // 1. Update thông tin sản phẩm
+    const updateProductQuery = sql`
       UPDATE "product"
       SET "Name" = ${name},
           "Description" = ${JSON.stringify(parsedDescription)},
           "ProductType" = ${productType},
           "SubType" = ${subType}
       WHERE "ProductID" = ${productId}
-    `,
-      sql`
-      DELETE FROM "product_variants" WHERE "ProductID" = ${productId}
-    `,
-      ...variants.map(
-        (v, i) => sql`
+    `;
+
+    // 2. Xóa những variant admin đã bỏ đi (chạy trước để tránh xung đột unique color)
+    const deleteRemovedVariantQueries = existingVariants
+      .filter((ev) => !incomingIds.has(String(ev.VariantID)))
+      .map(
+        (ev) => sql`
+          DELETE FROM "product_variants"
+          WHERE "VariantID" = ${ev.VariantID} AND "ProductID" = ${productId}
+        `,
+      );
+
+    // 3. Update variant cũ / insert variant mới
+    const upsertVariantQueries = variants.map((v, i) => {
+      if (v.variantId) {
+        return sql`
+          UPDATE "product_variants"
+          SET "Color" = ${v.color},
+              "Price" = ${v.price},
+              "Stock" = ${v.stock},
+              "MainImage" = ${variantImageURLs[i]}
+          WHERE "VariantID" = ${v.variantId} AND "ProductID" = ${productId}
+        `;
+      }
+      return sql`
         INSERT INTO "product_variants" ("ProductID", "Color", "Price", "Stock", "MainImage")
         VALUES (${productId}, ${v.color}, ${v.price}, ${v.stock}, ${variantImageURLs[i]})
-      `,
-      ),
-      sql`
-      DELETE FROM "product_images" WHERE "ProductID" = ${productId}
-    `,
+      `;
+    });
+
+    // 4. Ảnh phụ: giữ cách cũ (bảng này không bị giỏ hàng tham chiếu)
+    const extraImageQueries = [
+      sql`DELETE FROM "product_images" WHERE "ProductID" = ${productId}`,
       ...allExtraImageURLs.map(
         (imageUrl) => sql`
           INSERT INTO "product_images" ("ProductID", "ImageUrl")
@@ -612,7 +653,14 @@ const editProductAdmin = async (req, res) => {
         `,
       ),
     ];
-    await sql.transaction(updateProductQueries);
+
+    await sql.transaction([
+      updateProductQuery,
+      ...deleteRemovedVariantQueries,
+      ...upsertVariantQueries,
+      ...extraImageQueries,
+    ]);
+
     res.status(200).json({
       success: true,
       message: "Product updated successfully",
