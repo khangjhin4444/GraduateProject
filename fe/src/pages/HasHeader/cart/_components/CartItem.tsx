@@ -115,8 +115,8 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
           className="w-full h-full object-cover rounded-3xl"
         />
       </div>
-      <div className="block sm:flex-2">
-        <h2 className="font-semibold text-md md:text-lg lg:text-xl mb-2">
+      <div className="block sm:flex-2 mt-4 sm:mt-0">
+        <h2 className="font-semibold text-xl md:text-lg lg:text-xl mb-2">
           {item.Name}
         </h2>
         <div>
@@ -127,7 +127,9 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
             {item.SubType}
           </span>
         </div>
-        <p className="mt-5 text-foreground mb-5">Variant: {item.Color}</p>
+        <p className="mt-5 text-foreground text-lg mb-5">
+          Variant: {item.Color}
+        </p>
         <div className="flex justify-center items-center w-1/2  border-2 border-border py-2 px-3 rounded-2xl ">
           <button
             disabled={!canDecrease}
@@ -144,7 +146,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
             onBlur={() => {
               if (quantity < 1) setQuantity(latestRef.current);
             }}
-            className="w-full text-center"
+            className="w-full text-center text-xl sm:text-lg"
           />
           <button
             disabled={!canIncrease}
@@ -156,13 +158,14 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
         </div>
       </div>
       <div className="block sm:flex-1 ">
-        <div className="flex flex-col justify-between items-end h-full w-full">
+        <div className="flex sm:flex-col justify-between items-end h-full w-full flex-row-reverse mt-3 sm:mt-0">
           <div className="text-red-500 relative z-20">
-            <button className="cursor-pointer">
+            <button className="cursor-pointer flex gap-2 border-2 border-red-500 rounded-2xl p-2 sm:border-none sm:rounded-none sm:gap-0">
+              <span className="sm:hidden font-semibold">Delete</span>
               <Trash2 />
             </button>
           </div>
-          <div className="items-end">
+          <div>
             <span className="text-sm text-muted-foreground">
               {formatCurrency(Number(item.Price))} EACH
             </span>
