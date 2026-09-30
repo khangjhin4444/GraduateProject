@@ -43,8 +43,8 @@ export default function CartItemList() {
       ) : (
         <section className="mt-10 block lg:flex items-start gap-10 mb-10">
           <div className="block lg:flex-2">
-            {cart.items.map((item, index) => (
-              <CartItem item={item} key={index} />
+            {cart.items.map((item) => (
+              <CartItem item={item} key={item.CartItemID} />
             ))}
           </div>
           <div className="block sm:flex-1">checkout</div>
