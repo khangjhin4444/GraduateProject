@@ -338,15 +338,14 @@ export function EditProductFormDialog({
                         <FieldLabel>Type</FieldLabel>
                         <Select
                           {...field}
-                          value={type}
+                          value={field.value}
                           onValueChange={(v) => {
                             field.onChange(v);
                             setType(v!);
 
-                            form.setValue(
-                              "subtype",
-                              SUBTYPES[v as keyof typeof SUBTYPES][0],
-                            );
+                            const defaultSubtype =
+                              SUBTYPES[v as keyof typeof SUBTYPES][0];
+                            form.setValue("subtype", defaultSubtype);
                           }}
                         >
                           <SelectTrigger>
@@ -382,13 +381,13 @@ export function EditProductFormDialog({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {SUBTYPES[type as keyof typeof SUBTYPES]?.map(
-                              (s) => (
-                                <SelectItem key={s} value={s}>
-                                  {s}
-                                </SelectItem>
-                              ),
-                            )}
+                            {SUBTYPES[
+                              form.getValues("type") as keyof typeof SUBTYPES
+                            ]?.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {s}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </Field>
