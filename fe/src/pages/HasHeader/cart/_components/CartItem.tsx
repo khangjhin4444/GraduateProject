@@ -44,6 +44,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
     mutationFn: ({ variantId }: { variantId: number }) =>
       CartUsecase.deleteCartItem({ variantId }),
     onMutate: () => {
+      debounced.cancel();
       setIsDelete(true);
       setOptimistic(0);
     },
@@ -184,6 +185,7 @@ export default function CartItem({ item }: { item: CartItemEntity }) {
               <div className="text-red-500 relative z-20">
                 <button
                   className="cursor-pointer flex gap-2 border-2 border-red-500 rounded-2xl p-2 sm:border-none sm:rounded-none sm:gap-0"
+                  disabled={changeItemQuantityMutation.isPending}
                   onClick={() =>
                     deleteCartItemMutation.mutate({ variantId: item.VariantID })
                   }
