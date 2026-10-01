@@ -239,6 +239,25 @@ const deleteCartItem = async (req, res) => {
   }
 };
 
+const clearCart = async (req, res) => {
+  try {
+    const userId = req.userId;
+    await sql`
+      DELETE FROM "cart_items"
+      WHERE "CartID" IN (
+        SELECT "CartID" FROM "cart" WHERE "UserID" = ${userId}
+      )
+    `;
+    return res.status(200).json({
+      success: true,
+      message: "Deleted All Cart Item",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 const placeOrder = async (req, res) => {
   try {
     const userId = req.userId;
@@ -467,4 +486,5 @@ module.exports = {
   deleteCartItem,
   placeOrder,
   getCartQuantity,
+  clearCart,
 };
