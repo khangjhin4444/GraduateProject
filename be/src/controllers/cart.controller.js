@@ -27,7 +27,7 @@ const getCart = async (req, res) => {
       items: cartItems,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 const addToCart = async (req, res) => {
@@ -128,7 +128,7 @@ const addToCart = async (req, res) => {
     console.error("Lỗi khi thêm vào giỏ hàng:", error);
     return res
       .status(500)
-      .json({ success: false, message: "Server Error nội bộ." });
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 const changeItemQuantity = async (req, res) => {
@@ -189,7 +189,7 @@ const changeItemQuantity = async (req, res) => {
     console.error("Lỗi khi thêm vào giỏ hàng:", error);
     return res
       .status(500)
-      .json({ success: false, message: "Server Error nội bộ." });
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -235,7 +235,9 @@ const deleteCartItem = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -254,7 +256,9 @@ const clearCart = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -458,7 +462,7 @@ const placeOrder = async (req, res) => {
     console.error("Lỗi hệ thống thanh toán:", error);
     return res
       .status(500)
-      .json({ success: false, message: "Server Error nội bộ." });
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -476,7 +480,9 @@ const getCartQuantity = async (req, res) => {
       .json({ success: true, quantity: cartItems[0].total || 0 });
   } catch (error) {
     console.error("Error fetching cart quantity:", error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 module.exports = {

@@ -85,7 +85,9 @@ const cancelOrder = async (req, res) => {
     });
   } catch (error) {
     console.error("Error canceling order:", error);
-    return res.status(500).json({ success: false, message: "Server error." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -157,7 +159,9 @@ const cancelAdminOrder = async (req, res) => {
     });
   } catch (error) {
     console.error("Error when cancel order:", error);
-    return res.status(500).json({ success: false, message: "Server Error." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -186,7 +190,9 @@ const proceedAdminOrder = async (req, res) => {
     });
   } catch (error) {
     console.error("Error when proceed order :", error);
-    return res.status(500).json({ success: false, message: "Server Error." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 module.exports = {
