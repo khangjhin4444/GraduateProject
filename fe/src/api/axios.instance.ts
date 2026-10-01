@@ -56,22 +56,30 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
-publicApi.interceptors.response.use((response: AxiosResponse) => {
-  const schema = response.config.responseSchema;
-  if (schema) {
-    const result = schema.safeParse(response.data);
-    if (!result.success) {
-      console.error(
-        `[Zod Error] API: ${response.config.url}`,
-        z.prettifyError(result.error),
-      );
-      return Promise.reject(new Error("Wrong data format from server"));
+publicApi.interceptors.response.use(
+  (response: AxiosResponse) => {
+    const schema = response.config.responseSchema;
+    if (schema) {
+      const result = schema.safeParse(response.data);
+      if (!result.success) {
+        console.error(
+          `[Zod Error] API: ${response.config.url}`,
+          z.prettifyError(result.error),
+        );
+        return Promise.reject(new Error("Wrong data format from server"));
+      }
+      response.data = result.data;
+      return response;
     }
-    response.data = result.data;
     return response;
-  }
-  return response;
-});
+  },
+  (error: AxiosError<BackendErrorResponse>) => {
+    if (error.response?.data?.message) {
+      error.message = error.response.data.message;
+    }
+    return Promise.reject(error);
+  },
+);
 interface BackendErrorResponse {
   success: boolean;
   message: string;
