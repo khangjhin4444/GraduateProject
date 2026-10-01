@@ -148,11 +148,11 @@ export default function Header() {
               <ShoppingCart className="w-8 h-8 text-foreground" />
               <div
                 className={clsx(
-                  "absolute select-none -right-2 -top-2 bg-accent text-accent-foreground rounded-full w-6 h-6  items-center flex justify-center font-bold",
+                  "absolute select-none text-sm -right-3 -top-3 bg-accent text-accent-foreground rounded-full w-7 h-7  items-center flex justify-center font-bold",
                   { hidden: !isAuth },
                 )}
               >
-                {cartQuantity}
+                {cartQuantity <= 99 ? cartQuantity : "99+"}
               </div>
             </button>
             <button
