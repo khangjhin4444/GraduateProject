@@ -12,6 +12,12 @@ export default function OrderSummary({
 }) {
   const navigate = useNavigate();
   const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
+  const subTotalCount =
+    cartQuantity -
+    selectedItems.reduce(
+      (total, item) => (!item.isChecked ? total + item.Quantity : total),
+      0,
+    );
   const Subtotal = selectedItems.reduce(
     (total, item) =>
       item.isChecked ? total + Number(item.Price) * item.Quantity : total,
@@ -24,7 +30,7 @@ export default function OrderSummary({
         <div className="flex justify-between items-center mb-3">
           <p className="text-muted-foreground">
             Subtotal{" "}
-            {`(${cartQuantity} ${cartQuantity > 1 ? "items" : "item"})`}
+            {`(${subTotalCount} ${subTotalCount > 1 ? "items" : "item"})`}
           </p>
           <span className="text-foreground font-medium text-lg">
             {formatCurrency(Subtotal)}
@@ -44,6 +50,7 @@ export default function OrderSummary({
       <Button
         className="py-7 text-xl bg-primary text-primary-foreground cursor-pointer hover:zoom-105"
         disabled={cartQuantity === 0}
+        onClick={() => navigate("/checkout")}
       >
         Proceed to Checkout
       </Button>

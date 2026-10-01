@@ -29,12 +29,17 @@ export default function CartItemList() {
     setQuantityOverrides((prev) => ({ ...prev, [cartItemID]: Quantity }));
   }
   const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
-  console.log(cart);
+  const subTotalCount =
+    cartQuantity -
+    selectedItems.reduce(
+      (total, item) => (!item.isChecked ? total + item.Quantity : total),
+      0,
+    );
   return (
     <div>
       <div className="flex justify-between items-center ">
         <p>
-          You have {cartQuantity} {cartQuantity > 1 ? "items" : "item"} to
+          You have {subTotalCount} {subTotalCount > 1 ? "items" : "item"} to
           checkout
         </p>
         <button
