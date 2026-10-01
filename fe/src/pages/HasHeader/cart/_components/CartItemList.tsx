@@ -68,8 +68,8 @@ export default function CartItemList() {
           </div>
         </div>
       ) : (
-        <section className="mt-10 block lg:flex items-start gap-10 mb-10">
-          <div className="block lg:flex-2">
+        <section className="mt-10 block xl:flex items-start gap-10 mb-10">
+          <div className="block xl:flex-2">
             {selectedItems.map((item) => (
               <CartItem
                 item={item}
@@ -79,7 +79,7 @@ export default function CartItemList() {
               />
             ))}
           </div>
-          <div className="block sm:flex-1 sm:sticky top-50">
+          <div className="block xl:flex-1 xl:sticky top-50">
             <OrderSummary selectedItems={selectedItems}></OrderSummary>
           </div>
         </section>
