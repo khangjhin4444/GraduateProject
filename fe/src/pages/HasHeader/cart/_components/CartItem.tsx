@@ -52,7 +52,7 @@ export default function CartItem({
     const pending = queryClient.isMutating({
       predicate: (m) => m.options.scope?.id === "cart-writes",
     });
-    if (pending === 1) {
+    if (pending === 1 && !debounced.isPending()) {
       return queryClient.invalidateQueries({ queryKey: ["cart"] });
     }
   };
