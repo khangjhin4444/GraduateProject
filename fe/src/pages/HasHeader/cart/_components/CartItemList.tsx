@@ -3,10 +3,19 @@ import { Link } from "react-router";
 import CartItem from "./CartItem";
 import { useState } from "react";
 import OrderSummary from "./OrderSummary";
-import { useAppSelector } from "@/state/hooks";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
 import { useClearCart } from "@/hooks/useClearCart";
+import { updateCartQuantity } from "@/state/profile/profileSlice";
 export default function CartItemList() {
+  const dispatch = useAppDispatch();
   const { data: cart } = useCart();
+  if (cart.warnings > 0) {
+    dispatch(
+      updateCartQuantity(
+        cart.items.reduce((total, item) => total + item.Quantity, 0),
+      ),
+    );
+  }
   const [checkedOverrides, setCheckedOverrides] = useState<
     Record<number, boolean>
   >({});
