@@ -35,6 +35,15 @@ export const DeleteCartItemResponseSchema = z.object({
   message: z.string(),
 });
 
+export const ClearCartItemResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type ClearCartItemResponseEntity = z.infer<
+  typeof ClearCartItemResponseSchema
+>;
+
 export type DeleteCartItemResponseEntity = z.infer<
   typeof DeleteCartItemResponseSchema
 >;
