@@ -38,6 +38,8 @@ export default function CartItem({
     dispatch(changeCartQuantityByDelta(delta));
   };
   const changeItemQuantityMutation = useMutation({
+mutationKey: ["cart-quantity"],
+    scope: { id: "cart-writes" },
     mutationFn: (payload: { variantId: number; quantity: number }) =>
       CartUsecase.changeItemQuantity(payload),
     onError: (error: AxiosError) => {
@@ -55,6 +57,8 @@ export default function CartItem({
   });
 
   const deleteCartItemMutation = useMutation({
+mutationKey: ["cart-item-delete"],
+    scope: { id: "cart-writes" },
     mutationFn: ({ variantId }: { variantId: number }) =>
       CartUsecase.deleteCartItem({ variantId }),
     onMutate: () => {

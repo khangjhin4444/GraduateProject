@@ -13,6 +13,8 @@ export const useAddToCart = () => {
   const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: ["cart-add"],
+    scope: { id: "cart-writes" },
     mutationFn: async (payload: AddToCartPayload) => {
       return CartUsecase.addToCart(payload);
     },
