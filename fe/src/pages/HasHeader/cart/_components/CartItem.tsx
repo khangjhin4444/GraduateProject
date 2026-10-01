@@ -110,11 +110,13 @@ mutationKey: ["cart-item-delete"],
   );
 
   const currentStock = item.Stock;
-  // const currentStock = 0;
-  if (currentStock < quantity && currentStock != 0) {
-    latestRef.current = currentStock;
-    doSync();
+  useEffect(() => {
+    if (currentStock > 0 && latestRef.current > currentStock) {
+      setOptimistic(currentStock);
+      handleQuantityChangeParent(item.CartItemID, currentStock);
+      debounced();
   }
+}, [currentStock]);
 
   const canIncrease = !!(quantity < currentStock);
   const canDecrease = !!(quantity > 1);
