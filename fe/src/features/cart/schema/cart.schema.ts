@@ -22,6 +22,7 @@ const CartItemSchema = z.object({
 export const GetCartResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
+  warnings: z.number(),
   items: z.array(CartItemSchema),
 });
 
