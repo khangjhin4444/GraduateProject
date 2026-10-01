@@ -1,18 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { CartItemEntity } from "@/features/cart/schema/cart.schema";
-import { useAppSelector } from "@/state/hooks";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function OrderSummary({
   selectedItems,
+  cartQuantity,
 }: {
   selectedItems: Array<CartItemEntity & { isChecked: boolean }>;
+  cartQuantity: number;
 }) {
   const navigate = useNavigate();
-  const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
   const subTotalCount =
     cartQuantity -
     selectedItems.reduce(
