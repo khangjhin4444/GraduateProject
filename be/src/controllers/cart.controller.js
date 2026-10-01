@@ -18,6 +18,7 @@ const getCart = async (req, res) => {
       JOIN "product_variants" pv ON ci."VariantID" = pv."VariantID"
       JOIN "product" p ON pv."ProductID" = p."ProductID"
       WHERE c."UserID" = ${currentUserId}
+      ORDER BY ci."CartItemID"
     `;
 
     res.status(200).json({
