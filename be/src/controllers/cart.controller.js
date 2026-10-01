@@ -160,21 +160,21 @@ const changeItemQuantity = async (req, res) => {
       });
     }
 
-    let cartRecord = await sql`
-      SELECT "CartID" FROM "cart" WHERE "UserID" = ${userId}
+    const updatedItem = await sql`
+      UPDATE "cart_items" AS ci
+      SET "Quantity" = ${Quantity}
+      FROM "cart" AS c
+      WHERE ci."CartID" = c."CartID"
+        AND c."UserID" = ${userId}
+        AND ci."VariantID" = ${VariantID}
+      RETURNING ci."CartItemID"
     `;
-
-    let cartId = cartRecord[0].CartID;
-    const existingItem = await sql`
-      SELECT "CartItemID", "Quantity"
-      FROM "cart_items"
-      WHERE "CartID" = ${cartId} AND "VariantID" = ${VariantID}
-    `;
-    await sql`
-        UPDATE "cart_items"
-        SET "Quantity" = ${Quantity}
-        WHERE "CartItemID" = ${existingItem[0].CartItemID}
-      `;
+    if (updatedItem.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Cart item no longer exists.",
+      });
+    }
     // const newQuantity =
     //   await sql`SELECT COALESCE(SUM("Quantity"), 0) AS "TotalQuantity"
     //                         FROM "cart_items"
