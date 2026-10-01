@@ -4,6 +4,7 @@ import CartItem from "./CartItem";
 import { useState } from "react";
 import OrderSummary from "./OrderSummary";
 import { useAppSelector } from "@/state/hooks";
+import { useClearCart } from "@/hooks/useClearCart";
 export default function CartItemList() {
   const { data: cart } = useCart();
   const [checkedOverrides, setCheckedOverrides] = useState<
@@ -35,6 +36,10 @@ export default function CartItemList() {
       (total, item) => (!item.isChecked ? total + item.Quantity : total),
       0,
     );
+  const clearCartMutation = useClearCart();
+  const handleClearCart = () => {
+    clearCartMutation.mutate();
+  };
   return (
     <div>
       <div className="flex justify-between items-center ">
@@ -44,7 +49,8 @@ export default function CartItemList() {
         </p>
         <button
           className="text-muted-foreground cursor-pointer disabled:cursor-not-allowed"
-          disabled={cartQuantity === 0}
+          disabled={cartQuantity === 0 || clearCartMutation.isPending}
+          onClick={handleClearCart}
         >
           Clear cart
         </button>
