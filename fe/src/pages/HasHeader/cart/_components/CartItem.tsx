@@ -23,6 +23,7 @@ export default function CartItem({
   const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState<number>(item.Quantity);
+  const [quantityInput, setQuantityInput] = useState(String(item.Quantity));
   const latestRef = useRef(item.Quantity);
   const syncedRef = useRef(item.Quantity);
   const inFlightRef = useRef(false);
@@ -33,6 +34,7 @@ export default function CartItem({
     if (delta === 0) return;
     latestRef.current = next;
     setQuantity(next);
+    setQuantityInput(String(next));
     dispatch(changeCartQuantityByDelta(delta));
   };
   const changeItemQuantityMutation = useMutation({
@@ -79,6 +81,7 @@ export default function CartItem({
     if (target < 1 || target === syncedRef.current) return;
     inFlightRef.current = true;
     try {
+      console.log("call change with quantity: ", target);
       await changeItemQuantityMutation.mutateAsync({
         variantId: item.VariantID,
         quantity: target,
@@ -104,7 +107,7 @@ export default function CartItem({
 
   const currentStock = item.Stock;
   // const currentStock = 0;
-  if (currentStock < quantity) {
+  if (currentStock < quantity && currentStock != 0) {
     latestRef.current = currentStock;
     doSync();
   }
@@ -121,13 +124,15 @@ export default function CartItem({
 
     if (type === "decrease") next = Math.max(1, current - 1);
     else if (type === "increase") next = Math.min(currentStock, current + 1);
-    else if (type === "input") {
-      const n = parseInt(value ?? "", 10);
-      if (isNaN(n) || n < 1) {
-        setQuantity(1);
+    else if (type === "input" && value !== undefined) {
+      setQuantityInput(value);
+      if (value === "") {
         return;
-      } // chỉ đổi hiển thị, không dispatch, không gọi API
+      }
+      const n = parseInt(value.toString(), 10);
+      if (isNaN(n) || n < 1 || currentStock < 1) return;
       next = Math.min(currentStock, n);
+      setQuantityInput(String(next));
     }
 
     setOptimistic(next);
@@ -177,10 +182,13 @@ export default function CartItem({
               <input
                 type="number"
                 max={currentStock}
-                value={quantity}
+                value={quantityInput}
                 onChange={(e) => handleQuantityChange("input", e.target.value)}
                 onBlur={() => {
-                  if (quantity < 1) setQuantity(latestRef.current);
+                  if (quantityInput === "" || Number(quantityInput) < 1) {
+                    setQuantity(latestRef.current);
+                    setQuantityInput(String(latestRef.current));
+                  }
                 }}
                 className="w-full text-center text-xl sm:text-lg select-none"
               />
