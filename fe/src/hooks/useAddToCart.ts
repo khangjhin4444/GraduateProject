@@ -33,9 +33,6 @@ export const useAddToCart = () => {
       // }
       dispatch(changeCartQuantityByDelta(-payload.quantity));
     },
-    onSuccess: (data) => {
-      dispatch(updateCartQuantity(Number(data.newQuantity!)));
-    },
     onSettled: () => {
       const pending = queryClient.isMutating({
         predicate: (m) => m.options.scope?.id === "cart-writes",
