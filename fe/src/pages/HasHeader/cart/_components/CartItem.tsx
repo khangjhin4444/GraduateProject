@@ -37,6 +37,12 @@ export default function CartItem({
     setQuantityInput(String(next));
     dispatch(changeCartQuantityByDelta(delta));
   };
+const invalidateIfLast = () => {
+    const pending = queryClient.isMutating({
+      predicate: (m) => m.options.scope?.id === "cart-writes",
+    });
+    if (pending === 1) queryClient.invalidateQueries({ queryKey: ["cart"] });
+  };
   const changeItemQuantityMutation = useMutation({
 mutationKey: ["cart-quantity"],
     scope: { id: "cart-writes" },
@@ -54,6 +60,7 @@ mutationKey: ["cart-quantity"],
       // handleQuantityChangeParent(item.CartItemID, payload.quantity);
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
+onSettled: invalidateIfLast,
   });
 
   const deleteCartItemMutation = useMutation({
@@ -74,9 +81,7 @@ mutationKey: ["cart-item-delete"],
       setIsDelete(false);
       return;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
+    onSettled: invalidateIfLast,
   });
 
   const doSync = async () => {
