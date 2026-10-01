@@ -7,10 +7,8 @@ const sql = neon(process.env.DATABASE_URL);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const getCart = async (req, res) => {
   try {
-    // Lấy ID cực kỳ an toàn từ middleware verifyToken đã gắn vào trước đó
     const currentUserId = req.userId;
 
-    // Lấy danh sách sản phẩm trong giỏ kèm thông tin biến thể ảnh và giá
     const cartItems = await sql`
       SELECT ci."CartItemID", ci."Quantity", pv."MainImage", pv."Price", p."Name", p."ProductType", p."SubType", pv."Color", pv."Stock", pv."VariantID"
       FROM "cart" c
@@ -21,12 +19,38 @@ const getCart = async (req, res) => {
       ORDER BY ci."CartItemID"
     `;
 
+    let warnings = 0;
+    const updatePromises = [];
+
+    for (const item of cartItems) {
+      if (item.Stock > 0 && item.Quantity > item.Stock) {
+        warnings += 1;
+
+        updatePromises.push(
+          sql`
+            UPDATE "cart_items" 
+            SET "Quantity" = ${item.Stock} 
+            WHERE "CartItemID" = ${item.CartItemID}
+          `,
+        );
+
+        item.Quantity = item.Stock;
+      }
+    }
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+    }
+
+    let finalMessage = "Get cart items success";
+
     res.status(200).json({
       success: true,
-      message: "Get cart items success",
+      message: finalMessage,
+      warnings: warnings,
       items: cartItems,
     });
   } catch (error) {
+    console.error("Get cart error:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
