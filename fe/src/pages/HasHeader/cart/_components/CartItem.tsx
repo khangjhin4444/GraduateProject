@@ -172,7 +172,7 @@ export default function CartItem({
               className="w-full h-full object-cover rounded-3xl"
             />
           </div>
-          <div className="block sm:flex-2 mt-4 sm:mt-0">
+          <div className="block sm:flex-2 mt-4 sm:mt-0 relative">
             <h2 className="font-semibold text-xl md:text-lg lg:text-xl mb-2">
               {item.Name}
             </h2>
@@ -227,12 +227,11 @@ export default function CartItem({
                     deleteCartItemMutation.mutate({ variantId: item.VariantID })
                   }
                 >
-                  <span className="sm:hidden font-semibold">Delete</span>
                   <Trash2 />
                 </button>
               </div>
               <Checkbox
-                className="w-7 h-7 border-2 border-border"
+                className="sm:w-7 sm:h-7 border-2 border-border absolute sm:relative top-6 right-6 w-10 h-10"
                 checked={item.isChecked}
                 onClick={() => {
                   handleToggleCheck(item.CartItemID);

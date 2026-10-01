@@ -4,6 +4,7 @@ import type { CartItemEntity } from "@/features/cart/schema/cart.schema";
 import { useAppSelector } from "@/state/hooks";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export default function OrderSummary({
   selectedItems,
@@ -23,6 +24,13 @@ export default function OrderSummary({
       item.isChecked ? total + Number(item.Price) * item.Quantity : total,
     0,
   );
+  const handleNavigateCheckout = () => {
+    if (selectedItems.filter((item) => item.isChecked).length === 0) {
+      toast.error("Please select at least 1 item to checkout!");
+      return;
+    }
+    navigate("/checkout");
+  };
   return (
     <Card className="shadow-2xl px-4 py-5 bg-background w-full">
       <div className="border-b-2 border-b-border pb-4">
@@ -50,7 +58,7 @@ export default function OrderSummary({
       <Button
         className="py-7 text-xl bg-primary text-primary-foreground cursor-pointer hover:zoom-105"
         disabled={cartQuantity === 0}
-        onClick={() => navigate("/checkout")}
+        onClick={handleNavigateCheckout}
       >
         Proceed to Checkout
       </Button>
