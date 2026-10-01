@@ -86,7 +86,7 @@ router.post("/register", async (req, res) => {
     res.status(200).json({ success: true, message: "Register Success!" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
 
@@ -164,7 +164,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
 
@@ -515,7 +515,7 @@ router.post("/google", async (req, res) => {
     });
   } catch (error) {
     console.log("Lỗi Google Login Backend:", error);
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 

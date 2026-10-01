@@ -79,7 +79,7 @@ const getProducts = async (req, res) => {
     });
   } catch (error) {
     console.error("Error catch:", error);
-    res.status(500).json({ success: false, message: "Lỗi lấy dữ liệu!" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -87,39 +87,28 @@ const getProductByID = async (req, res) => {
   const productId = req.params.id;
   try {
     const product = await sql`
-      WITH VariantList AS (
-        SELECT 
-          "ProductID",
-          json_agg(
-            json_build_object(
-              'VariantID', "VariantID",
-              'Color', "Color",
-              'Price', "Price",
-              'Stock', "Stock",
-              'MainImage', "MainImage"
-            )
-          ) AS variants
-        FROM "product_variants"
-        GROUP BY "ProductID"
-      ),
-      ImageList AS (
-        SELECT 
-          "ProductID",
-          json_agg("ImageUrl") AS images
-        FROM "product_images"
-        GROUP BY "ProductID"
-      )
       SELECT 
         p."ProductID",
         p."Name",
         p."Description",
         p."ProductType",
         p."SubType",
-        COALESCE(v.variants, '[]'::json) AS variants,
-        COALESCE(i.images, '[]'::json) AS images
+        COALESCE(
+          (SELECT json_agg(
+              json_build_object(
+                'VariantID', pv."VariantID", 'Color', pv."Color", 
+                'Price', pv."Price", 'Stock', pv."Stock", 'MainImage', pv."MainImage"
+              )
+            ) 
+          FROM "product_variants" pv WHERE pv."ProductID" = p."ProductID"
+          ), '[]'::json
+        ) AS variants,
+        COALESCE(
+          (SELECT json_agg(pi."ImageUrl") 
+          FROM "product_images" pi WHERE pi."ProductID" = p."ProductID"
+          ), '[]'::json
+        ) AS images
       FROM "product" p
-      LEFT JOIN VariantList v ON p."ProductID" = v."ProductID"
-      LEFT JOIN ImageList i ON p."ProductID" = i."ProductID"
       WHERE p."ProductID" = ${productId};
     `;
 
@@ -132,7 +121,7 @@ const getProductByID = async (req, res) => {
     res.status(200).json({ success: true, data: product[0] });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Lỗi Server!" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -140,35 +129,29 @@ const getRelevantProduct = async (req, res) => {
   try {
     const productId = req.query.id;
     const type = req.query.type;
-    const idRecords = await sql`
-      SELECT "ProductID" 
-      FROM "product" 
-      WHERE "ProductType" = ${type} AND "ProductID" != ${productId}
-    `;
-
-    if (idRecords.length === 0) {
-      return res.status(200).json({ success: true, data: [] });
-    }
-    const allIds = idRecords.map((record) => record.ProductID);
-    const randomIds = allIds.sort(() => 0.5 - Math.random()).slice(0, 4);
     const finalProducts = await sql`
-      SELECT DISTINCT ON (p."ProductID") 
-          p."ProductID", 
-          p."Name", 
-          p."Description", 
+      WITH RandomProducts AS (
+        SELECT "ProductID", "Name", "Description"
+        FROM "product" 
+        WHERE "ProductType" = ${type} AND "ProductID" != ${productId}
+        ORDER BY RANDOM()
+        LIMIT 4
+      )
+      SELECT DISTINCT ON (rp."ProductID") 
+          rp."ProductID", 
+          rp."Name", 
+          rp."Description", 
           pv."MainImage" AS "MainImage",
           pv."Price" AS "Price"
-      FROM "product" p
-      LEFT JOIN "product_variants" pv ON p."ProductID" = pv."ProductID"
-      
-      WHERE p."ProductID" = ANY(${randomIds}) 
-      ORDER BY p."ProductID" ASC, pv."Color" ASC
+      FROM RandomProducts rp
+      LEFT JOIN "product_variants" pv ON rp."ProductID" = pv."ProductID"
+      ORDER BY rp."ProductID" ASC, pv."Color" ASC
     `;
 
     res.status(200).json({ success: true, data: finalProducts });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -180,44 +163,34 @@ const getProductsAdmin = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const products = await sql`
-      WITH VariantList AS (
+      WITH PaginatedProducts AS (
         SELECT 
-          "ProductID",
-          json_agg(
-            json_build_object(
-              'VariantID', "VariantID",
-              'Color', "Color",
-              'Price', "Price",
-              'Stock', "Stock",
-              'MainImage', "MainImage"
-            )
-          ) AS variants
-        FROM "product_variants"
-        GROUP BY "ProductID"
-      ),
-      ImageList AS (
-        SELECT 
-          "ProductID",
-          json_agg("ImageUrl") AS images
-        FROM "product_images"
-        GROUP BY "ProductID"
+          "ProductID", "Name", "Description", "ProductType", "SubType"
+        FROM "product"
+        WHERE "ProductType" = ${type}
+        ORDER BY "SubType" ASC, "ProductID" ASC
+        LIMIT ${limit + 1} OFFSET ${offset}
       )
       SELECT 
-        p."ProductID",
-        p."Name",
-        p."Description",
-        p."ProductType",
-        p."SubType",
-        COALESCE(v.variants, '[]'::json) AS variants,
-        COALESCE(i.images, '[]'::json) AS images
-      FROM "product" p
-      LEFT JOIN VariantList v ON p."ProductID" = v."ProductID"
-      LEFT JOIN ImageList i ON p."ProductID" = i."ProductID"
-      WHERE p."ProductType" = ${type}
-      ORDER BY p."SubType" ASC,p."ProductID" ASC
-      LIMIT ${limit + 1} OFFSET ${offset}
+        pp.*,
+        COALESCE((
+          SELECT json_agg(
+            json_build_object(
+              'VariantID', pv."VariantID", 'Color', pv."Color", 
+              'Price', pv."Price", 'Stock', pv."Stock", 'MainImage', pv."MainImage"
+            )
+          )
+          FROM "product_variants" pv
+          WHERE pv."ProductID" = pp."ProductID"
+        ), '[]'::json) AS variants,
+        COALESCE((
+          SELECT json_agg(pi."ImageUrl")
+          FROM "product_images" pi
+          WHERE pi."ProductID" = pp."ProductID"
+        ), '[]'::json) AS images
+      FROM PaginatedProducts pp
+      ORDER BY pp."SubType" ASC, pp."ProductID" ASC;
     `;
-
     const hasNextPage = products.length > limit;
     const data = hasNextPage ? products.slice(0, limit) : products;
 
@@ -231,7 +204,7 @@ const getProductsAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Lỗi phân trang:", error);
-    res.status(500).json({ success: false, message: "Lỗi lấy dữ liệu!" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -244,6 +217,8 @@ const getProductByKeyword = async (req, res) => {
     const offset = (page - 1) * limit;
     const sort = req.query.sort || "default";
     const searchPattern = `%${keyword}%`;
+    console.log(keyword);
+    console.log(searchPattern);
 
     let orderBySql = sql`"ProductID" ASC`;
 
@@ -258,8 +233,22 @@ const getProductByKeyword = async (req, res) => {
     }
 
     const products = await sql`
-      SELECT
-        standard_products.*,
+      WITH BaseSearch AS (
+        SELECT DISTINCT ON (p."ProductID") 
+            p."ProductID", p."Name", p."Description", p."ProductType", p."SubType",
+            pv."MainImage" AS "MainImage", pv."Price" AS "Price"
+        FROM "product" p
+        LEFT JOIN "product_variants" pv ON p."ProductID" = pv."ProductID"
+        WHERE p."Name" ILIKE ${searchPattern} OR p."Description"::text ILIKE ${searchPattern}
+        ORDER BY p."ProductID" ASC, pv."Color" ASC
+      ),
+      PaginatedSearch AS (
+        SELECT * FROM BaseSearch
+        ORDER BY ${orderBySql}
+        LIMIT ${limit + 1} OFFSET ${offset}
+      )
+      SELECT 
+        ps.*,
         (
           SELECT json_agg(
             json_build_object(
@@ -269,25 +258,10 @@ const getProductByKeyword = async (req, res) => {
             )
           )
           FROM "product_variants" pv_sub
-          WHERE pv_sub."ProductID" = standard_products."ProductID"
+          WHERE pv_sub."ProductID" = ps."ProductID"
         ) AS variants
-      FROM (
-          SELECT DISTINCT ON (p."ProductID") 
-              p."ProductID", 
-              p."Name", 
-              p."Description", 
-              p."ProductType", 
-              p."SubType",
-              pv."MainImage" AS "MainImage",
-              pv."Price" AS "Price"
-          FROM "product" p
-          LEFT JOIN "product_variants" pv ON p."ProductID" = pv."ProductID"
-          WHERE p."Name" ILIKE ${searchPattern} 
-             OR p."Description" ILIKE ${searchPattern}
-          ORDER BY p."ProductID"
-        ) as standard_products
-        ORDER BY ${orderBySql}
-        LIMIT ${limit + 1} OFFSET ${offset}
+      FROM PaginatedSearch ps
+      ORDER BY ${orderBySql}
     `;
 
     const hasNextPage = products.length > limit;
@@ -303,7 +277,7 @@ const getProductByKeyword = async (req, res) => {
     });
   } catch (error) {
     console.error("Lỗi tìm kiếm:", error);
-    res.status(500).json({ success: false, message: "Lỗi server" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -327,7 +301,7 @@ const deleteProductAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Lỗi xóa sản phẩm:", error);
-    res.status(500).json({ success: false, message: "Lỗi xóa sản phẩm!" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -362,7 +336,7 @@ const updateProductVariantAdmin = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Error when update" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   } finally {
     // QUAN TRỌNG: Phải trả kết nối lại cho Pool, nếu không Server sẽ bị treo sau vài lần gọi
     client.release();
@@ -482,7 +456,7 @@ const addProductAdmin = async (req, res) => {
     console.error("❌ Error adding product:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to save product",
+      message: error.message || "Internal Server Error",
     });
   }
 };
@@ -669,7 +643,7 @@ const editProductAdmin = async (req, res) => {
     console.error("❌ Error editing product:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to update product",
+      message: error.message || "Internal Server Error",
     });
   }
 };
