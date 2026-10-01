@@ -119,13 +119,6 @@ export default function CartItem({
   );
 
   const currentStock = item.Stock;
-  useEffect(() => {
-    if (currentStock > 0 && latestRef.current > currentStock) {
-      setOptimistic(currentStock);
-      handleQuantityChangeParent(item.CartItemID, currentStock);
-      debounced();
-    }
-  }, [currentStock]);
 
   const canIncrease = !!(quantity < currentStock);
   const canDecrease = !!(quantity > 1);
