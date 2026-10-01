@@ -104,9 +104,13 @@ mutationKey: ["cart-item-delete"],
 
   useEffect(
     () => () => {
+if (queryClient.isMutating({ mutationKey: ["clear-cart"] }) > 0) {
+        debounced.cancel();
+      } else {
       debounced.flush();
+}
     },
-    [debounced],
+    [debounced, queryClient],
   );
 
   const currentStock = item.Stock;
