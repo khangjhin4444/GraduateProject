@@ -21,7 +21,7 @@ const getCart = async (req, res) => {
 
     let warnings = 0;
     const updatePromises = [];
-
+    let cartQuantity = 0;
     for (const item of cartItems) {
       if (item.Stock > 0 && item.Quantity > item.Stock) {
         warnings += 1;
@@ -36,6 +36,7 @@ const getCart = async (req, res) => {
 
         item.Quantity = item.Stock;
       }
+      cartQuantity += item.Quantity;
     }
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
@@ -46,7 +47,8 @@ const getCart = async (req, res) => {
     res.status(200).json({
       success: true,
       message: finalMessage,
-      warnings: warnings,
+      warnings,
+      cartQuantity,
       items: cartItems,
     });
   } catch (error) {
