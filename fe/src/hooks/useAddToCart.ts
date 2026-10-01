@@ -1,6 +1,9 @@
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
-import { useAppDispatch, useAppSelector } from "@/state/hooks";
-import { updateCartQuantity } from "@/state/profile/profileSlice";
+import { useAppDispatch } from "@/state/hooks";
+import {
+  changeCartQuantityByDelta,
+  updateCartQuantity,
+} from "@/state/profile/profileSlice";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export type AddToCartPayload = {
@@ -10,7 +13,6 @@ export type AddToCartPayload = {
 
 export const useAddToCart = () => {
   const dispatch = useAppDispatch();
-  const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["cart-add"],
@@ -19,20 +21,26 @@ export const useAddToCart = () => {
       return CartUsecase.addToCart(payload);
     },
     onMutate: async (payload) => {
-      const previousCartQuantity = cartQuantity;
-      const optimisticQuantity =
-        Number(previousCartQuantity) + payload.quantity;
-      dispatch(updateCartQuantity(optimisticQuantity));
-      return { previousCartQuantity };
+      // const previousCartQuantity = cartQuantity;
+      // const optimisticQuantity =
+      //   Number(previousCartQuantity) + payload.quantity;
+      dispatch(changeCartQuantityByDelta(payload.quantity));
+      // return { previousCartQuantity };
     },
-    onError: (_, __, context) => {
-      if (context?.previousCartQuantity !== undefined) {
-        dispatch(updateCartQuantity(context.previousCartQuantity));
-      }
+    onError: (_, payload) => {
+      // if (context?.previousCartQuantity !== undefined) {
+      //   dispatch(updateCartQuantity(context.previousCartQuantity));
+      // }
+      dispatch(changeCartQuantityByDelta(-payload.quantity));
     },
     onSuccess: (data) => {
       dispatch(updateCartQuantity(Number(data.newQuantity!)));
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+    onSettled: () => {
+      const pending = queryClient.isMutating({
+        predicate: (m) => m.options.scope?.id === "cart-writes",
+      });
+      if (pending === 1) queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
 };
