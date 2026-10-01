@@ -132,6 +132,7 @@ export default function CartItem({
       const n = parseInt(value.toString(), 10);
       if (isNaN(n) || n < 1 || currentStock < 1) return;
       next = Math.min(currentStock, n);
+      setQuantityInput(String(next));
     }
 
     setOptimistic(next);
