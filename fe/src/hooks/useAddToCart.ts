@@ -1,9 +1,6 @@
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
 import { useAppDispatch } from "@/state/hooks";
-import {
-  changeCartQuantityByDelta,
-  updateCartQuantity,
-} from "@/state/profile/profileSlice";
+import { changeCartQuantityByDelta } from "@/state/profile/profileSlice";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export type AddToCartPayload = {
