@@ -204,30 +204,13 @@ const deleteCartItem = async (req, res) => {
       });
     }
 
-    const variantRecord = await sql`
-      SELECT "Stock" FROM "product_variants" WHERE "VariantID" = ${VariantID}
-    `;
-
-    if (variantRecord.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy phiên bản sản phẩm này.",
-      });
-    }
-    let cartRecord = await sql`
-      SELECT "CartID" FROM "cart" WHERE "UserID" = ${userId}
-    `;
-
-    let cartId = cartRecord[0].CartID;
     await sql`
-      DELETE 
-      FROM "cart_items"
-      WHERE "CartID" = ${cartId} AND "VariantID" = ${VariantID}
+      DELETE FROM "cart_items"
+      USING "cart"
+      WHERE "cart_items"."CartID" = "cart"."CartID"
+        AND "cart"."UserID" = ${userId}
+        AND "cart_items"."VariantID" = ${VariantID}
     `;
-    // const newQuantity =
-    //   await sql`SELECT COALESCE(SUM("Quantity"), 0) AS "TotalQuantity"
-    //                         FROM "cart_items"
-    //                         WHERE "CartID" = ${cartId};`;
     return res.status(200).json({
       success: true,
       message: "Deleted Item",
@@ -469,15 +452,15 @@ const placeOrder = async (req, res) => {
 const getCartQuantity = async (req, res) => {
   const userId = req.userId;
   try {
-    const cartRecord = await sql`
-      SELECT "CartID" FROM "cart" WHERE "UserID" = ${userId}
-    `;
-    const cartItems = await sql`
-      SELECT SUM("Quantity") as total FROM "cart_items" WHERE "CartID" = ${cartRecord[0].CartID}
+    const result = await sql`
+      SELECT COALESCE(SUM(ci."Quantity"), 0) as total
+      FROM "cart_items" ci
+      JOIN "cart" c ON ci."CartID" = c."CartID"
+      WHERE c."UserID" = ${userId}
     `;
     return res
       .status(200)
-      .json({ success: true, quantity: cartItems[0].total || 0 });
+      .json({ success: true, quantity: result[0].total || 0 });
   } catch (error) {
     console.error("Error fetching cart quantity:", error);
     return res
