@@ -37,24 +37,35 @@ export default function CartItem({
     setQuantityInput(String(next));
     dispatch(changeCartQuantityByDelta(delta));
   };
+  const invalidateIfLast = () => {
+    const pending = queryClient.isMutating({
+      predicate: (m) => m.options.scope?.id === "cart-writes",
+    });
+    if (pending === 1) queryClient.invalidateQueries({ queryKey: ["cart"] });
+  };
   const changeItemQuantityMutation = useMutation({
+    mutationKey: ["cart-quantity"],
+    scope: { id: "cart-writes" },
     mutationFn: (payload: { variantId: number; quantity: number }) =>
       CartUsecase.changeItemQuantity(payload),
     onError: (error: AxiosError) => {
-      debounced.cancel(); // bỏ các thay đổi đang chờ
+      toast.error(error.message);
+      debounced.cancel();
+      if (queryClient.isMutating({ mutationKey: ["clear-cart"] }) > 0) return;
       setOptimistic(syncedRef.current); // rollback qua cùng đường -> badge tự đúng
       handleQuantityChangeParent(item.CartItemID, syncedRef.current);
-      toast.error(error.message);
+
       return;
     },
     onSuccess: (_, payload) => {
       syncedRef.current = payload.quantity;
-      // handleQuantityChangeParent(item.CartItemID, payload.quantity);
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
+    onSettled: invalidateIfLast,
   });
 
   const deleteCartItemMutation = useMutation({
+    mutationKey: ["cart-item-delete"],
+    scope: { id: "cart-writes" },
     mutationFn: ({ variantId }: { variantId: number }) =>
       CartUsecase.deleteCartItem({ variantId }),
     onMutate: () => {
@@ -64,15 +75,14 @@ export default function CartItem({
       handleQuantityChangeParent(item.CartItemID, 0);
     },
     onError: (error: AxiosError) => {
-      setOptimistic(syncedRef.current);
       toast.error(error.message);
+      if (queryClient.isMutating({ mutationKey: ["clear-cart"] }) > 0) return;
+      setOptimistic(syncedRef.current);
       handleQuantityChangeParent(item.CartItemID, syncedRef.current);
       setIsDelete(false);
       return;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
+    onSettled: invalidateIfLast,
   });
 
   const doSync = async () => {
@@ -100,17 +110,23 @@ export default function CartItem({
 
   useEffect(
     () => () => {
-      debounced.flush();
+      if (queryClient.isMutating({ mutationKey: ["clear-cart"] }) > 0) {
+        debounced.cancel();
+      } else {
+        debounced.flush();
+      }
     },
-    [debounced],
+    [debounced, queryClient],
   );
 
   const currentStock = item.Stock;
-  // const currentStock = 0;
-  if (currentStock < quantity && currentStock != 0) {
-    latestRef.current = currentStock;
-    doSync();
-  }
+  useEffect(() => {
+    if (currentStock > 0 && latestRef.current > currentStock) {
+      setOptimistic(currentStock);
+      handleQuantityChangeParent(item.CartItemID, currentStock);
+      debounced();
+    }
+  }, [currentStock]);
 
   const canIncrease = !!(quantity < currentStock);
   const canDecrease = !!(quantity > 1);
