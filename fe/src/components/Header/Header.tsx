@@ -46,6 +46,7 @@ import MobileProductCategory, {
   MobileNavigationLink,
 } from "./_components/MobileProductCategory";
 import DesktopProductCategory from "./_components/DesktopProductCategory";
+import { useCart } from "@/hooks/useCart";
 
 function MobileSidebarTrigger() {
   const { toggleSidebar } = useSidebar();
@@ -65,7 +66,8 @@ function MobileSidebarTrigger() {
 export default function Header() {
   const navigate = useNavigate();
   const isAuth = useAppSelector((state) => state.token.authChecked);
-  const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
+  const cartData = useCart();
+  const cartQuantity = cartData.data.cartQuantity;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [hasScrolled, setHasScrolled] = useState(false);
