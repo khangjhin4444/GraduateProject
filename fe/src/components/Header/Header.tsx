@@ -46,7 +46,8 @@ import MobileProductCategory, {
   MobileNavigationLink,
 } from "./_components/MobileProductCategory";
 import DesktopProductCategory from "./_components/DesktopProductCategory";
-import { useCart } from "@/hooks/useCart";
+import { cartQueryOptions, useCart } from "@/hooks/useCart";
+import { useQuery } from "@tanstack/react-query";
 
 function MobileSidebarTrigger() {
   const { toggleSidebar } = useSidebar();
@@ -66,8 +67,8 @@ function MobileSidebarTrigger() {
 export default function Header() {
   const navigate = useNavigate();
   const isAuth = useAppSelector((state) => state.token.authChecked);
-  const cartData = useCart();
-  const cartQuantity = cartData.data.cartQuantity;
+  const { data: cartData } = useQuery({ ...cartQueryOptions, enabled: isAuth });
+  const cartQuantity = isAuth ? (cartData?.cartQuantity ?? 0) : 0;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [hasScrolled, setHasScrolled] = useState(false);
