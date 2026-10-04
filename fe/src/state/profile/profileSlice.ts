@@ -2,7 +2,6 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 interface profileState {
   id: number;
-  cartQuantity: number;
   fullName: string | undefined;
   phoneNumber: string | undefined;
   address: string | undefined;
@@ -11,7 +10,6 @@ interface profileState {
 
 const initialState: profileState = {
   id: 0,
-  cartQuantity: 0,
   fullName: "",
   address: "",
   phoneNumber: "",
@@ -24,7 +22,6 @@ const profileSlice = createSlice({
   reducers: {
     setInfo: (state, action: PayloadAction<profileState>) => {
       state.id = action.payload.id;
-      state.cartQuantity = action.payload.cartQuantity;
       state.fullName = action.payload.fullName;
       state.address = action.payload.address;
       state.phoneNumber = action.payload.phoneNumber;
@@ -33,21 +30,9 @@ const profileSlice = createSlice({
     deleteInfo: () => {
       return initialState;
     },
-    updateCartQuantity: (state, action: PayloadAction<number>) => {
-      state.cartQuantity = action.payload;
-    },
-
-    changeCartQuantityByDelta: (state, action: PayloadAction<number>) => {
-      state.cartQuantity += action.payload;
-    },
   },
 });
 
-export const {
-  setInfo,
-  deleteInfo,
-  updateCartQuantity,
-  changeCartQuantityByDelta,
-} = profileSlice.actions;
+export const { setInfo, deleteInfo } = profileSlice.actions;
 
 export default profileSlice.reducer;

@@ -58,7 +58,6 @@ export function refreshAuth(): Promise<{
       store.dispatch(
         setInfo({
           id: data.user.id,
-          cartQuantity: Number(data.user.cartQuantity),
           fullName: data.user.Name ?? "",
           phoneNumber: data.user.Phone ?? "",
           address: data.user.Address ?? "",

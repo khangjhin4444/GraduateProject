@@ -1,7 +1,7 @@
+import type { GetCartResponseEntity } from "@/features/cart/schema/cart.schema";
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
-import { useAppDispatch } from "@/state/hooks";
-import { changeCartQuantityByDelta } from "@/state/profile/profileSlice";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export type AddToCartPayload = {
   variantId: number;
@@ -9,7 +9,6 @@ export type AddToCartPayload = {
 };
 
 export const useAddToCart = () => {
-  const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["cart-add"],
@@ -18,17 +17,23 @@ export const useAddToCart = () => {
       return CartUsecase.addToCart(payload);
     },
     onMutate: async (payload) => {
-      // const previousCartQuantity = cartQuantity;
-      // const optimisticQuantity =
-      //   Number(previousCartQuantity) + payload.quantity;
-      dispatch(changeCartQuantityByDelta(payload.quantity));
-      // return { previousCartQuantity };
+      await queryClient.cancelQueries({ queryKey: ["cart"] });
+      const previousCart = queryClient.getQueryData(["cart"]);
+      queryClient.setQueryData(["cart"], (oldCart: GetCartResponseEntity) => {
+        if (!oldCart) return oldCart;
+
+        return {
+          ...oldCart,
+          cartQuantity: oldCart.cartQuantity + payload.quantity,
+        };
+      });
+      return { previousCart };
     },
-    onError: (_, payload) => {
-      // if (context?.previousCartQuantity !== undefined) {
-      //   dispatch(updateCartQuantity(context.previousCartQuantity));
-      // }
-      dispatch(changeCartQuantityByDelta(-payload.quantity));
+    onError: (error, _, context) => {
+      toast.error(error.message);
+      if (context?.previousCart) {
+        queryClient.setQueryData(["cart"], context.previousCart);
+      }
     },
     onSettled: () => {
       const pending = queryClient.isMutating({

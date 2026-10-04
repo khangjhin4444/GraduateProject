@@ -3,31 +3,16 @@ import { Link } from "react-router";
 import CartItem from "./CartItem";
 import { useState } from "react";
 import OrderSummary from "./OrderSummary";
-import { useAppDispatch, useAppSelector } from "@/state/hooks";
-import { useClearCart } from "@/hooks/useClearCart";
-import { updateCartQuantity } from "@/state/profile/profileSlice";
 export default function CartItemList() {
-  const dispatch = useAppDispatch();
   const { data: cart } = useCart();
-  if (cart.warnings > 0) {
-    dispatch(
-      updateCartQuantity(
-        cart.items.reduce((total, item) => total + item.Quantity, 0),
-      ),
-    );
-  }
+
   const [checkedOverrides, setCheckedOverrides] = useState<
     Record<number, boolean>
   >({});
-  const [quantityOverrides, setQuantityOverrides] = useState<
-    Record<number, number>
-  >({});
-  const selectedItems = cart.items.map((item) => {
-    const Quantity = quantityOverrides[item.CartItemID] ?? item.Quantity;
-    const isChecked =
-      checkedOverrides[item.CartItemID] ?? item.Stock >= Quantity;
-    return { ...item, Quantity, isChecked };
-  });
+  const selectedItems = cart.items.map((item) => ({
+    ...item,
+    isChecked: checkedOverrides[item.CartItemID] ?? item.Stock >= item.Quantity,
+  }));
   function handleToggleCheck(cartItemID: number) {
     const current = selectedItems.find((i) => i.CartItemID === cartItemID);
     setCheckedOverrides((prev) => ({
@@ -35,20 +20,14 @@ export default function CartItemList() {
       [cartItemID]: !current?.isChecked,
     }));
   }
-  function handleQuantityChange(cartItemID: number, Quantity: number) {
-    setQuantityOverrides((prev) => ({ ...prev, [cartItemID]: Quantity }));
-  }
-  const cartQuantity = useAppSelector((state) => state.profile.cartQuantity);
+  const cartQuantity = cart.cartQuantity;
   const subTotalCount =
     cartQuantity -
     selectedItems.reduce(
       (total, item) => (!item.isChecked ? total + item.Quantity : total),
       0,
     );
-  const clearCartMutation = useClearCart();
-  const handleClearCart = () => {
-    clearCartMutation.mutate();
-  };
+
   return (
     <div>
       <div className="flex justify-between items-center ">
@@ -56,13 +35,6 @@ export default function CartItemList() {
           You have {subTotalCount} {subTotalCount > 1 ? "items" : "item"} to
           checkout
         </p>
-        <button
-          className="text-muted-foreground cursor-pointer disabled:cursor-not-allowed"
-          disabled={cartQuantity === 0 || clearCartMutation.isPending}
-          onClick={handleClearCart}
-        >
-          Clear cart
-        </button>
       </div>
 
       {cartQuantity == 0 ? (
@@ -90,12 +62,14 @@ export default function CartItemList() {
                 item={item}
                 key={item.CartItemID}
                 handleToggleCheck={handleToggleCheck}
-                handleQuantityChangeParent={handleQuantityChange}
               />
             ))}
           </div>
           <div className="block xl:flex-1 xl:sticky top-50">
-            <OrderSummary selectedItems={selectedItems}></OrderSummary>
+            <OrderSummary
+              selectedItems={selectedItems}
+              cartQuantity={cartQuantity}
+            ></OrderSummary>
           </div>
         </section>
       )}

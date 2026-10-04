@@ -53,7 +53,6 @@ export default function Page() {
       dispatch(
         setInfo({
           id: response.user.id,
-          cartQuantity: Number(response.user.cartQuantity),
           fullName: response.user.Name ?? "",
           phoneNumber: response.user.Phone ?? "",
           address: response.user.Address ?? "",
