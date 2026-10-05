@@ -30,7 +30,7 @@ export default function CartItemList() {
 
   return (
     <div>
-      <div className="flex justify-between items-center ">
+      <div className="flex justify-between items-center pb-2 border-b-2">
         <p>
           You have {subTotalCount} {subTotalCount > 1 ? "items" : "item"} to
           checkout
@@ -55,7 +55,7 @@ export default function CartItemList() {
           </div>
         </div>
       ) : (
-        <section className="mt-10 block xl:flex items-start gap-10 mb-10">
+        <section className="mt-8 block xl:flex items-start gap-10 mb-10">
           <div className="block xl:flex-2">
             {selectedItems.map((item) => (
               <CartItem
