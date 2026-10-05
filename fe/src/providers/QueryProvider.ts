@@ -9,7 +9,7 @@ export const queryClient = new QueryClient({
   }),
   defaultOptions: {
     queries: {
-      throwOnError: true,
+      throwOnError: (_error, query) => query.state.data === undefined,
     },
     mutations: {
       throwOnError: true,
