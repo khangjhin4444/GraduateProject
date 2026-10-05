@@ -415,7 +415,7 @@ const placeOrder = async (req, res) => {
         `
         INSERT INTO "order" (
           "UserID", "Date", "Shipping", "Status", "Payment", 
-          "Name", "Phone", "Address", "Total", "Request
+          "Name", "Phone", "Address", "Total", "Request"
         ) 
         VALUES (
           $1, NOW(), $2, 'Pending', $3, 
