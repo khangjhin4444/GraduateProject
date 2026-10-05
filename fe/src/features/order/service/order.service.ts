@@ -16,7 +16,11 @@ type PrepareOrder = (
 ) => Promise<PrepareOrderResponseEntity>;
 
 export interface PlaceOrderProps extends OrderForm {
-  variantIds: number[];
+  variantIds?: number[];
+  buyNow?: {
+    id: number;
+    qty: number;
+  };
 }
 
 type PlaceOrder = (
