@@ -161,16 +161,21 @@ export const router = createBrowserRouter([
             lazy: lazyLoad(() => import("@/pages/HasHeader/cart")),
             // Component: Cart,
           },
+          {
+            path: "/checkout",
+            loader: withAuth(),
+            lazy: lazyLoad(() => import("@/pages/HasHeader/checkout")),
+            // Component: Checkout,
+          },
+          {
+            path: "/order",
+            loader: withAuth(),
+            lazy: lazyLoad(() => import("@/pages/HasHeader/order")),
+          },
         ],
       },
       {
         children: [
-          {
-            path: "/checkout",
-            loader: withAuth(),
-            lazy: lazyLoad(() => import("@/pages/checkout")),
-            // Component: Checkout,
-          },
           {
             Component: AdminLayout,
             children: [

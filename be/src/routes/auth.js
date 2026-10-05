@@ -241,6 +241,7 @@ router.post("/refresh", async (req, res) => {
       `;
 
       if (activeToken.length > 0) {
+        console.log("Token is refreshing, try again later");
         return res.status(409).json({
           success: false,
           message: "Token đang được làm mới, vui lòng thử lại.",

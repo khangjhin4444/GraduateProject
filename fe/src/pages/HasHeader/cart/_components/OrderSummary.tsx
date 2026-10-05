@@ -29,7 +29,12 @@ export default function OrderSummary({
       toast.error("Please select at least 1 item to checkout!");
       return;
     }
-    navigate("/checkout");
+    const checkedItems = selectedItems
+      .filter((item) => item.isChecked)
+      .map((item) => {
+        return { id: item.VariantID, qty: item.Quantity };
+      });
+    navigate("/checkout", { state: { checkoutItems: checkedItems } });
   };
   return (
     <Card className="shadow-2xl px-4 py-5 bg-background w-full">
