@@ -95,6 +95,7 @@ export const router = createBrowserRouter([
     Component: RootLayout,
     loader: rootLoader,
     hydrateFallbackElement: <LoadingPage />,
+    errorElement: <GlobalErrorFallback />,
     children: [
       {
         path: "/",
@@ -111,7 +112,6 @@ export const router = createBrowserRouter([
           {
             path: "/home",
             Component: Home,
-            errorElement: <GlobalErrorFallback />,
           },
           { path: "/service", Component: Service },
           { path: "/contact", Component: Contact },
