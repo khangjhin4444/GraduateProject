@@ -167,6 +167,11 @@ export const router = createBrowserRouter([
             lazy: lazyLoad(() => import("@/pages/HasHeader/checkout")),
             // Component: Checkout,
           },
+          {
+            path: "/order",
+            loader: withAuth(),
+            lazy: lazyLoad(() => import("@/pages/HasHeader/order")),
+          },
         ],
       },
       {
