@@ -6,5 +6,6 @@ export const usePrepareOrder = (payload: PrepareOrderProps[]) => {
   return useQuery({
     queryKey: ["prepare-order", payload],
     queryFn: async () => OrderUsecase.prepareOrder(payload),
+    enabled: payload.length > 0,
   });
 };
