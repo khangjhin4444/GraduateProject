@@ -286,9 +286,9 @@ const placeOrder = async (req, res) => {
       address,
       shipping,
       payment,
-      total,
       variantIds,
-      buyNowItems,
+      buyNow,
+      save,
     } = req.body;
 
     if (!name || !phone || !address || !shipping || !payment) {
@@ -298,8 +298,39 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    // Xác định chế độ checkout
-    const isBuyNow = Array.isArray(buyNowItems) && buyNowItems.length > 0;
+    const isBuyNow = buyNow !== undefined;
+    const validShipping = ["Normal", "Fast"].includes(shipping);
+    const validPayment = ["COD", "Banking"].includes(payment);
+    const validBuyNow =
+      buyNow &&
+      typeof buyNow === "object" &&
+      !Array.isArray(buyNow) &&
+      Number.isSafeInteger(buyNow.id) &&
+      buyNow.id > 0 &&
+      Number.isSafeInteger(buyNow.qty) &&
+      buyNow.qty > 0;
+    const validVariantIds =
+      Array.isArray(variantIds) &&
+      variantIds.length > 0 &&
+      variantIds.every((id) => Number.isSafeInteger(id) && id > 0) &&
+      new Set(variantIds).size === variantIds.length;
+
+    if (
+      !validShipping ||
+      !validPayment ||
+      (isBuyNow && (!validBuyNow || variantIds !== undefined)) ||
+      (!isBuyNow && !validVariantIds)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order information",
+      });
+    }
+
+    const shippingFees = {
+      Normal: { COD: 40000, Banking: 20000 },
+      Fast: { COD: 80000, Banking: 40000 },
+    };
 
     // 1. Mở một kết nối (Client) chuyên dụng từ Pool để giữ Transaction
     const client = await pool.connect();
@@ -311,25 +342,23 @@ const placeOrder = async (req, res) => {
       let orderItems = []; // Danh sách items sẽ được đưa vào order
 
       if (isBuyNow) {
-        // === CHẾ ĐỘ MUA NGAY: Lấy thông tin từ buyNowItems, không cần giỏ hàng ===
-        for (const buyItem of buyNowItems) {
-          const variantRes = await client.query(
-            `SELECT "VariantID", "Price", "Stock", "Color" FROM "product_variants" WHERE "VariantID" = $1`,
-            [buyItem.VariantID],
-          );
-          if (variantRes.rows.length === 0) {
-            throw new Error(`VARIANT_NOT_FOUND_${buyItem.VariantID}`);
-          }
-          const variant = variantRes.rows[0];
-          if (buyItem.Quantity > variant.Stock) {
-            throw new Error(`OUT_OF_STOCK_${variant.Color}_${variant.Stock}`);
-          }
-          orderItems.push({
-            VariantID: variant.VariantID,
-            Quantity: buyItem.Quantity,
-            Price: variant.Price,
-          });
+        // Buy Now receives one variant and quantity; pricing is always read from the database.
+        const variantRes = await client.query(
+          `SELECT "VariantID", "Price", "Stock", "Color" FROM "product_variants" WHERE "VariantID" = $1 FOR UPDATE`,
+          [buyNow.id],
+        );
+        if (variantRes.rows.length === 0) {
+          throw new Error(`VARIANT_NOT_FOUND_${buyNow.id}`);
         }
+        const variant = variantRes.rows[0];
+        if (buyNow.qty > variant.Stock) {
+          throw new Error(`OUT_OF_STOCK_${variant.Color}_${variant.Stock}`);
+        }
+        orderItems.push({
+          VariantID: variant.VariantID,
+          Quantity: buyNow.qty,
+          Price: variant.Price,
+        });
       } else {
         // === CHẾ ĐỘ GIỎ HÀNG: Lấy items từ cart ===
         const cartRes = await client.query(
@@ -347,15 +376,10 @@ const placeOrder = async (req, res) => {
           FROM "cart_items" ci
           JOIN "product_variants" pv ON ci."VariantID" = pv."VariantID"
           WHERE ci."CartID" = $1
+            AND ci."VariantID" = ANY($2::int[])
+          FOR UPDATE OF ci, pv
         `;
-        const queryParams = [cartId];
-
-        if (Array.isArray(variantIds) && variantIds.length > 0) {
-          itemsQuery += ` AND ci."VariantID" = ANY($2)`;
-          queryParams.push(variantIds);
-        }
-
-        const itemsRes = await client.query(itemsQuery, queryParams);
+        const itemsRes = await client.query(itemsQuery, [cartId, variantIds]);
         const cartItems = itemsRes.rows;
         if (cartItems.length === 0) throw new Error("EMPTY_CART");
 
@@ -376,11 +400,14 @@ const placeOrder = async (req, res) => {
         // Thực hiện sau khi tạo order (bước dưới)
         // Lưu cartId để dùng ở bước xóa
         orderItems._cartId = cartId;
-        orderItems._variantIds =
-          Array.isArray(variantIds) && variantIds.length > 0
-            ? variantIds
-            : null;
+        orderItems._variantIds = orderItems.map((item) => item.VariantID);
       }
+
+      const subtotal = orderItems.reduce(
+        (sum, item) => sum + Number(item.Price) * item.Quantity,
+        0,
+      );
+      const total = subtotal + shippingFees[shipping][payment];
 
       // 3. Tạo Đơn hàng mới
       const orderRes = await client.query(
@@ -420,20 +447,21 @@ const placeOrder = async (req, res) => {
         );
       }
 
-      // 5. Xóa Giỏ hàng (chỉ khi checkout từ giỏ hàng, không xóa khi Buy Now)
+      // 5. Chỉ xóa các mặt hàng đã đặt khỏi giỏ; Buy Now không thay đổi giỏ hàng.
       if (!isBuyNow && orderItems._cartId) {
-        if (orderItems._variantIds) {
-          // Chỉ xóa những item đã checkout
-          await client.query(
-            `DELETE FROM "cart_items" WHERE "CartID" = $1 AND "VariantID" = ANY($2)`,
-            [orderItems._cartId, orderItems._variantIds],
-          );
-        } else {
-          // Xóa toàn bộ (backward compatible)
-          await client.query(`DELETE FROM "cart_items" WHERE "CartID" = $1`, [
-            orderItems._cartId,
-          ]);
-        }
+        await client.query(
+          `DELETE FROM "cart_items" WHERE "CartID" = $1 AND "VariantID" = ANY($2::int[])`,
+          [orderItems._cartId, orderItems._variantIds],
+        );
+      }
+
+      if (save === true) {
+        await client.query(
+          `UPDATE "user"
+           SET "Name" = $1, "Phone" = $2, "Address" = $3
+           WHERE "UserID" = $4`,
+          [name, phone, address, userId],
+        );
       }
 
       // CHỐT GIAO DỊCH LƯU VÀO DATABASE
