@@ -16,8 +16,10 @@ import CheckoutSkeleton from "./CheckoutSkeleton";
 
 export default function CheckoutPage({
   checkoutItems,
+  isBuyNow,
 }: {
   checkoutItems: PrepareOrderProps[];
+  isBuyNow: boolean;
 }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -95,6 +97,7 @@ export default function CheckoutPage({
               setShipping={setShipping}
               items={data.items}
               placeOrderMutation={placeOrderMutation}
+              isBuyNow={isBuyNow}
             />
           </div>
           <div className="block xl:flex-1 xl:sticky top-32 h-fit">
