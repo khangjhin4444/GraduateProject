@@ -18,7 +18,6 @@ import { clsx } from "clsx";
 import { HandCoins, MapPinHouse, Truck } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 
 const OrderFormSchema = z.object({
