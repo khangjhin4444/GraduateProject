@@ -286,6 +286,7 @@ const placeOrder = async (req, res) => {
       address,
       shipping,
       payment,
+      request,
       variantIds,
       buyNow,
       save,
@@ -414,15 +415,15 @@ const placeOrder = async (req, res) => {
         `
         INSERT INTO "order" (
           "UserID", "Date", "Shipping", "Status", "Payment", 
-          "Name", "Phone", "Address", "Total"
+          "Name", "Phone", "Address", "Total", "Request
         ) 
         VALUES (
           $1, NOW(), $2, 'Pending', $3, 
-          $4, $5, $6, $7
+          $4, $5, $6, $7, $8
         )
         RETURNING "OrderID"
       `,
-        [userId, shipping, payment, name, phone, address, total],
+        [userId, shipping, payment, name, phone, address, total, request],
       );
 
       const orderId = orderRes.rows[0].OrderID;
