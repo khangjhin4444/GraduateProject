@@ -12,6 +12,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import OrderForm from "./OrderForm";
 import OrderSummary from "./OrderSummary";
+import CheckoutSkeleton from "./CheckoutSkeleton";
 
 export default function CheckoutPage({
   checkoutItems,
@@ -60,7 +61,9 @@ export default function CheckoutPage({
         </p>
       </div>
       {isPending ? (
-        <div className="mt-10 text-xl font-medium">Loading...</div>
+        <div className="mt-5">
+          <CheckoutSkeleton />
+        </div>
       ) : isError || !data ? (
         <div className="mt-10 text-red-500 text-xl font-medium">
           Something went wrong: {error?.message || "Retry later"}
