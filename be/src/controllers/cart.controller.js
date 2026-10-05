@@ -85,6 +85,12 @@ const addToCart = async (req, res) => {
     }
 
     const currentStock = variantRecord[0].Stock;
+    if (currentStock === 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Out of stock!`,
+      });
+    }
     if (Quantity > currentStock) {
       return res.status(400).json({
         success: false,
