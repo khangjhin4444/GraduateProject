@@ -209,13 +209,18 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    Component: AuthLayout,
+    errorElement: <GlobalErrorFallback />,
     children: [
-      { path: "/register", Component: Register },
-      { path: "/login", Component: Login },
+      {
+        Component: AuthLayout,
+        children: [
+          { path: "/register", Component: Register },
+          { path: "/login", Component: Login },
+        ],
+      },
+      { path: "/not-found", Component: NotFoundPage },
+      { path: "/forbidden", Component: ForbiddenPage },
+      { path: "*", Component: NotFoundPage },
     ],
   },
-  { path: "/not-found", Component: NotFoundPage },
-  { path: "/forbidden", Component: ForbiddenPage },
-  { path: "*", Component: NotFoundPage },
 ]);
