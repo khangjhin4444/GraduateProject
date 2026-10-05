@@ -22,7 +22,7 @@ export default function Page() {
   const { id } = useParams();
   const { data } = useProductDetail(Number(id!));
   const productData = data.data;
-const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const { data: relevantData, isLoading: isRelevantLoading } = useRelevant({
     type: productData.ProductType,
     id: productData.ProductID,
@@ -86,7 +86,7 @@ const queryClient = useQueryClient();
         return data.message;
       },
       error: (err) => {
-if ((err.message as string).includes("out of stock"))
+        if ((err.message as string).includes("out of stock"))
           queryClient.invalidateQueries({ queryKey: ["product", id] });
         return err.message;
       },
@@ -204,16 +204,21 @@ if ((err.message as string).includes("out of stock"))
                   return (
                     <button
                       key={`${productData.ProductID}-${index}`}
-                      title={variant.Color} // Tooltip hiện tên màu khi hover
-                      onClick={(e) => {
-                        e.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài thẻ Card
+                      title={
+                        variant.Stock === 0 ? "Out of stock" : variant.Color
+                      }
+                      disabled={variant.Stock === 0}
+                      onClick={() => {
                         handleVariantClick(variant);
                       }}
                       className={clsx(
                         "w-10 h-10 rounded-full border border-foreground transition-all",
                         isSelected
                           ? "ring-3 ring-ring ring-offset-1 scale-100"
-                          : "hover:scale-110 opacity-80 hover:opacity-100",
+                          : "",
+                        variant.Stock === 0
+                          ? "opacity-30"
+                          : "hover:scale-110 opacity-100 hover:opacity-100",
                       )}
                       style={{
                         backgroundColor: getHexColor(variant.Color),
