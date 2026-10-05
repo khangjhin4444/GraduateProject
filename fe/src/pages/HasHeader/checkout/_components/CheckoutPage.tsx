@@ -7,7 +7,7 @@ import { OrderUsecase } from "@/features/order/usecase/order.usecase";
 import { usePrepareOrder } from "@/hooks/usePrepareOrder";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import OrderForm from "./OrderForm";
@@ -44,6 +44,12 @@ export default function CheckoutPage({
     },
   });
   const { data, isPending, isError, error } = usePrepareOrder(checkoutItems);
+
+  useEffect(() => {
+    if (data?.warnings) {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    }
+  }, [data?.warnings, queryClient]);
 
   return (
     <main className="px-8 md:px-10 min-h-screen pb-10 mt-4 relative">
