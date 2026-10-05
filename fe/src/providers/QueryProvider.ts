@@ -7,4 +7,12 @@ export const queryClient = new QueryClient({
       toast.error(`An error occurred: ${error.message}`);
     },
   }),
+  defaultOptions: {
+    queries: {
+      throwOnError: (_error, query) => query.state.data === undefined,
+    },
+    mutations: {
+      throwOnError: true,
+    },
+  },
 });
