@@ -4,7 +4,7 @@ import {
 } from "@/features/product/schema/product.schema";
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import useProductDetail from "@/hooks/useProductDetail";
 import { Blocks, customRender } from "@/shared/components/BlockRender";
 import Quantity from "./Quantity";
@@ -19,6 +19,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Page() {
+  const navigate = useNavigate();
   const { id } = useParams();
   const { data } = useProductDetail(Number(id!));
   const productData = data.data;
@@ -92,7 +93,6 @@ export default function Page() {
       },
     });
   };
-
   const handleBuyNow = () => {
     if (!activeVariant) {
       toast.error("Choose a variant");
@@ -106,18 +106,16 @@ export default function Page() {
       return;
     }
 
-    const buyNowItem = {
-      VariantID: activeVariant.VariantID,
-      Quantity: qty,
-      Price: activeVariant.Price,
-      Name: productData.Name,
-      Color: activeVariant.Color,
-      MainImage: activeVariant.MainImage,
-      Stock: activeVariant.Stock,
-      CartItemID: -1, // Not in cart
-    };
-
-    sessionStorage.setItem("buy_now_session", JSON.stringify([buyNowItem]));
+    const buyNowItem = [
+      {
+        id: activeVariant.VariantID,
+        qty,
+      },
+    ];
+    navigate("/checkout", {
+      state: { checkoutItems: buyNowItem, isBuyNow: true },
+    });
+    // sessionStorage.setItem("buy_now_session", JSON.stringify([buyNowItem]));
     // router.push("/checkout");
   };
 
