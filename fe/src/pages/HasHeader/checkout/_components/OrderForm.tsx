@@ -37,6 +37,7 @@ export default function OrderForm({
   items,
   setShipping,
   placeOrderMutation,
+  isBuyNow,
 }: {
   items: OrderProdudctEntity[];
   setShipping: React.Dispatch<React.SetStateAction<number>>;
@@ -52,6 +53,7 @@ export default function OrderForm({
       toastId: string | number;
     }
   >;
+  isBuyNow: boolean;
 }) {
   const profile = useAppSelector((state) => state.profile);
   const form = useForm<OrderForm>({
@@ -72,13 +74,19 @@ export default function OrderForm({
   const [isBank, setIsBank] = useState<boolean>(false);
 
   async function onSubmit(data: OrderForm) {
-    const payload = {
-      ...data,
-      variantIds: items.map((item) => item.VariantID),
-    };
+    const payload = isBuyNow
+      ? {
+          ...data,
+          buyNow: {
+            id: items[0].VariantID,
+            qty: items[0].Quantity,
+          },
+        }
+      : {
+          ...data,
+          variantIds: items.map((item) => item.VariantID),
+        };
     await placeOrderMutation.mutateAsync(payload);
-
-    console.log(payload);
   }
   return (
     <div className="mt-7 ">
