@@ -195,10 +195,97 @@ const proceedAdminOrder = async (req, res) => {
       .json({ success: false, message: "Internal Server Error" });
   }
 };
+
+const prepareOrder = async (req, res) => {
+  try {
+    const { items } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No items provided for checkout" });
+    }
+
+    // Lấy ra danh sách các VariantID để query
+    const variantIds = items.map((item) => item.id);
+
+    // Truy vấn thông tin sản phẩm và biến thể dựa trên schema
+    const dbVariants = await sql`
+      SELECT 
+        pv."VariantID", pv."MainImage", pv."Price", pv."Color", pv."Stock",
+        p."Name", p."ProductType", p."SubType"
+      FROM "product_variants" pv
+      JOIN "product" p ON pv."ProductID" = p."ProductID"
+      WHERE pv."VariantID" = ANY(${variantIds}::int[])
+    `;
+
+    let warnings = 0;
+    let totalQuantity = 0;
+    let subTotal = 0;
+    const validItems = [];
+
+    // Duyệt qua từng item frontend gửi lên để đối chiếu với dữ liệu Database
+    for (const reqItem of items) {
+      // Tìm sản phẩm tương ứng trong kết quả Database trả về
+      const dbItem = dbVariants.find((v) => v.VariantID === reqItem.id);
+
+      // Nếu không tìm thấy trong DB (có thể do ID sai hoặc sản phẩm đã bị xóa), bỏ qua
+      if (!dbItem) continue;
+
+      // Logic kiểm tra Stock
+      if (dbItem.Stock === 0) {
+        // Nếu stock = 0, tăng biến cảnh báo và KHÔNG push vào mảng validItems
+        warnings += 1;
+        continue;
+      }
+
+      let finalQuantity = reqItem.qty;
+
+      if (finalQuantity > dbItem.Stock) {
+        // Nếu số lượng đặt lớn hơn stock hiện có, ép số lượng về bằng stock
+        finalQuantity = dbItem.Stock;
+        warnings += 1;
+      }
+
+      // Đẩy sản phẩm hợp lệ vào danh sách trả về cho màn hình Checkout
+      validItems.push({
+        VariantID: dbItem.VariantID,
+        Name: dbItem.Name,
+        ProductType: dbItem.ProductType,
+        SubType: dbItem.SubType,
+        Color: dbItem.Color,
+        MainImage: dbItem.MainImage,
+        Price: dbItem.Price,
+        Quantity: finalQuantity, // Sử dụng số lượng đã được xử lý an toàn
+      });
+
+      // Cộng dồn tổng số lượng và tạm tính
+      totalQuantity += finalQuantity;
+      subTotal += Number(dbItem.Price) * finalQuantity;
+    }
+
+    let finalMessage = "Prepare order success";
+    if (warnings > 0) {
+      finalMessage =
+        "Some item quantity had been or remove due to stock change.";
+    }
+    res.status(200).json({
+      success: true,
+      message: finalMessage,
+      warnings,
+      totalQuantity,
+      subTotal,
+      items: validItems,
+    });
+  } catch (error) {
+    console.error("Prepare order error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
 module.exports = {
   getOrders,
   cancelOrder,
   getAdminOrders,
   cancelAdminOrder,
   proceedAdminOrder,
+  prepareOrder,
 };

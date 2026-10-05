@@ -5,7 +5,7 @@ const verifyAdmin = require("../middlewares/verifyAdmin");
 const orderController = require("../controllers/order.controller");
 
 router.use(verifyToken);
-
+router.post("/prepare", orderController.prepareOrder);
 router.get("/", orderController.getOrders);
 
 router.put("/cancel", orderController.cancelOrder);
