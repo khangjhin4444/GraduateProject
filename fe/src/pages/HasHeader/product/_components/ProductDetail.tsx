@@ -16,11 +16,13 @@ import { useAddToCart } from "@/hooks/useAddToCart";
 import { clsx } from "clsx";
 import { getHexColor } from "@/utils/colors";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Page() {
   const { id } = useParams();
   const { data } = useProductDetail(Number(id!));
   const productData = data.data;
+const queryClient = useQueryClient();
   const { data: relevantData, isLoading: isRelevantLoading } = useRelevant({
     type: productData.ProductType,
     id: productData.ProductID,
@@ -84,6 +86,8 @@ export default function Page() {
         return data.message;
       },
       error: (err) => {
+if ((err.message as string).includes("out of stock"))
+          queryClient.invalidateQueries({ queryKey: ["product", id] });
         return err.message;
       },
     });
