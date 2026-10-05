@@ -1,7 +1,6 @@
 import type { GetCartResponseEntity } from "@/features/cart/schema/cart.schema";
 import { CartUsecase } from "@/features/cart/usecase/cart.usecase";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 export type AddToCartPayload = {
   variantId: number;
@@ -29,8 +28,7 @@ export const useAddToCart = () => {
       });
       return { previousCart };
     },
-    onError: (error, _, context) => {
-      toast.error(error.message);
+    onError: (__, _, context) => {
       if (context?.previousCart) {
         queryClient.setQueryData(["cart"], context.previousCart);
       }
