@@ -246,6 +246,16 @@ const prepareOrder = async (req, res) => {
         // Nếu số lượng đặt lớn hơn stock hiện có, ép số lượng về bằng stock
         finalQuantity = dbItem.Stock;
         warnings += 1;
+
+        await sql`
+          UPDATE "cart_items" AS ci
+          SET "Quantity" = ${finalQuantity}
+          FROM "cart" AS c
+          WHERE ci."CartID" = c."CartID"
+            AND c."UserID" = ${req.userId}
+            AND ci."VariantID" = ${dbItem.VariantID}
+            AND ci."Quantity" > ${dbItem.Stock}
+        `;
       }
 
       // Đẩy sản phẩm hợp lệ vào danh sách trả về cho màn hình Checkout
