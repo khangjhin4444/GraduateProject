@@ -46,7 +46,7 @@ import MobileProductCategory, {
   MobileNavigationLink,
 } from "./_components/MobileProductCategory";
 import DesktopProductCategory from "./_components/DesktopProductCategory";
-import { cartQueryOptions, useCart } from "@/hooks/useCart";
+import { cartQueryOptions } from "@/hooks/useCart";
 import { useQuery } from "@tanstack/react-query";
 
 function MobileSidebarTrigger() {
