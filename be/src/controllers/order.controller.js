@@ -228,8 +228,10 @@ const prepareOrder = async (req, res) => {
       // Tìm sản phẩm tương ứng trong kết quả Database trả về
       const dbItem = dbVariants.find((v) => v.VariantID === reqItem.id);
 
-      // Nếu không tìm thấy trong DB (có thể do ID sai hoặc sản phẩm đã bị xóa), bỏ qua
-      if (!dbItem) continue;
+      if (!dbItem) {
+        warnings += 1;
+        continue;
+      }
 
       // Logic kiểm tra Stock
       if (dbItem.Stock === 0) {
@@ -266,7 +268,7 @@ const prepareOrder = async (req, res) => {
     let finalMessage = "Prepare order success";
     if (warnings > 0) {
       finalMessage =
-        "Some item quantity had been or remove due to stock change.";
+        "Some selected items were removed or their quantities were adjusted due to stock changes.";
     }
     res.status(200).json({
       success: true,
