@@ -81,7 +81,7 @@ export default function ProductTable({ type }: { type: string }) {
     isError,
 
     error,
-  } = useAdminProductDetail({ type });
+  } = useAdminProductDetail({ type, enable: inView });
 
   const handleEdit = (productId: number) => {
     const allRows = products?.pages.flatMap((page) => page.data) ?? [];
