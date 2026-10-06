@@ -119,6 +119,17 @@ const cancelOrder = async (req, res) => {
 const getAdminOrders = async (req, res) => {
   try {
     const status = req.query.status;
+const page = Number(req.query.page ?? 1);
+    const limit = 10;
+
+    if (!Number.isSafeInteger(page) || page < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Page must be a positive integer.",
+      });
+    }
+
+    const offset = (page - 1) * limit;
     const orders = await sql`
       SELECT 
         o."OrderID",
@@ -139,7 +150,9 @@ const getAdminOrders = async (req, res) => {
             'Color', pv."Color",
             'MainImage', pv."MainImage",
             'Quantity', oi."Quantity",
-            'Price', oi."Price" 
+            'Price', oi."Price",
+            'ProductType', p. "ProductType",
+            'SubType', p. "SubType" 
           )
         ) AS items
         FROM "order" o
@@ -148,14 +161,26 @@ const getAdminOrders = async (req, res) => {
         JOIN "product" p ON pv."ProductID" = p."ProductID"
         WHERE o."Status" = ${status}
         GROUP BY o."OrderID"
-        ORDER BY o."Date" DESC;`;
+        ORDER BY o."Date" DESC, o."OrderID" DESC
+        LIMIT ${limit + 1}
+        OFFSET ${offset};`;
+    const hasNextPage = orders.length > limit;
+    const data = hasNextPage ? orders.slice(0, limit) : orders;
+
     return res.status(200).json({
       success: true,
-      length: orders ? orders.length : 0,
-      data: orders,
+page,
+      limit,
+      hasNextPage,
+      nextPage: hasNextPage ? page + 1 : null,
+      length: data.length,
+      data,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error fetching admin orders:", error);
+return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
