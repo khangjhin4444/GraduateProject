@@ -221,7 +221,7 @@ const proceedAdminOrder = async (req, res) => {
 
     const result = await sql`
       UPDATE "order"
-      SET "Status" = 'Delivered'
+      SET "Status" = 'Confirmed'
       WHERE "OrderID" = ${orderID} 
         AND "Status" = 'Pending'
       RETURNING "OrderID";
