@@ -6,6 +6,14 @@ import {
   type AdminProductResponseEntity,
   type DeleteProductAdminResponseEntity,
   DeleteProductAdminResponseSchema,
+  type GetAdminOrdersResponseEntity,
+  GetAdminOrdersResponseSchema,
+  type AdminCancelOrderResponseEntity,
+  AdminCancelOrderResponseSchema,
+  type AdminProceedOrderResponseEntity,
+  AdminProceedOrderResponseSchema,
+  type AdminDeliverOrderResponseEntity,
+  AdminDeliverOrderResponseSchema,
 } from "../schema/admin.schema";
 
 type GetProductDetail = ({
@@ -29,15 +37,32 @@ type DeleteProductAdmin = (
   variantId: number,
 ) => Promise<DeleteProductAdminResponseEntity>;
 
+type GetAdminOrders = (params: {
+  status: string;
+  page: number;
+}) => Promise<GetAdminOrdersResponseEntity>;
+
+type AdminCancelOrder = (
+  orderId: number,
+) => Promise<AdminCancelOrderResponseEntity>;
+
+type AdminProceedOrder = (
+  orderId: number,
+) => Promise<AdminProceedOrderResponseEntity>;
+
+type AdminDeliverOrder = (
+  orderId: number,
+) => Promise<AdminDeliverOrderResponseEntity>;
+
 type AdminServiceType = {
   getProductDetail: GetProductDetail;
   deleteProduct: DeleteProductAdmin;
-  // updateProductVariantAdmin: UpdateProductVariantAdmin;
   addProduct: AddProductAdmin;
   editProduct: EditProductAdmin;
-  // getAdminOrders: GetAdminOrders;
-  // cancelAdminOrder: CancelAdminOrder;
-  // proceedAdminOrder: ProceedAdminOrder;
+  getAdminOrders: GetAdminOrders;
+  adminCancelOrder: AdminCancelOrder;
+  adminProceedOrder: AdminProceedOrder;
+  adminDeliverOrder: AdminDeliverOrder;
 };
 
 export const AdminService: AdminServiceType = {
@@ -92,5 +117,50 @@ export const AdminService: AdminServiceType = {
       responseSchema: DeleteProductAdminResponseSchema,
     });
     return response.data as DeleteProductAdminResponseEntity;
+  },
+  getAdminOrders: async ({ status, page }) => {
+    const response = await privateApi.request({
+      method: "GET",
+      url: "/api/orders/admin",
+      params: {
+        status,
+        page,
+      },
+      responseSchema: GetAdminOrdersResponseSchema,
+    });
+    return response.data as GetAdminOrdersResponseEntity;
+  },
+  adminCancelOrder: async (orderId: number) => {
+    const response = await privateApi.request({
+      method: "PUT",
+      url: "/api/orders/admin/cancel",
+      data: {
+        orderID: orderId,
+      },
+      responseSchema: AdminCancelOrderResponseSchema,
+    });
+    return response.data as AdminCancelOrderResponseEntity;
+  },
+  adminProceedOrder: async (orderId: number) => {
+    const response = await privateApi.request({
+      method: "PUT",
+      url: "/api/orders/admin/proceed",
+      data: {
+        orderID: orderId,
+      },
+      responseSchema: AdminProceedOrderResponseSchema,
+    });
+    return response.data as AdminProceedOrderResponseEntity;
+  },
+  adminDeliverOrder: async (orderId: number) => {
+    const response = await privateApi.request({
+      method: "PUT",
+      url: "/api/orders/admin/deliver",
+      data: {
+        orderID: orderId,
+      },
+      responseSchema: AdminDeliverOrderResponseSchema,
+    });
+    return response.data as AdminDeliverOrderResponseEntity;
   },
 };

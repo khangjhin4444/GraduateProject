@@ -7,4 +7,11 @@ export const AdminUsecase = {
   editProduct: (productId: number, formData: FormData) =>
     AdminService.editProduct(productId, formData),
   deleteProduct: (variantId: number) => AdminService.deleteProduct(variantId),
+  getAdminOrders: ({ status, page }: { status: string; page: number }) =>
+    AdminService.getAdminOrders({ status, page }),
+  adminCancelOrder: (orderId: number) => AdminService.adminCancelOrder(orderId),
+  adminProceedOrder: (orderId: number) =>
+    AdminService.adminProceedOrder(orderId),
+  adminDeliverOrder: (orderId: number) =>
+    AdminService.adminDeliverOrder(orderId),
 };

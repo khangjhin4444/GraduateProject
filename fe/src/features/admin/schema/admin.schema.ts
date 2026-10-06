@@ -88,6 +88,74 @@ export const DeleteProductAdminResponseSchema = z.object({
   message: z.string(),
 });
 
+const OrderItemSchema = z.object({
+  OrderItemID: z.number(),
+  Name: z.string(),
+  Color: z.string(),
+  MainImage: z.string(),
+  Quantity: z.number(),
+  Price: z.union([z.string(), z.number()]),
+  ProductType: z.string(),
+  SubType: z.string(),
+});
+
+const OrderSchema = z.object({
+  OrderID: z.number(),
+  UserID: z.number(),
+  Date: z.string(),
+  Shipping: z.string(),
+  Status: z.string(),
+  Payment: z.string(),
+  ReceiverName: z.string(),
+  Phone: z.string(),
+  Address: z.string(),
+  Total: z.union([z.string(), z.number()]),
+  Request: z.string().nullable(),
+  items: z.array(OrderItemSchema),
+});
+
+export const GetAdminOrdersResponseSchema = z.object({
+  success: z.boolean(),
+  page: z.number(),
+  limit: z.number(),
+  hasNextPage: z.boolean(),
+  nextPage: z.number().nullable(),
+  length: z.number(),
+  data: z.array(OrderSchema),
+});
+
+export const AdminCancelOrderResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export const AdminProceedOrderResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type AdminProceedOrderResponseEntity = z.infer<
+  typeof AdminCancelOrderResponseSchema
+>;
+
+export const AdminDeliverOrderResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type AdminDeliverOrderResponseEntity = z.infer<
+  typeof AdminCancelOrderResponseSchema
+>;
+
+export type AdminCancelOrderResponseEntity = z.infer<
+  typeof AdminCancelOrderResponseSchema
+>;
+
+export type GetAdminOrdersResponseEntity = z.infer<
+  typeof GetAdminOrdersResponseSchema
+>;
+export type OrderEntity = z.infer<typeof OrderSchema>;
+export type OrderItemEntity = z.infer<typeof OrderItemSchema>;
 export type DeleteProductAdminResponseEntity = z.infer<
   typeof DeleteProductAdminResponseSchema
 >;
