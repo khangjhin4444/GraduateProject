@@ -1,6 +1,6 @@
 import useOrders from "@/hooks/useOrders";
 import OrderCard from "./OrderCard";
-import OrderListSkeleton from "./OrderListSkeleton";
+import OrderListSkeleton from "@/shared/components/OrderListSkeleton";
 
 export default function OrderList({ status }: { status: string }) {
   const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage } =
