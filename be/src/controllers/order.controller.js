@@ -82,7 +82,7 @@ const cancelOrder = async (req, res) => {
       RETURNING "OrderID";
     `;
     console.log(result);
-    if (result.rowCount === 0) {
+    if (result.length === 0) {
       return res.status(400).json({
         success: false,
         message:
