@@ -1,8 +1,7 @@
 import type { OrderItemEntity } from "@/features/order/schema/order.schema";
 import { formatCurrency } from "@/utils/formatCurrency";
-// import { formatSubtype } from "@/utils/formatSubtype";
 
-export default function ItemCard({ item }: { item: OrderItemEntity }) {
+export default function OrderItemCard({ item }: { item: OrderItemEntity }) {
   return (
     <div className="lg:flex items-center border-b pb-2 mb-3">
       <div className="flex gap-5 flex-3">
@@ -21,11 +20,11 @@ export default function ItemCard({ item }: { item: OrderItemEntity }) {
           <p className="text-muted-foreground text-xs sm:text-sm md:text-sm">
             {formatCurrency(Number(item.Price))} x {item.Quantity}
           </p>
-          <p className="font-semibold mt-auto text-lg lg:hidden ">
-            {formatCurrency(Number(item.Price) * item.Quantity)}
-          </p>
         </div>
       </div>
+      <p className="font-semibold  text-lg lg:hidden text-right w-full mt-2">
+        {formatCurrency(Number(item.Price) * item.Quantity)}
+      </p>
       <div className="hidden lg:block flex-1 font-semibold text-md">
         {formatCurrency(Number(item.Price) * item.Quantity)}
       </div>
