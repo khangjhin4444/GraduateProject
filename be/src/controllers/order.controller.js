@@ -1,5 +1,10 @@
-const { neon } = require("@neondatabase/serverless");
+const { neon, Pool, neonConfig } = require("@neondatabase/serverless");
+const ws = require("ws");
+
+neonConfig.webSocketConstructor = ws;
+
 const sql = neon(process.env.DATABASE_URL);
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const getOrders = async (req, res) => {
   try {
@@ -185,33 +190,64 @@ const getAdminOrders = async (req, res) => {
 };
 
 const cancelAdminOrder = async (req, res) => {
-  try {
-    const { orderID } = req.body;
+  const { orderID } = req.body;
+  let client;
 
-    const result = await sql`
-      UPDATE "order"
-      SET "Status" = 'Canceled'
-      WHERE "OrderID" = ${orderID} 
-        AND "Status" = 'Pending'
-      RETURNING "OrderID";
-    `;
-    console.log(result);
-    if (result.length === 0) {
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `UPDATE "order"
+       SET "Status" = 'Canceled'
+       WHERE "OrderID" = $1
+         AND "Status" IN ('Pending', 'Confirmed')
+       RETURNING "OrderID"`,
+      [orderID],
+    );
+    if (result.rowCount === 0) {
+      await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
         message: "Cannot cancel order!",
       });
     }
 
+    const orderItems = await client.query(
+      `SELECT "VariantID", "Quantity"
+       FROM "order_items"
+       WHERE "OrderID" = $1`,
+      [orderID],
+    );
+
+    for (const item of orderItems.rows) {
+      await client.query(
+        `UPDATE "product_variants"
+         SET "Stock" = "Stock" + $1
+         WHERE "VariantID" = $2`,
+        [item.Quantity, item.VariantID],
+      );
+    }
+
+    await client.query("COMMIT");
     return res.status(200).json({
       success: true,
       message: "Canceled order!",
     });
   } catch (error) {
+    if (client) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("Error rolling back admin order cancellation:", rollbackError);
+      }
+    }
     console.error("Error when cancel order:", error);
     return res
       .status(500)
       .json({ success: false, message: "Internal Server Error" });
+  } finally {
+    client?.release();
   }
 };
 
