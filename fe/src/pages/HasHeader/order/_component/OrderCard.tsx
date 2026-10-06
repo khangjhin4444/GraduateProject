@@ -3,7 +3,7 @@ import type { OrderEntity } from "@/features/order/schema/order.schema";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { getClassTextByStatus } from "@/utils/getClassTextByStatus";
 import { getIconByStatus } from "@/utils/getIconByStatus";
-import ItemCard from "./ItemCard";
+import OrderItemCard from "@/shared/components/OrderItemCard";
 import OrderInformation from "./OrderInformation";
 
 export default function OrderCard({ order }: { order: OrderEntity }) {
@@ -30,7 +30,7 @@ export default function OrderCard({ order }: { order: OrderEntity }) {
           <div className="col-span-1 md:col-span-2 relative  md:h-auto md:border-r">
             <div className="md:absolute md:inset-0 overflow-y-auto scrollbar-none p-3">
               {order.items.map((item) => {
-                return <ItemCard item={item} key={item.OrderItemID} />;
+                return <OrderItemCard item={item} key={item.OrderItemID} />;
               })}
             </div>
           </div>
