@@ -154,7 +154,7 @@ export default function OrderInformation({ order }: { order: OrderEntity }) {
                   }
                   className="w-full py-4 border-2 border-foreground bg-background text-foreground hover:border-primary  hover:text-primary cursor-pointer hover:bg-white"
                 >
-                  {proceedOrderMutation.isPending
+                  {deliverOrderMutation.isPending
                     ? "Setting to Delivered..."
                     : "Set to Delivered"}
                 </Button>
