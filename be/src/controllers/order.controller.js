@@ -81,7 +81,7 @@ const cancelOrder = async (req, res) => {
     const result = await sql`
       UPDATE "order"
       SET "Status" = 'Canceled'
-      WHERE "OrderID" = ${orderID} 
+      WHERE "OrderID" = ${orderID}
         AND "UserID" = ${userID} 
         AND "Status" = 'Pending'
       RETURNING "OrderID";
@@ -289,7 +289,7 @@ const deliverAdminOrder = async (req, res) => {
     const result = await sql`
       UPDATE "order"
       SET "Status" = 'Delivered'
-      WHERE "OrderID" = ${orderID} 
+      WHERE "OrderID" = ${orderID}
         AND "Status" = 'Confirmed'
       RETURNING "OrderID";
     `;
