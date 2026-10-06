@@ -161,7 +161,9 @@ export default function Header() {
             <button
               aria-label="order-btn"
               className="hidden md:flex justify-center font-semibold text-foreground cursor-pointer items-center"
-              onClick={() => {}}
+              onClick={() => {
+                navigate("/order");
+              }}
             >
               <ReceiptText className="mr-2 h-7 w-7" />
               Orders
@@ -188,7 +190,9 @@ export default function Header() {
 
                       <DropdownMenuItem
                         className="flex md:hidden"
-                        onClick={() => {}}
+                        onClick={() => {
+                          navigate("/order");
+                        }}
                       >
                         <ReceiptText className="mr-2 h-4 w-4" />
                         Orders

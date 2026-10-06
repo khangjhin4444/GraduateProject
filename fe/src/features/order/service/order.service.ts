@@ -2,6 +2,8 @@ import type { OrderForm } from "@/pages/HasHeader/checkout/_components/OrderForm
 import {
   PlaceOrderResponseSchema,
   PrepareOrderResponseSchema,
+  GetOrdersResponseSchema,
+  type GetOrdersResponseEntity,
   type PlaceOrderResponseEntity,
   type PrepareOrderResponseEntity,
 } from "../schema/order.schema";
@@ -26,13 +28,27 @@ export interface PlaceOrderProps extends OrderForm {
 type PlaceOrder = (
   pyaload: PlaceOrderProps,
 ) => Promise<PlaceOrderResponseEntity>;
+type GetOrders = (params: {
+  status: string;
+  page: number;
+}) => Promise<GetOrdersResponseEntity>;
 
 type OrderService = {
   prepareOrder: PrepareOrder;
   placeOrder: PlaceOrder;
+  getOrders: GetOrders;
 };
 
 export const OrderService: OrderService = {
+  getOrders: async ({ status, page }) => {
+    const response = await privateApi.request({
+      method: "GET",
+      url: "/api/orders",
+      params: { status, page },
+      responseSchema: GetOrdersResponseSchema,
+    });
+    return response.data as GetOrdersResponseEntity;
+  },
   prepareOrder: async (payload: PrepareOrderProps[]) => {
     const response = await privateApi.request({
       method: "POST",
