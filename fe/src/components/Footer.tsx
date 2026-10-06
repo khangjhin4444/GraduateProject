@@ -22,8 +22,8 @@ export default function Footer() {
         <div>
           <iframe
             src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fprofile.php%3Fid%3D61575185811123&tabs&width=340&height=130&small_header=false&adapt_container_width=false&hide_cover=false&show_facepile=false&appId"
-            width="340"
-            height="250"
+            width="300"
+            height="180"
             className="border-0 rounded-2xl"
             allowFullScreen={true}
             allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
