@@ -14,5 +14,5 @@ router.get("/admin", verifyAdmin, orderController.getAdminOrders);
 
 router.put("/admin/cancel", verifyAdmin, orderController.cancelAdminOrder);
 router.put("/admin/proceed", verifyAdmin, orderController.proceedAdminOrder);
-
+router.put("/admin/deliver", verifyAdmin, orderController.deliverAdminOrder);
 module.exports = router;
