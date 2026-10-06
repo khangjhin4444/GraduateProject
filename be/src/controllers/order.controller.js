@@ -119,7 +119,7 @@ const cancelOrder = async (req, res) => {
 const getAdminOrders = async (req, res) => {
   try {
     const status = req.query.status;
-const page = Number(req.query.page ?? 1);
+    const page = Number(req.query.page ?? 1);
     const limit = 10;
 
     if (!Number.isSafeInteger(page) || page < 1) {
@@ -152,7 +152,7 @@ const page = Number(req.query.page ?? 1);
             'Quantity', oi."Quantity",
             'Price', oi."Price",
             'ProductType', p. "ProductType",
-            'SubType', p. "SubType" 
+            'SubType', p. "SubType"
           )
         ) AS items
         FROM "order" o
@@ -169,7 +169,7 @@ const page = Number(req.query.page ?? 1);
 
     return res.status(200).json({
       success: true,
-page,
+      page,
       limit,
       hasNextPage,
       nextPage: hasNextPage ? page + 1 : null,
@@ -178,7 +178,7 @@ page,
     });
   } catch (error) {
     console.error("Error fetching admin orders:", error);
-return res
+    return res
       .status(500)
       .json({ success: false, message: "Internal Server Error" });
   }
@@ -240,6 +240,37 @@ const proceedAdminOrder = async (req, res) => {
     });
   } catch (error) {
     console.error("Error when proceed order :", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+const deliverAdminOrder = async (req, res) => {
+  try {
+    const { orderID } = req.body;
+
+    const result = await sql`
+      UPDATE "order"
+      SET "Status" = 'Delivered'
+      WHERE "OrderID" = ${orderID} 
+        AND "Status" = 'Confirmed'
+      RETURNING "OrderID";
+    `;
+    console.log(result);
+    if (result.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot set status to Delivered",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Order set to Delivered!",
+    });
+  } catch (error) {
+    console.error("Error when set delivered order :", error);
     return res
       .status(500)
       .json({ success: false, message: "Internal Server Error" });
@@ -350,4 +381,5 @@ module.exports = {
   cancelAdminOrder,
   proceedAdminOrder,
   prepareOrder,
+  deliverAdminOrder,
 };
