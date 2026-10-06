@@ -11,8 +11,5 @@ export const queryClient = new QueryClient({
     queries: {
       throwOnError: (_error, query) => query.state.data === undefined,
     },
-    mutations: {
-      throwOnError: true,
-    },
   },
 });
