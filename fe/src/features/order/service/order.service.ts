@@ -6,6 +6,7 @@ import {
   type GetOrdersResponseEntity,
   type PlaceOrderResponseEntity,
   type PrepareOrderResponseEntity,
+  type CancelOrderResponseEntity,
 } from "../schema/order.schema";
 import { privateApi } from "@/api/axios.instance";
 
@@ -33,10 +34,13 @@ type GetOrders = (params: {
   page: number;
 }) => Promise<GetOrdersResponseEntity>;
 
+type CanceleOrder = (orderId: number) => Promise<CancelOrderResponseEntity>;
+
 type OrderService = {
   prepareOrder: PrepareOrder;
   placeOrder: PlaceOrder;
   getOrders: GetOrders;
+  cancelOrder: CanceleOrder;
 };
 
 export const OrderService: OrderService = {
@@ -70,5 +74,15 @@ export const OrderService: OrderService = {
       responseSchema: PlaceOrderResponseSchema,
     });
     return response.data as PlaceOrderResponseEntity;
+  },
+  cancelOrder: async (orderId: number) => {
+    const response = await privateApi.request({
+      method: "PUT",
+      url: "/api/orders/cancel",
+      data: {
+        orderID: orderId,
+      },
+    });
+    return response.data as CancelOrderResponseEntity;
   },
 };

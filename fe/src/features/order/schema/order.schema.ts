@@ -62,6 +62,15 @@ export const GetOrdersResponseSchema = z.object({
   data: z.array(OrderSchema),
 });
 
+export const CancelOrderResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type CancelOrderResponseEntity = z.infer<
+  typeof CancelOrderResponseSchema
+>;
+
 export type OrderEntity = z.infer<typeof OrderSchema>;
 export type OrderItemEntity = z.infer<typeof OrderItemSchema>;
 
