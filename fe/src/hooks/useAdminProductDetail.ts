@@ -28,7 +28,6 @@ export default function useAdminProductDetail({
 }: {
   type: string;
   page?: number;
-  limit?: number;
   enable?: boolean;
 }) {
   return useInfiniteQuery(
