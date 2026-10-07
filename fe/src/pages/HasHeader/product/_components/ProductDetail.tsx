@@ -21,12 +21,13 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function Page() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { data } = useProductDetail(Number(id!));
+  const { data, isSuccess } = useProductDetail(Number(id!));
   const productData = data.data;
   const queryClient = useQueryClient();
   const { data: relevantData, isLoading: isRelevantLoading } = useRelevant({
     type: productData.ProductType,
     id: productData.ProductID,
+    enable: isSuccess,
   });
   const relevantProducts = relevantData?.data || [];
 
