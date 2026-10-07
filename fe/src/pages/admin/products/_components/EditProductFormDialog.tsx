@@ -240,9 +240,7 @@ export function EditProductFormDialog({
               // Surface description error from Zod
               if (errors.description) {
                 setDescriptionError(
-                  errors.description.blocks?.message ??
-                    errors.description.message ??
-                    "Please enter a product description",
+                  descriptionError ?? "Please enter a product description",
                 );
               } else {
                 setDescriptionError(null);
