@@ -51,7 +51,11 @@ export function useCartItem(item: CartItemEntity) {
       variantId: number;
       quantity: number;
       editVersion: number;
-    }) => CartUsecase.changeItemQuantity(payload),
+    }) =>
+      CartUsecase.changeItemQuantity({
+        variantId: payload.variantId,
+        quantity: payload.quantity,
+      }),
     onError: (error, payload) => {
       toast.error(error.message);
       if (payload.editVersion !== editVersionRef.current) return;
@@ -172,10 +176,7 @@ export function useCartItem(item: CartItemEntity) {
     }
   }, [item.Quantity]);
 
-  const handleQuantityChange = (
-    type: QuantityChangeType,
-    value?: string,
-  ) => {
+  const handleQuantityChange = (type: QuantityChangeType, value?: string) => {
     const current = latestQuantityRef.current;
     let next = current;
 
