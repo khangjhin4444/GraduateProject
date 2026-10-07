@@ -51,7 +51,11 @@ export function useCartItem(item: CartItemEntity) {
       variantId: number;
       quantity: number;
       editVersion: number;
-    }) => CartUsecase.changeItemQuantity(payload),
+    }) =>
+      CartUsecase.changeItemQuantity({
+        variantId: payload.variantId,
+        quantity: payload.quantity,
+      }),
     onError: (error, payload) => {
       toast.error(error.message);
       if (payload.editVersion !== editVersionRef.current) return;
@@ -156,11 +160,7 @@ export function useCartItem(item: CartItemEntity) {
 
   useEffect(
     () => () => {
-      if (queryClient.isMutating({ mutationKey: ["clear-cart"] }) > 0) {
-        debounced.cancel();
-      } else {
-        debounced.flush();
-      }
+      debounced.flush();
     },
     [debounced, queryClient],
   );
@@ -172,10 +172,7 @@ export function useCartItem(item: CartItemEntity) {
     }
   }, [item.Quantity]);
 
-  const handleQuantityChange = (
-    type: QuantityChangeType,
-    value?: string,
-  ) => {
+  const handleQuantityChange = (type: QuantityChangeType, value?: string) => {
     const current = latestQuantityRef.current;
     let next = current;
 
@@ -184,11 +181,13 @@ export function useCartItem(item: CartItemEntity) {
     else if (type === "input" && value !== undefined) {
       setQuantityInput(value);
       if (value === "") {
+        updateCachedQuantity(syncedQuantityRef.current);
         debounced.cancel();
         return;
       }
       const quantity = Number(value);
       if (!Number.isInteger(quantity) || quantity < 1 || item.Stock < 1) {
+        updateCachedQuantity(syncedQuantityRef.current);
         debounced.cancel();
         return;
       }
