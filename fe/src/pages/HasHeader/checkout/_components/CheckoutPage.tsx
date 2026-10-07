@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import OrderForm from "./OrderForm";
 import OrderSummary from "./OrderSummary";
 import CheckoutSkeleton from "./CheckoutSkeleton";
+import { usePlaceOrder } from "@/hooks/usePlaceOrder";
 
 export default function CheckoutPage({
   checkoutItems,
@@ -25,27 +26,7 @@ export default function CheckoutPage({
   const navigate = useNavigate();
   const [shipping, setShipping] = useState<number>(40);
 
-  const placeOrderMutation = useMutation({
-    mutationFn: (payload: PlaceOrderProps) => OrderUsecase.placeOrder(payload),
-    onMutate: () => {
-      const toastId = toast.loading("Placing Order...");
-      return { toastId };
-    },
-    onError: (error, _, context) => {
-      if (error instanceof AxiosError && error.response?.data?.message) {
-        toast.error(error.response.data.message, { id: context?.toastId });
-      } else {
-        toast.error(error.message, { id: context?.toastId });
-      }
-    },
-    onSuccess: (_, __, context) => {
-      toast.success("Order Placed!", { id: context?.toastId });
-      navigate("/order", { replace: true });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
-  });
+  const { placeOrderMutation } = usePlaceOrder();
   const { data, isPending, isError, error } = usePrepareOrder(checkoutItems);
 
   useEffect(() => {
