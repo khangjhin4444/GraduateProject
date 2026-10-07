@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, Upload, X } from "lucide-react";
-import { toast } from "sonner";
 import { ImageUploader } from "./ImageUploader";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { z } from "zod";
@@ -32,9 +30,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditorJsInput, type EditorJsInputHandle } from "./EditorJsInput";
 import { Label } from "@/components/ui/label";
-import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
 import { EditorDataSchema } from "@/features/admin/schema/admin.schema";
-import { AxiosError } from "axios";
+import { useSaveProduct } from "@/hooks/useSaveProduct";
 
 const PRODUCT_TYPES: { value: string; label: string }[] = [
   { value: "KeyboardKit", label: "Keyboard Kit" },
@@ -84,7 +81,7 @@ const ProductFormSchema = z.object({
   extraImages: z.array(z.file()),
 });
 
-type ProductForm = z.infer<typeof ProductFormSchema>;
+export type ProductForm = z.infer<typeof ProductFormSchema>;
 
 export function ProductFormDialog({
   initType,
@@ -134,10 +131,6 @@ export function ProductFormDialog({
     name: "extraImages",
   });
 
-  const [revalidateType, setRevalidateType] = useState<
-    "KeyboardKit" | "Prebuild" | "Keycap" | "Switch"
-  >(initType as "KeyboardKit" | "Prebuild" | "Keycap" | "Switch");
-
   const handleAddExtraImage = (newFile: File) => {
     const currentImages = form.getValues("extraImages");
     form.setValue("extraImages", [...currentImages, newFile], {
@@ -155,63 +148,7 @@ export function ProductFormDialog({
     );
   };
 
-  const saveMutation = useMutation({
-    mutationFn: async (data: ProductForm) => handleSave(data),
-    onSuccess: () => {
-      onOpenChange(false);
-      onSaved(revalidateType);
-      toast.success("Product saved successfully!");
-    },
-    onError: (error) => {
-      if (error instanceof AxiosError && error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error(error.message);
-      }
-    },
-  });
-  const handleSave = async (data: ProductForm) => {
-    const colors = data.variants.map((v) => v.color.trim().toLowerCase());
-    const uniqueColors = new Set(colors);
-    const isUnique = uniqueColors.size === data.variants.length;
-    if (!isUnique) {
-      toast.error("Variant colors must be unique.");
-      throw new Error("Validation failed: duplicate colors");
-    }
-
-    // Build FormData to send files + data to backend
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("productType", data.type);
-    formData.append("subType", data.subtype);
-    formData.append("description", JSON.stringify(data.description));
-
-    // Append variant metadata as JSON (without file/main_image)
-    const variantsMeta = data.variants.map((v) => ({
-      color: v.color,
-      price: v.price,
-      stock: v.stock,
-    }));
-    formData.append("variants", JSON.stringify(variantsMeta));
-
-    // Append variant images in order
-    data.variants.forEach((v) => {
-      if (v.file) {
-        formData.append("variantImages", v.file);
-      }
-    });
-
-    // Append extra images
-    data.extraImages.forEach((f) => {
-      formData.append("extraImages", f);
-    });
-
-    await AdminUsecase.addProduct(formData);
-  };
-
-  function onSubmit(data: ProductForm) {
-    saveMutation.mutate(data);
-  }
+  const saveMutation = useSaveProduct({ onOpenChange, onSaved });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -228,13 +165,17 @@ export function ProductFormDialog({
                 });
               }
             } catch (err) {
-              console.error("Editor save failed:", err);
+              setDescriptionError(
+                err instanceof Error
+                  ? err.message
+                  : "Unable to save the product description",
+              );
+              return;
             }
             // Now trigger RHF validation + submit
             const onValid = (data: ProductForm) => {
               setDescriptionError(null);
-              // saveMutation.mutate();
-              onSubmit(data);
+              saveMutation.mutate(data);
             };
             const onInvalid = (errors: FieldErrors<ProductForm>) => {
               // Surface description error from Zod
@@ -298,7 +239,6 @@ export function ProductFormDialog({
                           value={field.value}
                           onValueChange={(v) => {
                             field.onChange(v);
-                            setRevalidateType(v!);
                             const defaultSubtype =
                               SUBTYPES[v as keyof typeof SUBTYPES][0];
                             form.setValue("subtype", defaultSubtype);
