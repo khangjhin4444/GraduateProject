@@ -19,8 +19,7 @@ export function useSaveProduct({
         variant.color.trim().toLowerCase(),
       );
       if (new Set(colors).size !== data.variants.length) {
-        toast.error("Variant colors must be unique.");
-        throw new Error("Validation failed: duplicate colors");
+        throw new Error("Variant colors must be unique.");
       }
 
       const formData = new FormData();
