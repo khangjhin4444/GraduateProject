@@ -185,11 +185,13 @@ export function useCartItem(item: CartItemEntity) {
     else if (type === "input" && value !== undefined) {
       setQuantityInput(value);
       if (value === "") {
+        updateCachedQuantity(syncedQuantityRef.current);
         debounced.cancel();
         return;
       }
       const quantity = Number(value);
       if (!Number.isInteger(quantity) || quantity < 1 || item.Stock < 1) {
+        updateCachedQuantity(syncedQuantityRef.current);
         debounced.cancel();
         return;
       }
