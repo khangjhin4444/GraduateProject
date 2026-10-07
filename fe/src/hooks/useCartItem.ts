@@ -160,11 +160,7 @@ export function useCartItem(item: CartItemEntity) {
 
   useEffect(
     () => () => {
-      if (queryClient.isMutating({ mutationKey: ["clear-cart"] }) > 0) {
-        debounced.cancel();
-      } else {
-        debounced.flush();
-      }
+      debounced.flush();
     },
     [debounced, queryClient],
   );
