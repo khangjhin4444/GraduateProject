@@ -1,15 +1,9 @@
 import { Button } from "@/components/ui/button";
-import type {
-  PlaceOrderProps,
-  PrepareOrderProps,
-} from "@/features/order/service/order.service";
-import { OrderUsecase } from "@/features/order/usecase/order.usecase";
+import type { PrepareOrderProps } from "@/features/order/service/order.service";
 import { usePrepareOrder } from "@/hooks/usePrepareOrder";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { toast } from "sonner";
 import OrderForm from "./OrderForm";
 import OrderSummary from "./OrderSummary";
 import CheckoutSkeleton from "./CheckoutSkeleton";
