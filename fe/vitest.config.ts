@@ -12,5 +12,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    coverage: {
+      provider: "v8",
+      enabled: true,
+      exclude: ["src/components/ui/*", "src/hooks/use-mobile.ts"],
+    },
   },
 });
