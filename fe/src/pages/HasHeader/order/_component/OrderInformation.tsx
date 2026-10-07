@@ -1,31 +1,13 @@
 import { Button } from "@/components/ui/button";
 import type { OrderEntity } from "@/features/order/schema/order.schema";
-import { OrderUsecase } from "@/features/order/usecase/order.usecase";
+
+import { useCancelOrder } from "@/hooks/useCancelOrder";
 import { formatCurrency } from "@/utils/formatCurrency";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+
 import { Banknote, CreditCard, MapPin, Phone, Truck, User } from "lucide-react";
-import { toast } from "sonner";
 
 export default function OrderInformation({ order }: { order: OrderEntity }) {
-  const queryClient = useQueryClient();
-  const cancelOrderMutation = useMutation({
-    mutationFn: (orderId: number) => OrderUsecase.cancelOrder(orderId),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders", order.Status] });
-    },
-    onError: (error) => {
-      if (error instanceof AxiosError) toast.error(error.message);
-      else toast.error("Error hapended when cancel order, try again later.");
-    },
-  });
-  const handleCancelOrder = (orderId: number) => {
-    const cancelOrderPromise = cancelOrderMutation.mutateAsync(orderId);
-    toast.promise(cancelOrderPromise, {
-      loading: "Canceling Order...",
-      success: "Order Canceled",
-    });
-  };
+  const { handleCancelOrder } = useCancelOrder(order);
   return (
     <>
       <p className="text-muted-foreground font-semibold text-md mb-2">
