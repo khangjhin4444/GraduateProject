@@ -326,11 +326,7 @@ export function ProductFormDialog({
                   <Plus className="h-4 w-4" /> Add variant
                 </Button>
               </div>
-              {form.formState.errors.variants?.root && (
-                <p className="text-[12px] text-red-500 font-semibold ml-3">
-                  {form.formState.errors.variants.root.message}
-                </p>
-              )}
+
               <div className="space-y-3">
                 {fields.map((field, idx) => (
                   <div
