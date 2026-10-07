@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Upload, X } from "lucide-react";
-import { toast } from "sonner";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { z } from "zod";
 import {
@@ -34,10 +32,9 @@ import {
   type EditorJsInputHandle,
 } from "./EditorJsInput";
 import { Label } from "@/components/ui/label";
-import { AdminUsecase } from "@/features/admin/usecase/admin.usecase";
 import { EditorDataSchema } from "@/features/admin/schema/admin.schema";
-import { AxiosError } from "axios";
 import VariantItem from "./VariantItem";
+import { useSaveEdit } from "@/hooks/useSaveEdit";
 
 const PRODUCT_TYPES: { value: string; label: string }[] = [
   { value: "KeyboardKit", label: "Keyboard Kit" },
@@ -70,7 +67,7 @@ const EditVariantSchema = z.object({
 export type EditVariantEntity = z.infer<typeof EditVariantSchema>;
 
 // For edit: extra images can be existing URLs or new Files
-type ExtraImageItem =
+export type ExtraImageItem =
   | { type: "existing"; url: string }
   | { type: "new"; file: File; previewUrl: string };
 
@@ -113,6 +110,31 @@ export type EditProductData = {
   images: string[];
 };
 
+function getDefaultFormValues(productData: EditProductData): EditProductForm {
+  return {
+    name: productData.Name,
+    type: productData.ProductType as EditProductForm["type"],
+    subtype: productData.SubType,
+    description: productData.Description,
+    variants: productData.variants.map((variant) => ({
+      variantId: variant.VariantID,
+      color: variant.Color,
+      price: variant.Price,
+      stock: variant.Stock,
+      file: undefined,
+      existingImage: variant.MainImage,
+    })),
+  };
+}
+
+function revokePreviewUrls(images: ExtraImageItem[]) {
+  images.forEach((image) => {
+    if (image.type === "new") {
+      URL.revokeObjectURL(image.previewUrl);
+    }
+  });
+}
+
 export function EditProductFormDialog({
   productData,
   open,
@@ -129,28 +151,21 @@ export function EditProductFormDialog({
   const [extraImages, setExtraImages] = useState<ExtraImageItem[]>(() =>
     productData.images.map((url) => ({ type: "existing" as const, url })),
   );
-
-  const [type, setType] = useState<string>(productData.ProductType);
+  const extraImagesRef = useRef(extraImages);
 
   const form = useForm<EditProductForm>({
     resolver: zodResolver(EditProductFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
-    defaultValues: {
-      name: productData.Name,
-      type: productData.ProductType as EditProductForm["type"],
-      subtype: productData.SubType,
-      description: productData.Description,
-      variants: productData.variants.map((v) => ({
-        variantId: v.VariantID,
-        color: v.Color,
-        price: v.Price,
-        stock: v.Stock,
-        file: undefined,
-        existingImage: v.MainImage,
-      })),
-    },
+    defaultValues: getDefaultFormValues(productData),
   });
+
+  useEffect(
+    () => () => {
+      revokePreviewUrls(extraImagesRef.current);
+    },
+    [],
+  );
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -162,117 +177,37 @@ export function EditProductFormDialog({
       color: field.color,
     };
   });
-  console.log(oldVariants);
 
-  useEffect(() => {
-    // Hàm return trong useEffect sẽ chạy khi component unmount
-    return () => {
-      extraImages.forEach((img) => {
-        if (img.type === "new" && img.previewUrl) {
-          URL.revokeObjectURL(img.previewUrl);
-        }
-      });
-    };
-  });
   const handleAddExtraImage = (newFile: File) => {
     const previewUrl = URL.createObjectURL(newFile);
-    setExtraImages((prev) => [
-      ...prev,
+    const nextExtraImages: ExtraImageItem[] = [
+      ...extraImagesRef.current,
       { type: "new", file: newFile, previewUrl },
-    ]);
+    ];
+    extraImagesRef.current = nextExtraImages;
+    setExtraImages(nextExtraImages);
   };
 
   const handleRemoveExtraImage = (indexToRemove: number) => {
-    if (
-      extraImages[indexToRemove].type === "new" &&
-      extraImages[indexToRemove].previewUrl
-    ) {
-      URL.revokeObjectURL(extraImages[indexToRemove].previewUrl);
+    const imageToRemove = extraImagesRef.current[indexToRemove];
+    if (!imageToRemove) return;
+    if (imageToRemove.type === "new") {
+      URL.revokeObjectURL(imageToRemove.previewUrl);
     }
-    setExtraImages((prev) =>
-      prev.filter((_, index) => index !== indexToRemove),
+    const nextExtraImages = extraImagesRef.current.filter(
+      (_, index) => index !== indexToRemove,
     );
+    extraImagesRef.current = nextExtraImages;
+    setExtraImages(nextExtraImages);
   };
 
-  const saveMutation = useMutation({
-    mutationFn: async (data: EditProductForm) => handleSave(data),
-    onSuccess: () => {
-      onOpenChange(false);
-      onSaved(type);
-      toast.success("Product updated successfully!");
-    },
-    onError: (error) => {
-      if (error instanceof AxiosError && error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error(error.message);
-      }
-    },
+  const saveMutation = useSaveEdit({
+    productId: productData.ProductID,
+    oldVariants,
+    extraImages,
+    onOpenChange,
+    onSaved,
   });
-
-  const handleSave = async (data: EditProductForm) => {
-    const colors = data.variants.map((v) => v.color.trim().toLowerCase());
-    const uniqueColors = new Set(colors);
-    const isUnique = uniqueColors.size === data.variants.length;
-    if (!isUnique) {
-      toast.error("Variant colors must be unique.");
-      throw new Error("Validation failed: duplicate colors");
-    }
-
-    // Build FormData
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("productType", data.type);
-    formData.append("subType", data.subtype);
-    formData.append("description", JSON.stringify(data.description));
-
-    // Variant metadata — include existingImage if no new file
-    const variantsMeta = data.variants.map((v) => {
-      const checkOldVariant = oldVariants.find(
-        (element) =>
-          element.color.trim().toLowerCase() === v.color.trim().toLowerCase(),
-      );
-      if (checkOldVariant) {
-        v.variantId = checkOldVariant.id;
-      }
-      return {
-        variantId: v.variantId,
-        color: v.color,
-        price: v.price,
-        stock: v.stock,
-        existingImage: v.file ? undefined : v.existingImage,
-      };
-    });
-    formData.append("variants", JSON.stringify(variantsMeta));
-
-    // Append only NEW variant image files (in order, skipping existing)
-    data.variants.forEach((v) => {
-      if (v.file) {
-        formData.append("variantImages", v.file);
-      }
-    });
-
-    // Extra images: separate existing URLs from new files
-    const existingExtraURLs = extraImages
-      .filter(
-        (item): item is { type: "existing"; url: string } =>
-          item.type === "existing",
-      )
-      .map((item) => item.url);
-    formData.append("existingExtraImages", JSON.stringify(existingExtraURLs));
-
-    extraImages.forEach((item) => {
-      if (item.type === "new") {
-        formData.append("extraImages", item.file);
-      }
-    });
-
-    await AdminUsecase.editProduct(productData.ProductID, formData);
-  };
-
-  function onSubmit(data: EditProductForm) {
-    saveMutation.mutate(data);
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -294,7 +229,7 @@ export function EditProductFormDialog({
             // Now trigger RHF validation + submit
             const onValid = (data: EditProductForm) => {
               setDescriptionError(null);
-              onSubmit(data);
+              saveMutation.mutate(data);
             };
             const onInvalid = (errors: FieldErrors<EditProductForm>) => {
               // Surface description error from Zod
@@ -358,8 +293,6 @@ export function EditProductFormDialog({
                           value={field.value}
                           onValueChange={(v) => {
                             field.onChange(v);
-                            setType(v!);
-
                             const defaultSubtype =
                               SUBTYPES[v as keyof typeof SUBTYPES][0];
                             form.setValue("subtype", defaultSubtype);

@@ -91,6 +91,7 @@ export default function ProductTable({ type }: { type: string }) {
     if (matchingRows.length === 0) return;
 
     const first = matchingRows[0];
+
     const productData: EditProductData = {
       ProductID: first.ProductID,
       Name: first.Name,
@@ -106,7 +107,6 @@ export default function ProductTable({ type }: { type: string }) {
       })),
       images: first.ExtraImages,
     };
-
     setEditProductData(productData);
     setEditDialogOpen(true);
   };
