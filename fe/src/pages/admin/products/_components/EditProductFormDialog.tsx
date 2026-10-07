@@ -224,7 +224,12 @@ export function EditProductFormDialog({
                 });
               }
             } catch (err) {
-              console.error("Editor save failed:", err);
+              setDescriptionError(
+                err instanceof Error
+                  ? err.message
+                  : "Unable to save the product description",
+              );
+              return;
             }
             // Now trigger RHF validation + submit
             const onValid = (data: EditProductForm) => {
