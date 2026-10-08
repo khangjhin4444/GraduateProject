@@ -323,7 +323,9 @@ describe("useCartItem", () => {
       queryClient.getQueryData<GetCartResponseEntity>(["cart"])?.items[0]
         ?.Quantity,
     ).toBe(3);
-    expect(toast.error).toHaveBeenCalledWith("Quantity update failed");
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith(
+      "Quantity update failed",
+    );
   });
 
   it("optimistically removes an item and restores its position on delete failure", async () => {
@@ -361,7 +363,7 @@ describe("useCartItem", () => {
     expect(
       queryClient.getQueryData<GetCartResponseEntity>(["cart"])?.cartQuantity,
     ).toBe(5);
-    expect(toast.error).toHaveBeenCalledWith("Delete failed");
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith("Delete failed");
   });
 
   it("handles a failed delete when the item is not in the cart cache", async () => {
@@ -378,9 +380,10 @@ describe("useCartItem", () => {
       await flushMicrotasks();
     });
 
-    expect(queryClient.getQueryData<GetCartResponseEntity>(["cart"])?.items)
-      .toEqual([otherItem]);
-    expect(toast.error).toHaveBeenCalledWith("Delete failed");
+    expect(
+      queryClient.getQueryData<GetCartResponseEntity>(["cart"])?.items,
+    ).toEqual([otherItem]);
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith("Delete failed");
   });
 
   it("handles a failed delete when the cart cache is missing", async () => {
@@ -398,7 +401,7 @@ describe("useCartItem", () => {
     });
 
     expect(queryClient.getQueryData(["cart"])).toBeUndefined();
-    expect(toast.error).toHaveBeenCalledWith("Delete failed");
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith("Delete failed");
   });
 
   it("does not restore a deleted item if the cart cache disappears before the request fails", async () => {

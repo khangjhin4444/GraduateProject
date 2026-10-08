@@ -142,7 +142,9 @@ describe("useSaveProduct", () => {
     expect(formData.getAll("extraImages")).toEqual([extraImage]);
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(onSaved).toHaveBeenCalledWith("KeyboardKit");
-    expect(toast.success).toHaveBeenCalledWith("Product saved successfully!");
+    expect(toast.success).toHaveBeenCalledExactlyOnceWith(
+      "Product saved successfully!",
+    );
   });
 
   it("rejects duplicate variant colors without calling the API", async () => {
@@ -161,11 +163,13 @@ describe("useSaveProduct", () => {
     await act(async () => {
       await expect(
         result.current.mutateAsync(duplicateColorForm),
-      ).rejects.toThrow("Validation failed: duplicate colors");
+      ).rejects.toThrow("Variant colors must be unique.");
     });
 
     expect(AdminUsecase.addProduct).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith("Variant colors must be unique.");
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith(
+      "Variant colors must be unique.",
+    );
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(onSaved).not.toHaveBeenCalled();
   });
@@ -182,7 +186,7 @@ describe("useSaveProduct", () => {
       await expect(result.current.mutateAsync(productForm)).rejects.toBe(error);
     });
 
-    expect(toast.error).toHaveBeenCalledWith("Create failed");
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith("Create failed");
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(onSaved).not.toHaveBeenCalled();
   });
@@ -211,7 +215,9 @@ describe("useSaveProduct", () => {
       await expect(result.current.mutateAsync(productForm)).rejects.toBe(error);
     });
 
-    expect(toast.error).toHaveBeenCalledWith("Product could not be created");
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith(
+      "Product could not be created",
+    );
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(onSaved).not.toHaveBeenCalled();
   });

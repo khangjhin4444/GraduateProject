@@ -61,8 +61,7 @@ describe("useCart Hook", () => {
 
     await waitFor(() => expect(result.current.data).toBeDefined());
 
-    expect(toast.info).toHaveBeenCalledTimes(1);
-    expect(toast.info).toHaveBeenCalledWith(
+    expect(toast.info).toHaveBeenCalledExactlyOnceWith(
       "1 item's quantity reduce due to current Stock",
     );
   });
@@ -75,8 +74,7 @@ describe("useCart Hook", () => {
 
     await waitFor(() => expect(result.current.data).toBeDefined());
 
-    expect(toast.info).toHaveBeenCalledTimes(1);
-    expect(toast.info).toHaveBeenCalledWith(
+    expect(toast.info).toHaveBeenCalledExactlyOnceWith(
       "3 items's quantity reduce due to current Stock",
     );
   });
