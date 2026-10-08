@@ -53,7 +53,8 @@ const SUBTYPES: Record<string, string[]> = {
 // For edit: variant image can be an existing URL (string) or a new File
 const EditVariantSchema = z.object({
   variantId: z.number().optional(),
-  color: z.string().min(1, { message: "Color is required" }),
+  color: z.string().min(1, { message: "Color is required" })
+      .max(20, { message: "Color must be at most 20 characters" }),
   price: z
     .number({ message: "Price is required" })
     .min(1, { message: "Price must be at least 1" }),
