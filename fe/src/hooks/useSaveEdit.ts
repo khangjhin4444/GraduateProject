@@ -34,8 +34,7 @@ export function useSaveEdit({
         variant.color.trim().toLowerCase(),
       );
       if (new Set(colors).size !== data.variants.length) {
-        toast.error("Variant colors must be unique.");
-        throw new Error("Validation failed: duplicate colors");
+        throw new Error("Variant colors must be unique.");
       }
 
       const formData = new FormData();
@@ -50,7 +49,9 @@ export function useSaveEdit({
             oldVariant.color.trim().toLowerCase() ===
             variant.color.trim().toLowerCase(),
         );
-        const variantId = matchingVariant ? matchingVariant.id : variant.variantId;
+        const variantId = matchingVariant
+          ? matchingVariant.id
+          : variant.variantId;
 
         return {
           variantId,

@@ -52,9 +52,7 @@ function createWrapper() {
 
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
   };
 }
@@ -101,9 +99,8 @@ describe("useSaveEdit", () => {
     });
 
     expect(AdminUsecase.editProduct).toHaveBeenCalledOnce();
-    const [productId, submittedFormData] = vi.mocked(
-      AdminUsecase.editProduct,
-    ).mock.calls[0];
+    const [productId, submittedFormData] = vi.mocked(AdminUsecase.editProduct)
+      .mock.calls[0];
     expect(productId).toBe(25);
     expect(submittedFormData).toBeInstanceOf(FormData);
     expect(submittedFormData.get("name")).toBe("Updated Keyboard");
@@ -137,7 +134,7 @@ describe("useSaveEdit", () => {
     expect(submittedFormData.getAll("extraImages")).toEqual([extraImageFile]);
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(onSaved).toHaveBeenCalledWith("KeyboardKit");
-    expect(toast.success).toHaveBeenCalledWith(
+    expect(toast.success).toHaveBeenCalledExactlyOnceWith(
       "Product updated successfully!",
     );
   });
@@ -157,11 +154,11 @@ describe("useSaveEdit", () => {
     await act(async () => {
       await expect(
         result.current.mutateAsync(duplicateColorForm),
-      ).rejects.toThrow("Validation failed: duplicate colors");
+      ).rejects.toThrow("Variant colors must be unique.");
     });
 
     expect(AdminUsecase.editProduct).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith(
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith(
       "Variant colors must be unique.",
     );
     expect(onOpenChange).not.toHaveBeenCalled();
@@ -180,7 +177,7 @@ describe("useSaveEdit", () => {
     });
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Update failed");
+      expect(toast.error).toHaveBeenCalledExactlyOnceWith("Update failed");
     });
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(onSaved).not.toHaveBeenCalled();
@@ -209,7 +206,9 @@ describe("useSaveEdit", () => {
       await expect(result.current.mutateAsync(formData)).rejects.toBe(error);
     });
 
-    expect(toast.error).toHaveBeenCalledWith("Product could not be updated");
+    expect(toast.error).toHaveBeenCalledExactlyOnceWith(
+      "Product could not be updated",
+    );
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(onSaved).not.toHaveBeenCalled();
   });

@@ -224,7 +224,12 @@ export function EditProductFormDialog({
                 });
               }
             } catch (err) {
-              console.error("Editor save failed:", err);
+              setDescriptionError(
+                err instanceof Error
+                  ? err.message
+                  : "Unable to save the product description",
+              );
+              return;
             }
             // Now trigger RHF validation + submit
             const onValid = (data: EditProductForm) => {
@@ -235,9 +240,7 @@ export function EditProductFormDialog({
               // Surface description error from Zod
               if (errors.description) {
                 setDescriptionError(
-                  errors.description.blocks?.message ??
-                    errors.description.message ??
-                    "Please enter a product description",
+                  descriptionError ?? "Please enter a product description",
                 );
               } else {
                 setDescriptionError(null);
@@ -383,11 +386,7 @@ export function EditProductFormDialog({
                   <Plus className="h-4 w-4" /> Add variant
                 </Button>
               </div>
-              {form.formState.errors.variants?.root && (
-                <p className="text-[12px] text-red-500 font-semibold ml-3">
-                  {form.formState.errors.variants.root.message}
-                </p>
-              )}
+
               <div className="space-y-3">
                 {fields.map((field, idx) => (
                   <VariantItem
