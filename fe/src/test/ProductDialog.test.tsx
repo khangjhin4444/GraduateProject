@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -38,11 +44,7 @@ vi.mock("@/pages/admin/products/_components/EditorJsInput", async () => {
 });
 
 vi.mock("@/pages/admin/products/_components/ImageUploader", () => ({
-  ImageUploader: ({
-    onFileChange,
-  }: {
-    onFileChange: (file: File) => void;
-  }) => (
+  ImageUploader: ({ onFileChange }: { onFileChange: (file: File) => void }) => (
     <input
       type="file"
       accept="image/*"
@@ -246,7 +248,9 @@ describe("ProductFormDialog", () => {
     expect(screen.queryByText("No extra images yet.")).not.toBeInTheDocument();
     expect(screen.getByAltText("Extra image preview")).toBeVisible();
 
-    const imageContainer = screen.getByAltText("Extra image preview").closest(".group");
+    const imageContainer = screen
+      .getByAltText("Extra image preview")
+      .closest(".group");
     const removeButton = imageContainer?.querySelector("button");
     expect(removeButton).not.toBeNull();
     fireEvent.click(removeButton!);
@@ -261,14 +265,18 @@ describe("ProductFormDialog", () => {
     fireEvent.change(extraImageInput);
 
     expect(screen.getByText("No extra images yet.")).toBeVisible();
-    expect(screen.queryByAltText("Extra image preview")).not.toBeInTheDocument();
+    expect(
+      screen.queryByAltText("Extra image preview"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows required-field validation and does not submit an invalid form", async () => {
     editorSave.mockResolvedValue({ blocks: [] });
     renderComponent();
 
-    fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form")!);
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Save" }).closest("form")!,
+    );
 
     expect(await screen.findByText("Color is required")).toBeVisible();
     expect(await screen.findByText("Price must be at least 1")).toBeVisible();
@@ -278,9 +286,38 @@ describe("ProductFormDialog", () => {
       await screen.findByText("Please enter a product description"),
     ).toBeVisible();
     expect(editorSave).toHaveBeenCalledOnce();
+    expect(screen.getByPlaceholderText("Product name")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(mutate).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByPlaceholderText("Product name"), {
+      target: {
+        value: `Lorem ipsum dolor, sit amet consectetur adipisicing elit. Non velit possimus in. Optio, dolor cum perferendis magni culpa at, placeat quidem eius ullam, minima ipsum recusandae dignissimos enim aspernatur repellat?
+      Hic maxime at esse explicabo corporis alias, fuga ipsum libero eaque deleniti ipsam et amet nihil vel ipsa officia iure, vitae voluptates dolores doloribus assumenda magnam qui animi. Aut, unde.
+      Possimus expedita, incidunt consequatur rem excepturi, modi dolores vitae adipisci amet natus corporis ut, soluta officiis ratione consectetur voluptatum tempore. Magnam at doloribus, architecto voluptates impedit error odit veniam tempora?`,
+      },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Black"), {
+      target: {
+        value: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
+      Necessitatibus omnis accusamus delectus impedit neque repellat eum distinctio aliquid, quis, ipsa doloribus illum eveniet est molestiae voluptate in sint a nulla dolore alias. Modi magnam saepe ducimus provident sapiente?
+      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`,
+      },
+    });
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Save" }).closest("form")!,
+    );
     expect(
-      screen.getByPlaceholderText("Product name"),
-    ).toHaveAttribute("aria-invalid", "true");
+      await screen.findByText("Product's name must be at most 120 characters"),
+    ).toBeVisible();
+    expect(
+      await screen.findByText("Color must be at most 20 characters"),
+    ).toBeVisible();
+
+    expect(screen.queryByText("Please fill this field")).toBeNull();
+    expect(screen.queryByText("Color is required")).toBeNull();
     expect(mutate).not.toHaveBeenCalled();
   });
 
@@ -407,7 +444,9 @@ describe("ProductFormDialog", () => {
       variantImage,
     );
 
-    fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form")!);
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Save" }).closest("form")!,
+    );
 
     await waitFor(() => expect(mutate).toHaveBeenCalledOnce());
     expect(editorSave).toHaveBeenCalledOnce();
@@ -417,9 +456,7 @@ describe("ProductFormDialog", () => {
       type: "Switch",
       subtype: "Linear",
       description: {
-        blocks: [
-          { type: "paragraph", data: { text: "Product description" } },
-        ],
+        blocks: [{ type: "paragraph", data: { text: "Product description" } }],
       },
       variants: [
         {

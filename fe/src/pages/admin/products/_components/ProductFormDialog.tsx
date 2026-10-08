@@ -49,7 +49,10 @@ const SUBTYPES: Record<string, string[]> = {
 
 const VariantSchema = z.object({
   id: z.number(),
-  color: z.string().min(1, { message: "Color is required" }),
+  color: z
+    .string()
+    .min(1, { message: "Color is required" })
+    .max(20, { message: "Color must be at most 20 characters" }),
   price: z
     .number({ message: "Price is required" })
     .min(1, { message: "Price must be at least 1" }),
