@@ -160,6 +160,7 @@ export function ProductFormDialog({
             try {
               const editorData = await editorRef.current?.save();
               if (editorData) {
+                setDescriptionError(null);
                 form.setValue("description", editorData, {
                   shouldValidate: false,
                 });
