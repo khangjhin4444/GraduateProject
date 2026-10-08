@@ -51,18 +51,26 @@ const SUBTYPES: Record<string, string[]> = {
 };
 
 // For edit: variant image can be an existing URL (string) or a new File
-const EditVariantSchema = z.object({
-  variantId: z.number().optional(),
-  color: z.string().min(1, { message: "Color is required" }),
-  price: z
-    .number({ message: "Price is required" })
-    .min(1, { message: "Price must be at least 1" }),
-  stock: z
-    .number({ message: "Stock is required" })
-    .min(0, { message: "Stock cannot be negative" }),
-  file: z.file().optional(), // New file (optional if keeping existing image)
-  existingImage: z.string().optional(), // Existing URL from DB
-});
+const EditVariantSchema = z
+  .object({
+    variantId: z.number().optional(),
+    color: z
+      .string()
+      .min(1, { message: "Color is required" })
+      .max(20, { message: "Color must be at most 20 characters" }),
+    price: z
+      .number({ message: "Price is required" })
+      .min(1, { message: "Price must be at least 1" }),
+    stock: z
+      .number({ message: "Stock is required" })
+      .min(0, { message: "Stock cannot be negative" }),
+    file: z.file().optional(), // New file (optional if keeping existing image)
+    existingImage: z.string().optional(), // Existing URL from DB
+  })
+  .refine((data) => data.file || data.existingImage, {
+    message: "Image is required",
+    path: ["file"], // Trỏ lỗi này vào trường 'file' để react-hook-form có thể hiển thị
+  });
 
 export type EditVariantEntity = z.infer<typeof EditVariantSchema>;
 
@@ -81,10 +89,7 @@ const EditProductFormSchema = z.object({
   description: EditorDataSchema,
   variants: z
     .array(EditVariantSchema)
-    .min(1, { message: "At least one variant is required" })
-    .refine((variants) => variants.every((v) => v.file || v.existingImage), {
-      message: "Each variant must have an image",
-    }),
+    .min(1, { message: "At least one variant is required" }),
 });
 
 export type EditProductForm = z.infer<typeof EditProductFormSchema>;

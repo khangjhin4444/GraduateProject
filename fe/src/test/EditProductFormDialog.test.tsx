@@ -214,7 +214,6 @@ describe("EditProductFormDialog", () => {
       "Updated Keyboard",
     );
     await user.click(screen.getByRole("button", { name: "Save Changes" }));
-
     await waitFor(() => expect(mutate).toHaveBeenCalledOnce());
     expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -321,6 +320,34 @@ describe("EditProductFormDialog", () => {
     expect(await screen.findByText("Color is required")).toBeVisible();
     expect(await screen.findByText("Price must be at least 1")).toBeVisible();
     expect(await screen.findByText("Stock cannot be negative")).toBeVisible();
+    expect(await screen.findByText("Image is required")).toBeVisible();
+    expect(mutate).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByPlaceholderText("Product name"), {
+      target: {
+        value: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
+      Necessitatibus omnis accusamus delectus impedit neque repellat eum distinctio aliquid, quis, ipsa doloribus illum eveniet est molestiae voluptate in sint a nulla dolore alias. Modi magnam saepe ducimus provident sapiente?
+      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`,
+      },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Black"), {
+      target: {
+        value: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
+      Necessitatibus omnis accusamus delectus impedit neque repellat eum distinctio aliquid, quis, ipsa doloribus illum eveniet est molestiae voluptate in sint a nulla dolore alias. Modi magnam saepe ducimus provident sapiente?
+      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`,
+      },
+    });
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Save Changes" }).closest("form")!,
+    );
+    expect(
+      await screen.findByText("Product's name must be at most 120 characters"),
+    ).toBeVisible();
+    expect(
+      await screen.findByText("Color must be at most 20 characters"),
+    ).toBeVisible();
+
+    expect(screen.queryByText("Please fill this field")).toBeNull();
+    expect(screen.queryByText("Color is required")).toBeNull();
     expect(mutate).not.toHaveBeenCalled();
   });
 
