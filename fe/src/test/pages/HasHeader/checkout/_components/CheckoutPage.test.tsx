@@ -25,7 +25,10 @@ vi.mock("@/pages/HasHeader/checkout/_components/OrderForm", () => ({
     isBuyNow: boolean;
   }) => (
     <div data-testid="order-form">
-      {JSON.stringify({ itemIds: items.map((item) => item.VariantID), isBuyNow })}
+      {JSON.stringify({
+        itemIds: items.map((item) => item.VariantID),
+        isBuyNow,
+      })}
     </div>
   ),
 }));
@@ -58,9 +61,11 @@ const preparedItems = [
   },
 ];
 
-function renderPage(queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
-})) {
+function renderPage(
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  }),
+) {
   const view = render(
     <QueryClientProvider client={queryClient}>
       <CheckoutPage checkoutItems={[{ id: 42, qty: 2 }]} isBuyNow={false} />
@@ -118,6 +123,21 @@ describe("CheckoutPage", () => {
 
     expect(screen.getByText(/Something went wrong:/)).toHaveTextContent(
       "Could not prepare order",
+    );
+  });
+
+  it("shows the error state when order preparation fails (no error message case)", () => {
+    vi.mocked(usePrepareOrder).mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: new Error(),
+    } as never);
+
+    renderPage();
+
+    expect(screen.getByText(/Something went wrong:/)).toHaveTextContent(
+      "Retry later",
     );
   });
 
