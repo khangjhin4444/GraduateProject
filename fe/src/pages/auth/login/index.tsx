@@ -25,6 +25,7 @@ import type { LoginErrorResponse } from "@/features/auth/schema/auth.schema";
 import { useAppDispatch } from "@/state/hooks";
 import { setToken } from "@/state/token/tokenSlice";
 import { setInfo } from "@/state/profile/profileSlice";
+import { completeLogin } from "@/lib/authLifecycle";
 
 const LoginSchema = z.object({
   username: z.string().min(1, { message: "Please Enter Username" }),
@@ -49,6 +50,7 @@ export default function Page() {
   async function onSubmit(data: LoginForm) {
     try {
       const response = await loginMutation.mutateAsync(data);
+      completeLogin();
       dispatch(setToken(response.accessToken));
       dispatch(
         setInfo({

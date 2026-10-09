@@ -3,6 +3,7 @@ import type { LoginResponseEntity } from "@/features/auth/schema/auth.schema";
 import { store } from "@/state/store";
 import { deleteInfo } from "@/state/profile/profileSlice";
 import { deleteToken, setToken } from "@/state/token/tokenSlice";
+import { beginLogout, completeLogin } from "@/lib/authLifecycle";
 
 const mocks = vi.hoisted(() => ({
   post: vi.fn(),
@@ -41,6 +42,7 @@ describe("refreshAuth", () => {
     vi.useRealTimers();
     store.dispatch(deleteToken());
     store.dispatch(deleteInfo());
+    completeLogin();
     consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
@@ -118,6 +120,113 @@ describe("refreshAuth", () => {
     });
   });
 
+  it("does not restore credentials when an in-flight refresh resolves after logout", async () => {
+    let resolveRequest!: (value: { data: LoginResponseEntity }) => void;
+    mocks.post.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
+    );
+
+    const refreshResult = refreshAuth();
+    beginLogout();
+    store.dispatch(deleteToken());
+    store.dispatch(deleteInfo());
+    resolveRequest({ data: loginResponse });
+
+    await expect(refreshResult).resolves.toEqual({
+      success: false,
+      expiredSession: false,
+      shouldLogin: true,
+    });
+    expect(store.getState().token.accessToken).toBe("");
+    expect(store.getState().profile.id).toBe(0);
+  });
+
+  it("does not start a refresh while logout is in progress", async () => {
+    beginLogout();
+
+    await expect(refreshAuth()).resolves.toEqual({
+      success: false,
+      expiredSession: false,
+      shouldLogin: true,
+    });
+
+    expect(mocks.post).not.toHaveBeenCalled();
+  });
+
+  it("does not let an old refresh overwrite a successful login", async () => {
+    let resolveRequest!: (value: { data: LoginResponseEntity }) => void;
+    mocks.post.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
+    );
+
+    const refreshResult = refreshAuth();
+    beginLogout();
+    completeLogin();
+    store.dispatch(setToken("new-login-token"));
+    resolveRequest({ data: loginResponse });
+
+    await expect(refreshResult).resolves.toEqual({
+      success: false,
+      expiredSession: false,
+      shouldLogin: false,
+    });
+    expect(store.getState().token.accessToken).toBe("new-login-token");
+  });
+
+  it("keeps a newer in-flight refresh when an older operation settles", async () => {
+    let resolveFirstRequest!: (value: { data: LoginResponseEntity }) => void;
+    let resolveSecondRequest!: (value: { data: LoginResponseEntity }) => void;
+    mocks.post
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirstRequest = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecondRequest = resolve;
+          }),
+      );
+
+    const firstRefresh = refreshAuth();
+
+    beginLogout();
+    completeLogin();
+    store.dispatch(setToken("new-login-token"));
+    const secondRefresh = refreshAuth();
+
+    expect(secondRefresh).not.toBe(firstRefresh);
+    expect(mocks.post).toHaveBeenCalledTimes(2);
+
+    resolveFirstRequest({ data: loginResponse });
+    await expect(firstRefresh).resolves.toEqual({
+      success: false,
+      expiredSession: false,
+      shouldLogin: false,
+    });
+    expect(store.getState().token.accessToken).toBe("new-login-token");
+
+    const repeatedRefresh = refreshAuth();
+    expect(repeatedRefresh).toBe(secondRefresh);
+    expect(mocks.post).toHaveBeenCalledTimes(2);
+
+    resolveSecondRequest({ data: loginResponse });
+    await expect(secondRefresh).resolves.toEqual({
+      success: true,
+      expiredSession: false,
+      shouldLogin: false,
+    });
+    expect(store.getState().token.accessToken).toBe("refreshed-token");
+  });
+
   it("retries a refresh request after a 409 response", async () => {
     vi.useFakeTimers();
     mocks.post
@@ -133,6 +242,23 @@ describe("refreshAuth", () => {
       shouldLogin: false,
     });
     expect(mocks.post).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a refresh after logout starts during the 409 backoff", async () => {
+    vi.useFakeTimers();
+    mocks.post.mockRejectedValueOnce(errorWithStatus(409));
+
+    const resultPromise = refreshAuth();
+    await vi.waitFor(() => expect(mocks.post).toHaveBeenCalledOnce());
+    beginLogout();
+    await vi.runAllTimersAsync();
+
+    await expect(resultPromise).resolves.toEqual({
+      success: false,
+      expiredSession: false,
+      shouldLogin: true,
+    });
+    expect(mocks.post).toHaveBeenCalledOnce();
   });
 
   it("stops retrying after the maximum number of 409 responses", async () => {

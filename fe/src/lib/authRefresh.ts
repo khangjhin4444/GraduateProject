@@ -3,12 +3,26 @@ import { authApi } from "@/api/axios.instance";
 import type { LoginResponseEntity } from "@/features/auth/schema/auth.schema";
 import { deleteToken, setToken } from "@/state/token/tokenSlice";
 import { deleteInfo, setInfo } from "@/state/profile/profileSlice";
+import {
+  getAuthOperationVersion,
+  isAuthOperationCurrent,
+  isLogoutInProgress,
+} from "@/lib/authLifecycle";
 
-let refreshPromise: Promise<{
+type RefreshResult = {
   success: boolean;
   expiredSession: boolean;
   shouldLogin: boolean;
-}> | null = null;
+};
+
+let refreshPromise: Promise<RefreshResult> | null = null;
+let refreshPromiseVersion: number | null = null;
+
+const cancelledRefreshResult = (): RefreshResult => ({
+  success: false,
+  expiredSession: false,
+  shouldLogin: isLogoutInProgress(),
+});
 
 const MAX_CONCURRENT_REFRESH_RETRIES = 5;
 const REFRESH_RETRY_DELAY_MS = 200;
@@ -23,7 +37,10 @@ const getErrorStatus = (error: unknown) => {
   return typeof response?.status === "number" ? response.status : undefined;
 };
 
-async function requestRefresh(attempt = 0): Promise<LoginResponseEntity> {
+async function requestRefresh(
+  operationVersion: number,
+  attempt = 0,
+): Promise<LoginResponseEntity> {
   try {
     return (
       await authApi.post<LoginResponseEntity>(
@@ -36,24 +53,32 @@ async function requestRefresh(attempt = 0): Promise<LoginResponseEntity> {
     const status = getErrorStatus(error);
     if (status === 409 && attempt < MAX_CONCURRENT_REFRESH_RETRIES) {
       await wait(REFRESH_RETRY_DELAY_MS * (attempt + 1));
-      return requestRefresh(attempt + 1);
+      if (!isAuthOperationCurrent(operationVersion)) {
+        throw error;
+      }
+      return requestRefresh(operationVersion, attempt + 1);
     }
 
     throw error;
   }
 }
 
-export function refreshAuth(): Promise<{
-  success: boolean;
-  expiredSession: boolean;
-  shouldLogin: boolean;
-}> {
-  if (refreshPromise) {
+export function refreshAuth(): Promise<RefreshResult> {
+  if (isLogoutInProgress()) {
+    return Promise.resolve(cancelledRefreshResult());
+  }
+
+  const operationVersion = getAuthOperationVersion();
+  if (refreshPromise && refreshPromiseVersion === operationVersion) {
     return refreshPromise;
   }
 
-  refreshPromise = requestRefresh()
+  const currentPromise = requestRefresh(operationVersion)
     .then((data) => {
+      if (!isAuthOperationCurrent(operationVersion)) {
+        return cancelledRefreshResult();
+      }
+
       store.dispatch(setToken(data.accessToken));
       store.dispatch(
         setInfo({
@@ -67,6 +92,10 @@ export function refreshAuth(): Promise<{
       return { success: true, expiredSession: false, shouldLogin: false };
     })
     .catch((error) => {
+      if (!isAuthOperationCurrent(operationVersion)) {
+        return cancelledRefreshResult();
+      }
+
       console.log(error);
       const status = getErrorStatus(error);
       if (status === 401) {
@@ -89,8 +118,13 @@ export function refreshAuth(): Promise<{
       };
     })
     .finally(() => {
-      refreshPromise = null;
+      if (refreshPromise === currentPromise) {
+        refreshPromise = null;
+        refreshPromiseVersion = null;
+      }
     });
 
-  return refreshPromise;
+  refreshPromise = currentPromise;
+  refreshPromiseVersion = operationVersion;
+  return currentPromise;
 }
