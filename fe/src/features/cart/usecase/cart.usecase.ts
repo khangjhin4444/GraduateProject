@@ -18,5 +18,4 @@ export const CartUsecase = {
   }) => CartService.changeItemQuantity({ variantId, quantity }),
   deleteCartItem: ({ variantId }: { variantId: number }) =>
     CartService.deleteCartItem({ variantId }),
-  clearCartItem: () => CartService.clearCartItem(),
 };
