@@ -11,7 +11,6 @@ import Home from "./pages/HasHeader/home";
 import Service from "./pages/HasHeader/service";
 import Contact from "./pages/HasHeader/contact";
 import Login from "./pages/auth/login";
-import ProductDetail from "./pages/HasHeader/product";
 import Register from "./pages/auth/register";
 import AuthLayout from "./pages/auth/layout";
 import HasHeaderLayout from "./pages/HasHeader/layout";
@@ -134,7 +133,7 @@ export const router = createBrowserRouter([
               }
               return null;
             }),
-            Component: ProductDetail,
+            lazy: lazyLoad(() => import("@/pages/HasHeader/product")),
           },
           {
             path: "/collection/:type/:sub?",
