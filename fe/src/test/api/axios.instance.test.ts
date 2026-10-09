@@ -13,10 +13,15 @@ import { z } from "zod";
 
 const mocks = vi.hoisted(() => ({
   refreshAuth: vi.fn(),
+  logoutInProgress: false,
 }));
 
 vi.mock("@/lib/authRefresh", () => ({
   refreshAuth: mocks.refreshAuth,
+}));
+
+vi.mock("@/lib/authLifecycle", () => ({
+  isLogoutInProgress: () => mocks.logoutInProgress,
 }));
 
 function response(
@@ -56,6 +61,7 @@ describe("axios instances", () => {
     originalPrivateAdapter = privateApi.defaults.adapter as AxiosAdapter;
     store.dispatch(setToken(""));
     mocks.refreshAuth.mockReset();
+    mocks.logoutInProgress = false;
   });
 
   afterEach(() => {
@@ -203,6 +209,37 @@ describe("axios instances", () => {
     });
 
     expect(mocks.refreshAuth).toHaveBeenCalledOnce();
+    expect(requestCount).toBe(1);
+  });
+
+  it("does not retry a private request if logout starts while refresh is pending", async () => {
+    let resolveRefresh!: (result: {
+      success: boolean;
+      expiredSession: boolean;
+      shouldLogin: boolean;
+    }) => void;
+    mocks.refreshAuth.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+    let requestCount = 0;
+    privateApi.defaults.adapter = async (config) => {
+      requestCount += 1;
+      throw failedResponse(config, 401, { message: "Unauthorized" });
+    };
+
+    const request = privateApi.get("/private");
+    await vi.waitFor(() =>
+      expect(mocks.refreshAuth).toHaveBeenCalledOnce(),
+    );
+    mocks.logoutInProgress = true;
+    resolveRefresh({ success: true, expiredSession: false, shouldLogin: false });
+
+    await expect(request).rejects.toMatchObject({
+      response: { status: 401 },
+    });
     expect(requestCount).toBe(1);
   });
 

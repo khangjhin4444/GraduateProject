@@ -11,6 +11,7 @@ const {
   getTokenTtlSeconds,
 } = require("../auth/session");
 const { isDatabaseUnavailableError } = require("../auth/refreshError");
+const { revokeRefreshSession } = require("../auth/logout");
 
 const router = express.Router();
 
@@ -406,25 +407,23 @@ router.post("/refresh", async (req, res) => {
 
 router.post("/logout", async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  console.time("total");
   if (!refreshToken) {
     return res
       .status(400)
       .json({ success: false, message: "Thiếu refresh token!" });
   }
   try {
-    console.time("query-del-token");
-    await sql`
-        DELETE FROM "refresh_tokens" WHERE "token" = ${refreshToken}
-      `;
+    await revokeRefreshSession(sql, refreshReplayCache, refreshToken);
   } catch (error) {
     console.error("Logout error:", error);
+    const databaseUnavailable = isDatabaseUnavailableError(error);
+    return res
+      .status(databaseUnavailable ? 503 : 500)
+      .json({ success: false, message: "Không thể hoàn tất đăng xuất." });
   }
-  console.timeEnd("query-del-token");
   res.clearCookie("refreshToken", {
     ...getRefreshCookieOptions(0),
   });
-  console.timeEnd("total");
   return res.status(200).json({
     success: true,
     message: "Đăng xuất thành công, token đã bị thu hồi",
