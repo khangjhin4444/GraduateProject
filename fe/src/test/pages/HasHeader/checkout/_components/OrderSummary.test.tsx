@@ -24,15 +24,15 @@ describe("Checkout OrderSummary", () => {
         Color: "Black",
         MainImage: "/keyboard.jpg",
         Price: "100000",
-        Quantity: 2,
+        Quantity: 102,
       },
     ];
 
     render(
       <OrderSummary
-        subTotal={200000}
+        subTotal={10200000}
         items={items}
-        count={2}
+        count={102}
         shipping={40}
         placeOrderMutation={placeOrderMutation}
       />,
@@ -40,7 +40,8 @@ describe("Checkout OrderSummary", () => {
 
     expect(screen.getByText("Keyboard")).toBeInTheDocument();
     expect(screen.getByText("40.000 VND")).toBeInTheDocument();
-    expect(screen.getByText("240.000 VND")).toBeInTheDocument();
+    expect(screen.getByText("10.240.000 VND")).toBeInTheDocument();
+    expect(screen.getByText("99+")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Placing Order" }),
     ).toBeDisabled();

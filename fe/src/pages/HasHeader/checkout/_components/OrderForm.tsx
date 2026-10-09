@@ -33,6 +33,17 @@ const OrderFormSchema = z.object({
 });
 export type OrderForm = z.infer<typeof OrderFormSchema>;
 
+const ShippingCost = {
+  Normal: {
+    COD: 40,
+    Banking: 20,
+  },
+  Fast: {
+    COD: 80,
+    Banking: 40,
+  },
+};
+
 export default function OrderForm({
   items,
   setShipping,
@@ -71,7 +82,7 @@ export default function OrderForm({
     },
   });
 
-  const [isBank, setIsBank] = useState<boolean>(false);
+  const [payment, setPayment] = useState<"COD" | "Banking">("COD");
 
   async function onSubmit(data: OrderForm) {
     const payload = isBuyNow
@@ -197,11 +208,6 @@ export default function OrderForm({
                     {...field}
                     value={field.value}
                   />
-                  {fieldState.error && (
-                    <p className="text-[12px] text-red-500 font-semibold  pt-1">
-                      {fieldState.error.message}
-                    </p>
-                  )}
                 </Field>
               );
             }}
@@ -252,9 +258,9 @@ export default function OrderForm({
                 className="md:flex"
                 onValueChange={(value) => {
                   field.onChange(value);
-                  if (value === "Fast") {
-                    setShipping(isBank ? 40 : 80);
-                  } else setShipping(isBank ? 20 : 40);
+                  setShipping(
+                    ShippingCost[value as "Fast" | "Normal"][payment],
+                  );
                 }}
               >
                 <FieldLabel htmlFor="standard">
@@ -273,7 +279,7 @@ export default function OrderForm({
                         <p
                           className={clsx(
                             "ms-auto font-semibold {}",
-                            isBank
+                            payment === "Banking"
                               ? "text-muted-foreground font-normal line-through"
                               : "text-foreground",
                           )}
@@ -283,7 +289,7 @@ export default function OrderForm({
                         <p
                           className={clsx(
                             "ms-auto font-semibold",
-                            isBank ? "block" : "hidden",
+                            payment === "Banking" ? "block" : "hidden",
                           )}
                         >
                           20.000 VND
@@ -308,7 +314,7 @@ export default function OrderForm({
                         <p
                           className={clsx(
                             "ms-auto font-semibold {}",
-                            isBank
+                            payment === "Banking"
                               ? "text-muted-foreground font-normal line-through"
                               : "text-foreground",
                           )}
@@ -318,7 +324,7 @@ export default function OrderForm({
                         <p
                           className={clsx(
                             "ms-auto font-semibold",
-                            isBank ? "block" : "hidden",
+                            payment === "Banking" ? "block" : "hidden",
                           )}
                         >
                           40.000 VND
@@ -354,10 +360,10 @@ export default function OrderForm({
                   className="md:flex"
                   onValueChange={(value) => {
                     if (value === "COD") {
-                      setIsBank(false);
+                      setPayment(value as "COD" | "Banking");
                       setShipping((prev) => prev * 2);
                     } else {
-                      setIsBank(true);
+                      setPayment(value as "COD" | "Banking");
                       setShipping((prev) => prev / 2);
                     }
                     field.onChange(value);
@@ -370,7 +376,6 @@ export default function OrderForm({
                           value="COD"
                           id="cod"
                           className="border-primary"
-                          onChange={() => setIsBank(false)}
                         />
                         <FieldContent>
                           <FieldTitle>Cash on delivery</FieldTitle>
@@ -388,7 +393,6 @@ export default function OrderForm({
                           value="Banking"
                           id="bank"
                           className="border-primary"
-                          onChange={() => setIsBank(true)}
                         />
                         <FieldContent>
                           <FieldTitle>Banking transfer</FieldTitle>

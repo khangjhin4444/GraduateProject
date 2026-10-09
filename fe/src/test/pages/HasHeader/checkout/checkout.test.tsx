@@ -4,10 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "@/pages/HasHeader/checkout";
 
 const routeState = vi.hoisted(() => ({
-  current: { checkoutItems: [], isBuyNow: false } as {
-    checkoutItems: { id: number; qty: number }[];
-    isBuyNow: boolean;
-  },
+  current: { checkoutItems: [], isBuyNow: false } as
+    | {
+        checkoutItems: { id: number; qty: number }[];
+        isBuyNow: boolean;
+      }
+    | undefined,
 }));
 
 vi.mock("react-router", async () => {
@@ -40,7 +42,7 @@ describe("Checkout page", () => {
   afterEach(() => cleanup());
 
   beforeEach(() => {
-    routeState.current = { checkoutItems: [], isBuyNow: false };
+    routeState.current = undefined;
     vi.mocked(useLocation).mockReturnValue({
       state: routeState.current,
     } as ReturnType<typeof useLocation>);

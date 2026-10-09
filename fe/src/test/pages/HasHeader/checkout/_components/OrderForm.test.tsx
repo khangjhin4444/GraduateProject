@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OrderProdudctEntity } from "@/features/order/schema/order.schema";
 import type { PlaceOrderProps } from "@/features/order/service/order.service";
 import OrderForm from "@/pages/HasHeader/checkout/_components/OrderForm";
-import { setInfo } from "@/state/profile/profileSlice";
+import { deleteInfo, setInfo } from "@/state/profile/profileSlice";
 import { store } from "@/state/store";
 
 const items: OrderProdudctEntity[] = [
@@ -77,6 +77,17 @@ describe("OrderForm", () => {
     cleanup();
     vi.clearAllMocks();
   });
+  it("display error when order's information is invalid", async () => {
+    store.dispatch(deleteInfo());
+    renderForm();
+    fireEvent.submit(document.getElementById("checkout-form")!);
+    expect(
+      await screen.findByText("Phone number must contains 10 numbers"),
+    ).toBeVisible();
+    expect(await screen.findAllByText("Please fill this field")).toHaveLength(
+      2,
+    );
+  });
 
   it("uses profile values as defaults and reports invalid contact details", async () => {
     const user = userEvent.setup();
@@ -108,6 +119,7 @@ describe("OrderForm", () => {
     await user.click(screen.getByRole("radio", { name: /Standard Delivery/ }));
     expect(setShipping).toHaveBeenLastCalledWith(40);
     await user.click(screen.getByRole("radio", { name: /Banking transfer/ }));
+    await user.click(screen.getByRole("radio", { name: /Cash on delivery/ }));
     expect(setShipping).toHaveBeenLastCalledWith(expect.any(Function));
     await user.type(
       screen.getByLabelText("Order Note (Optional)"),
@@ -125,11 +137,33 @@ describe("OrderForm", () => {
         address: "123 Keyboard Street",
         request: "Leave at reception",
         shipping: "Normal",
-        payment: "Banking",
+        payment: "COD",
         save: false,
         variantIds: [42, 43],
       }),
     );
+  });
+  it("uses discounted shipping fee for express delivery with bank payment", async () => {
+    const user = userEvent.setup();
+    const setShipping = vi.fn();
+
+    renderForm({ setShipping });
+    await user.click(screen.getByRole("radio", { name: /Banking transfer/ }));
+    await user.click(screen.getByRole("radio", { name: /Express Delivery/ }));
+    expect(setShipping).toHaveBeenLastCalledWith(40);
+    await user.click(screen.getByRole("radio", { name: /Standard Delivery/ }));
+    expect(setShipping).toHaveBeenLastCalledWith(20);
+  });
+  it("uses normal express shipping fee with COD payment", async () => {
+    const user = userEvent.setup();
+    const setShipping = vi.fn();
+
+    renderForm({ setShipping });
+
+    await user.click(screen.getByRole("radio", { name: /Express Delivery/ }));
+    expect(setShipping).toHaveBeenLastCalledWith(80);
+    await user.click(screen.getByRole("radio", { name: /Standard Delivery/ }));
+    expect(setShipping).toHaveBeenLastCalledWith(40);
   });
 
   it("submits only the first prepared item as a buy-now payload", async () => {

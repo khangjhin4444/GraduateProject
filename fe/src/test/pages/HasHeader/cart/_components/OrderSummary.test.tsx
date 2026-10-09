@@ -125,4 +125,39 @@ describe("Cart OrderSummary", () => {
     render(<OrderSummary selectedItems={items} cartQuantity={3} />);
     expect(screen.getByTestId("subtotal")).toHaveTextContent("200.000 VND");
   });
+  it("navigates user to keyboard collection when click continue shopping", () => {
+    const navigate = vi.fn();
+    vi.mocked(useNavigate).mockReturnValue(navigate);
+    const items = [
+      {
+        CartItemID: 1,
+        Quantity: 2,
+        MainImage: "/keyboard.jpg",
+        Price: "100000",
+        Name: "Keyboard",
+        Color: "Black",
+        Stock: 5,
+        VariantID: 42,
+        ProductType: "KeyboardKit",
+        SubType: "75%",
+        isChecked: true,
+      },
+      {
+        CartItemID: 2,
+        Quantity: 1,
+        MainImage: "/keycap.jpg",
+        Price: "50000",
+        Name: "Keycap",
+        Color: "White",
+        Stock: 5,
+        VariantID: 43,
+        ProductType: "Keycap",
+        SubType: "SA",
+        isChecked: false,
+      },
+    ];
+    render(<OrderSummary selectedItems={items} cartQuantity={3} />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue Shopping" }));
+    expect(navigate).toHaveBeenCalledWith("/collection/keyboardkit");
+  });
 });
