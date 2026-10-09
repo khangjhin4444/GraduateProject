@@ -56,7 +56,7 @@ export default function OrderSummary({
       </div>
       <div className="flex justify-between">
         <p className="text-foreground font-semibold text-xl">Total</p>
-        <p className="text-accent text-xl font-semibold">
+        <p className="text-accent text-xl font-semibold" data-testid="subtotal">
           {formatCurrency(Subtotal)}
         </p>
       </div>
