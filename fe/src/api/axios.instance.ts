@@ -1,4 +1,5 @@
 import { refreshAuth } from "@/lib/authRefresh";
+import { isLogoutInProgress } from "@/lib/authLifecycle";
 import { store } from "@/state/store";
 import axios, {
   type AxiosResponse,
@@ -107,6 +108,10 @@ privateApi.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const result = await refreshAuth(); // dùng chung singleton promise với loader
+
+      if (isLogoutInProgress()) {
+        return Promise.reject(error);
+      }
 
       if (result.success) {
         const newToken = store.getState().token.accessToken;
