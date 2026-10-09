@@ -217,11 +217,11 @@ export default function OrderForm({
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
-                    id="terms-checkbox-basic"
-                    name="terms-checkbox-basic"
+                    id="save-information"
+                    name="save-information"
                     className="w-5 h-5"
                   />
-                  <FieldLabel htmlFor="terms-checkbox-basic">
+                  <FieldLabel htmlFor="save-information">
                     Save Shipping information
                   </FieldLabel>
                 </Field>
