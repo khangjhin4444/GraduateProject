@@ -74,11 +74,14 @@ export function refreshAuth(): Promise<{
         store.dispatch(deleteToken());
         return { success: false, expiredSession: false, shouldLogin: true };
       }
-      if (status === 409 || status === 503 || status === undefined) {
-        return { success: false, expiredSession: false, shouldLogin: false };
+      // if (status === 409 || status === 503 || status === undefined) {
+      //   return { success: false, expiredSession: false, shouldLogin: false };
+      // }
+      if (status == 403) {
+        store.dispatch(deleteInfo());
+        store.dispatch(deleteToken());
       }
-      store.dispatch(deleteInfo());
-      store.dispatch(deleteToken());
+
       return {
         success: false,
         expiredSession: status === 403,
