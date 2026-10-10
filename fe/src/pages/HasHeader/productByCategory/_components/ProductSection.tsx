@@ -48,11 +48,9 @@ export default function ProductSection({
   const showPagination =
     !isPending && !isError && products.length > 0 && (page > 1 || hasNextPage);
 
-  const handleSortChange = (value: unknown) => {
-    if (typeof value === "string") {
-      setSort(value);
-      setPage(1);
-    }
+  const handleSortChange = (value: string) => {
+    setSort(value);
+    setPage(1);
   };
 
   useEffect(() => {
@@ -89,7 +87,7 @@ export default function ProductSection({
           <p>Sort by: </p>
           <Select
             items={sortOtps}
-            onValueChange={handleSortChange}
+            onValueChange={(value: string | null) => handleSortChange(value!)}
             disabled={products.length === 0}
           >
             <SelectTrigger className="w-45">
