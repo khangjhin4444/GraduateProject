@@ -46,6 +46,7 @@ describe("Category ProductSection", () => {
         pages: [
           {
             data: [createProduct(1, "75% Keyboard")],
+            totalPages: 1,
             hasNextPage: false,
             nextPage: null,
           },
@@ -66,6 +67,7 @@ describe("Category ProductSection", () => {
         pages: [
           {
             data: [createProduct(1, "75% Keyboard")],
+            totalPages: 1,
             hasNextPage: false,
             nextPage: null,
           },
@@ -135,8 +137,9 @@ describe("Category ProductSection", () => {
             pages: [
               {
                 data: [createProduct(page, `Product ${page}`)],
-                hasNextPage: page === 1,
-                nextPage: page === 1 ? 2 : null,
+                totalPages: 10,
+                hasNextPage: page < 10,
+                nextPage: page < 10 ? page + 1 : null,
               },
             ],
           },
@@ -147,6 +150,13 @@ describe("Category ProductSection", () => {
     );
 
     render(<ProductSection type="keycap" />);
+    fireEvent.click(screen.getByRole("button", { name: "Page 3" }));
+    fireEvent.click(screen.getByRole("button", { name: "Page 4" }));
+    expect(screen.getByText("Product 4")).toBeInTheDocument();
+    expect(useProductsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 4 }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Page 1" }));
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     expect(screen.getByText("Product 2")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
@@ -162,6 +172,7 @@ describe("Category ProductSection", () => {
       expect.objectContaining({ page: 1, sort: "name-asc" }),
     );
   });
+
   it("shows the empty state when returns no products", () => {
     useProductsMock.mockImplementation(
       ({ page }) =>
@@ -170,6 +181,7 @@ describe("Category ProductSection", () => {
             pages: [
               {
                 data: [],
+                totalPages: 0,
                 hasNextPage: page === 1,
                 nextPage: page === 1 ? 2 : null,
               },
