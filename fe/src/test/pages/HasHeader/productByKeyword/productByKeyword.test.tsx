@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import useSearchProducts from "@/hooks/useSearchProducts";
-import Page from "./index";
+import Page from "@/pages/HasHeader/productByKeyword";
 
 vi.mock("react-router", async () => {
   const actual =
@@ -11,6 +11,7 @@ vi.mock("react-router", async () => {
   return {
     ...actual,
     useLoaderData: vi.fn(),
+    useNavigate: vi.fn(),
   };
 });
 
@@ -18,14 +19,9 @@ vi.mock("@/hooks/useSearchProducts", () => ({
   default: vi.fn(),
 }));
 
-vi.mock("@/shared/components/ProductCard", () => ({
-  ProductCard: ({ product }: { product: { Name: string } }) => (
-    <div>{product.Name}</div>
-  ),
-}));
-
 const useLoaderDataMock = vi.mocked(useLoaderData);
 const useSearchProductsMock = vi.mocked(useSearchProducts);
+const navigate = vi.fn();
 
 function createPage(name: string, page: number) {
   return {
@@ -36,9 +32,10 @@ function createPage(name: string, page: number) {
         ProductType: "keyboardkit",
         Description: "",
         SubType: "75%",
-        MainImage: "image.jpg",
-        Price: "100",
-        variants: null,
+        variants: [
+          { colorText: "Black", image: "/black.jpg", price: 100000 },
+          { colorText: "White", image: "/white.jpg", price: 125000 },
+        ],
       },
     ],
     hasNextPage: page === 1,
@@ -48,7 +45,9 @@ function createPage(name: string, page: number) {
 
 describe("search page", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     useLoaderDataMock.mockReturnValue({ keyword: "first" });
+    vi.mocked(useNavigate).mockReturnValue(navigate);
     useSearchProductsMock.mockImplementation(
       ({ keyword, page }) =>
         ({
@@ -64,12 +63,14 @@ describe("search page", () => {
     const view = render(<Page />);
 
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
-    expect(screen.getByText("first-2")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "first-2" })).toBeInTheDocument();
 
     useLoaderDataMock.mockReturnValue({ keyword: "second" });
     view.rerender(<Page />);
 
-    expect(screen.getByText("second-1")).toBeInTheDocument();
-    expect(screen.queryByText("second-2")).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "second-1" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "second-2" }),
+    ).not.toBeInTheDocument();
   });
 });
