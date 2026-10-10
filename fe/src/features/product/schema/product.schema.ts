@@ -47,9 +47,9 @@ export const ProductSchema = z.object({
   ProductType: z.string(),
   Description: EditorDataSchema,
   SubType: z.string(),
-  MainImage: z.string(),
-  Price: z.string(),
-  variants: z.array(SimpleVariantSchema),
+  // MainImage: z.string(),
+  // Price: z.string(),
+  variants: z.array(SimpleVariantSchema).min(1),
 });
 
 export const RelevantProductSchema = z.object({
