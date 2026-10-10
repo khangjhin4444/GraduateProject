@@ -38,6 +38,7 @@ function createPage(name: string, page: number) {
         ],
       },
     ],
+    totalPages: 2,
     hasNextPage: page === 1,
     nextPage: page === 1 ? 2 : null,
   };

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import ProductSkeleton from "@/shared/components/ProductSkeleton";
 import { ProductCard } from "@/shared/components/ProductCard";
+import ProductPagination from "@/shared/components/ProductPagination";
 import {
   Select,
   SelectContent,
@@ -31,9 +30,9 @@ export default function SearchProductSection({ keyword }: { keyword: string }) {
     sort,
   });
   const products = data?.pages.flatMap((page) => page.products) ?? [];
-  const hasNextPage = data?.pages.at(-1)?.hasNextPage ?? false;
+  const totalPages = data?.pages.at(-1)?.totalPages ?? 0;
   const showPagination =
-    !isPending && !isError && products.length > 0 && (page > 1 || hasNextPage);
+    !isPending && !isError && products.length > 0 && totalPages > 1;
 
   const handleSortChange = (value: string) => {
     setSort(value);
@@ -108,38 +107,11 @@ export default function SearchProductSection({ keyword }: { keyword: string }) {
               ))}
             </div>
             {showPagination && (
-              <nav
-                aria-label="Product pagination"
-                className="mt-6 flex justify-end gap-2"
-              >
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Previous page"
-                  disabled={page === 1}
-                  onClick={() => changePage(page - 1)}
-                >
-                  <ChevronLeft />
-                </Button>
-                <span
-                  className="flex min-w-10 items-center justify-center text-sm font-medium"
-                  aria-current="page"
-                >
-                  {page}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Next page"
-                  disabled={!hasNextPage}
-                  onClick={() => changePage(page + 1)}
-                  className={
-                    !hasNextPage ? "cursor-not-allowed" : "cursor-pointer"
-                  }
-                >
-                  <ChevronRight />
-                </Button>
-              </nav>
+              <ProductPagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={changePage}
+              />
             )}
           </div>
         )}

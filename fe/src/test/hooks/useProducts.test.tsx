@@ -16,6 +16,7 @@ function productPage(page: number, hasNextPage: boolean) {
     success: true,
     page,
     limit: 12,
+    totalPages: 4,
     hasNextPage,
     nextPage: hasNextPage ? page + 1 : null,
     data: [],

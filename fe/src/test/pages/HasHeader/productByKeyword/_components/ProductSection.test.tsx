@@ -45,8 +45,9 @@ describe("Search ProductSection", () => {
             pages: [
               {
                 products: [createProduct(page, `${keyword} ${page}`)],
-                hasNextPage: page === 1,
-                nextPage: page === 1 ? 2 : null,
+                totalPages: 10,
+                hasNextPage: page < 10,
+                nextPage: page < 10 ? page + 1 : null,
               },
             ],
           },
@@ -66,6 +67,16 @@ describe("Search ProductSection", () => {
     expect(useSearchProductsMock).toHaveBeenLastCalledWith({
       keyword: "blue switches",
       page: 1,
+      sort: "default",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Page 3" }));
+    fireEvent.click(screen.getByRole("button", { name: "Page 4" }));
+    expect(
+      screen.getByRole("img", { name: "blue switches 4" }),
+    ).toBeInTheDocument();
+    expect(useSearchProductsMock).toHaveBeenLastCalledWith({
+      keyword: "blue switches",
+      page: 4,
       sort: "default",
     });
     fireEvent.click(screen.getByText("Default"));
@@ -101,7 +112,16 @@ describe("Search ProductSection", () => {
 
   it("shows the empty state when the search returns no products", () => {
     useSearchProductsMock.mockReturnValue({
-      data: { pages: [{ products: [], hasNextPage: false, nextPage: null }] },
+      data: {
+        pages: [
+          {
+            products: [],
+            totalPages: 0,
+            hasNextPage: false,
+            nextPage: null,
+          },
+        ],
+      },
       isPending: false,
       isError: false,
       error: null,
