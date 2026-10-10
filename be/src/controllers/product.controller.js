@@ -29,6 +29,12 @@ const getProducts = async (req, res) => {
         ? sql`p."ProductType" = ${type} AND p."SubType" = ${sub}`
         : sql`p."ProductType" = ${type}`;
 
+    const [{ totalCount }] = await sql`
+      SELECT COUNT(*)::int AS "totalCount"
+      FROM "product" p
+      WHERE ${categoryFilter}
+    `;
+
     const products = await sql`
       WITH BaseProducts AS (
         SELECT DISTINCT ON (p."ProductID") 
@@ -68,11 +74,13 @@ const getProducts = async (req, res) => {
 
     const hasNextPage = products.length > limit;
     const data = hasNextPage ? products.slice(0, limit) : products;
+    const totalPages = Math.ceil(totalCount / limit);
 
     res.status(200).json({
       success: true,
       page,
       limit: limit,
+      totalPages,
       hasNextPage,
       nextPage: hasNextPage ? page + 1 : null,
       data,
@@ -220,6 +228,13 @@ const getProductByKeyword = async (req, res) => {
     console.log(keyword);
     console.log(searchPattern);
 
+    const [{ totalCount }] = await sql`
+      SELECT COUNT(*)::int AS "totalCount"
+      FROM "product" p
+      WHERE p."Name" ILIKE ${searchPattern}
+        OR p."Description"::text ILIKE ${searchPattern}
+    `;
+
     let orderBySql = sql`"ProductID" ASC`;
 
     if (sort === "price-asc") {
@@ -266,11 +281,13 @@ const getProductByKeyword = async (req, res) => {
 
     const hasNextPage = products.length > limit;
     const data = hasNextPage ? products.slice(0, limit) : products;
+    const totalPages = Math.ceil(totalCount / limit);
 
     res.status(200).json({
       success: true,
       page,
       limit,
+      totalPages,
       hasNextPage,
       nextPage: hasNextPage ? page + 1 : null,
       products: data,
