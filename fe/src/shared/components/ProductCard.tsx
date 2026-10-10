@@ -13,17 +13,12 @@ import { Dot } from "lucide-react";
 export function ProductCard({ product }: { product: ProductEntity }) {
   const formatter = new Intl.NumberFormat("vi-VN");
   const navigate = useNavigate();
-  const [selectedVariant, setSelectedVariant] = useState<SimpleVariant | null>(
-    product.variants && product.variants.length > 0
-      ? product.variants[0]
-      : null,
+  const [selectedVariant, setSelectedVariant] = useState<SimpleVariant>(
+    product.variants[0],
   );
 
-  // Dữ liệu hiển thị thực tế (Ưu tiên variant đang chọn, nếu không có thì lấy dữ liệu gốc của product)
-  const displayImage = selectedVariant
-    ? selectedVariant.image
-    : product.MainImage;
-  const displayPrice = selectedVariant ? selectedVariant.price : product.Price;
+  const displayImage = selectedVariant.image;
+  const displayPrice = selectedVariant.price;
 
   // Hàm chuyển hướng
   const navigateToDetail = () => {
