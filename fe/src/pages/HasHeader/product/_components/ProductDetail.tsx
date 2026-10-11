@@ -47,8 +47,7 @@ export default function Page() {
       0,
     ) === 0;
   const activeVariant = selectedVariant || defaultVariant;
-  const mainImage =
-    selectedImage || activeVariant?.MainImage || productData?.images[0];
+  const mainImage = selectedImage || activeVariant.MainImage;
   const variantImages = productData.variants.map(
     (variant) => variant.MainImage,
   );
@@ -94,17 +93,10 @@ export default function Page() {
     });
   };
   const handleBuyNow = () => {
-    const qty = Number(quantity);
-
-    if (isNaN(qty) || qty < 1) {
-      setQuantity(1); // Ép về 1
-      return;
-    }
-
     const buyNowItem = [
       {
         id: activeVariant.VariantID,
-        qty,
+        qty: quantity,
       },
     ];
     navigate("/checkout", {
@@ -172,7 +164,7 @@ export default function Page() {
             {productData.Name}
           </h1>
           <h2 className="text-3xl text-accent font-extrabold mb-10 tracking-normal">
-            {formatCurrency(activeVariant?.Price || 0)}
+            {formatCurrency(activeVariant.Price)}
           </h2>
 
           {productData.variants.length > 0 && (
