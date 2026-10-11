@@ -164,7 +164,7 @@ export default function Page() {
             {productData.Name}
           </h1>
           <h2 className="text-3xl text-accent font-extrabold mb-10 tracking-normal">
-            {formatCurrency(activeVariant?.Price || 0)}
+            {formatCurrency(activeVariant.Price)}
           </h2>
 
           {productData.variants.length > 0 && (
