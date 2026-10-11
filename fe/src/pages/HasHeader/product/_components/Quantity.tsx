@@ -16,12 +16,11 @@ export default function Quantity({
     value?: string | number,
   ) => {
     if (type === "decrease") {
-      setQuantity((prev) => Math.max(1, (Number(prev) || 1) - 1));
+      setQuantity((prev) => Math.max(1, prev - 1));
     }
     if (type === "increase") {
       setQuantity((prev) => {
-        const current = Number(prev) || 1;
-        return current < currentStock ? current + 1 : currentStock;
+        return prev < currentStock ? prev + 1 : currentStock;
       });
     }
     if (type === "input" && value !== undefined) {
@@ -30,7 +29,6 @@ export default function Quantity({
         return;
       }
       const numValue = parseInt(value.toString(), 10);
-      if (isNaN(numValue)) return;
       if (numValue <= currentStock) {
         setQuantity(numValue);
       } else {
