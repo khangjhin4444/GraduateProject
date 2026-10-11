@@ -112,15 +112,21 @@ describe("DataTable", () => {
 
   it("fetches the next page on the last loaded page and advances when fetch succeeds", async () => {
     const user = userEvent.setup();
-    const { fetchNextPage } = renderTable({ hasNextPage: true });
+    const { fetchNextPage, rerender } = renderTable({ hasNextPage: true });
 
     await user.click(screen.getByRole("button", { name: "Next" }));
     expect(fetchNextPage).toHaveBeenCalledOnce();
     expect(screen.getByText("Product 11")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Next" }));
-    expect(fetchNextPage).toHaveBeenCalledTimes(2);
-    expect(screen.queryByText("Product 21")).not.toBeInTheDocument();
+    rerender(
+      <DataTable
+        columns={columns}
+        data={data}
+        fetchNextPage={fetchNextPage}
+        hasNextPage={false}
+        isFetchingNextPage={false}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
   });
 
   it("keeps the current page when fetching the next page fails", async () => {
