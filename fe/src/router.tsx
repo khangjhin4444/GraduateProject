@@ -1,8 +1,6 @@
 import {
   createBrowserRouter,
-  Outlet,
   redirect,
-  ScrollRestoration,
   type LoaderFunction,
   type RouteObject,
 } from "react-router";
@@ -23,6 +21,7 @@ import { store } from "./state/store";
 import { SUBTYPES } from "./shared/ProductSubtype";
 import type { ComponentType } from "react";
 import { formatSubtype } from "./utils/formatSubtype";
+import RootLayout from "@/pages/RootLayout";
 
 type LazyModule = { default: ComponentType };
 
@@ -30,14 +29,7 @@ const lazyLoad = (importFunc: () => Promise<LazyModule>) => async () => {
   const module = await importFunc();
   return { Component: module.default };
 };
-function RootLayout() {
-  return (
-    <>
-      <Outlet />
-      <ScrollRestoration />
-    </>
-  );
-}
+
 async function rootLoader({ request }: { request: Request }) {
   if (store.getState().token.accessToken === "") {
     await refreshAuth();
