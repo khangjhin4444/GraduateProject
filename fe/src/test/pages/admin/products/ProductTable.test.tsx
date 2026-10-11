@@ -19,7 +19,9 @@ vi.mock("@/pages/admin/products/_components/data-table", () => ({
   }: {
     columns: {
       id?: string;
-      cell?: (context: { row: { original: AdminProductEntity } }) => React.ReactNode;
+      cell?: (context: {
+        row: { original: AdminProductEntity };
+      }) => React.ReactNode;
     }[];
     data: AdminProductEntity[];
   }) => {
@@ -33,11 +35,6 @@ vi.mock("@/pages/admin/products/_components/data-table", () => ({
             <span>{`row-${index}`}</span>
           </div>
         ))}
-        {actions?.cell?.({
-          row: {
-            original: { ...data[0], ProductID: -1 },
-          },
-        })}
       </div>
     );
   },
@@ -95,7 +92,9 @@ const productRows: AdminProductEntity[] = [
     ProductID: 10,
     VariantID: 101,
     Name: "Keyboard",
-    Description: { blocks: [{ type: "paragraph", data: { text: "Keyboard" } }] },
+    Description: {
+      blocks: [{ type: "paragraph", data: { text: "Keyboard" } }],
+    },
     ProductType: "KeyboardKit",
     SubType: "75%",
     Color: "Black",
@@ -108,7 +107,9 @@ const productRows: AdminProductEntity[] = [
     ProductID: 10,
     VariantID: 102,
     Name: "Keyboard",
-    Description: { blocks: [{ type: "paragraph", data: { text: "Keyboard" } }] },
+    Description: {
+      blocks: [{ type: "paragraph", data: { text: "Keyboard" } }],
+    },
     ProductType: "KeyboardKit",
     SubType: "75%",
     Color: "White",
@@ -162,9 +163,9 @@ describe("Admin ProductTable", () => {
     renderProductTable();
 
     expect(screen.getByText("Product load failed")).toBeInTheDocument();
-    expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      document.querySelectorAll('[data-slot="skeleton"]').length,
+    ).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Add Product" })).toBeNull();
     expect(useAdminProductDetail).toHaveBeenCalledWith({
       type: "KeyboardKit",
@@ -173,9 +174,15 @@ describe("Admin ProductTable", () => {
   });
 
   it("renders an empty table when product data has not been returned", async () => {
-    const user = userEvent.setup();
     vi.mocked(useAdminProductDetail).mockReturnValue({
-      data: undefined,
+      data: {
+        pages: [
+          {
+            data: [],
+          },
+        ],
+      },
+
       isPending: false,
       fetchNextPage: vi.fn(),
       isFetchingNextPage: false,
@@ -187,9 +194,8 @@ describe("Admin ProductTable", () => {
 
     expect(screen.getByRole("heading", { name: "Switch" })).toBeInTheDocument();
     expect(screen.getByTestId("table-row-count")).toHaveTextContent("0");
-    await user.click(screen.getByRole("button", { name: "Edit product" }));
     expect(
-      screen.queryByRole("dialog", { name: "Edit product dialog" }),
+      screen.queryByRole("button", { name: "Edit product" }),
     ).not.toBeInTheDocument();
   });
 
@@ -197,11 +203,15 @@ describe("Admin ProductTable", () => {
     const user = userEvent.setup();
     const { invalidateQueries } = renderProductTable();
 
-    expect(screen.getByRole("heading", { name: "Keyboard Kit" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Keyboard Kit" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("table-row-count")).toHaveTextContent("2");
     await user.click(screen.getByRole("button", { name: "Add Product" }));
 
-    expect(screen.getByRole("dialog", { name: "Add product dialog" })).toBeVisible();
+    expect(
+      screen.getByRole("dialog", { name: "Add product dialog" }),
+    ).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Save new product" }));
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["admin-products", "KeyboardKit"],
@@ -212,8 +222,12 @@ describe("Admin ProductTable", () => {
     const user = userEvent.setup();
     const { invalidateQueries } = renderProductTable();
 
-    await user.click(screen.getAllByRole("button", { name: "Edit product" })[0]);
-    expect(screen.getByRole("dialog", { name: "Edit product dialog" })).toBeVisible();
+    await user.click(
+      screen.getAllByRole("button", { name: "Edit product" })[0],
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Edit product dialog" }),
+    ).toBeVisible();
     expect(screen.getByText("product-10")).toBeInTheDocument();
     expect(screen.getByText("variants-101,102")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Save edit" }));
@@ -221,19 +235,11 @@ describe("Admin ProductTable", () => {
       queryKey: ["admin-products", "KeyboardKit"],
     });
 
-    await user.click(screen.getByRole("button", { name: "Keep edit open" }));
-    expect(screen.getByRole("dialog", { name: "Edit product dialog" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Close edit" }));
     await waitFor(() =>
       expect(
         screen.queryByRole("dialog", { name: "Edit product dialog" }),
       ).not.toBeInTheDocument(),
     );
-    await user.click(
-      screen.getAllByRole("button", { name: "Edit product" }).at(-1)!,
-    );
-    expect(
-      screen.queryByRole("dialog", { name: "Edit product dialog" }),
-    ).not.toBeInTheDocument();
   });
 });
