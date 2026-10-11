@@ -47,8 +47,7 @@ export default function Page() {
       0,
     ) === 0;
   const activeVariant = selectedVariant || defaultVariant;
-  const mainImage =
-    selectedImage || activeVariant?.MainImage || productData?.images[0];
+  const mainImage = selectedImage || activeVariant.MainImage;
   const variantImages = productData.variants.map(
     (variant) => variant.MainImage,
   );
