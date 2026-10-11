@@ -93,17 +93,10 @@ export default function Page() {
     });
   };
   const handleBuyNow = () => {
-    const qty = Number(quantity);
-
-    if (isNaN(qty) || qty < 1) {
-      setQuantity(1); // Ép về 1
-      return;
-    }
-
     const buyNowItem = [
       {
         id: activeVariant.VariantID,
-        qty,
+        qty: quantity,
       },
     ];
     navigate("/checkout", {
