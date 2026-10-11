@@ -2,7 +2,7 @@ import {
   type RelevantProductEntity,
   type VariantEntity,
 } from "@/features/product/schema/product.schema";
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router";
 import useProductDetail from "@/hooks/useProductDetail";
@@ -17,6 +17,7 @@ import { clsx } from "clsx";
 import { getHexColor } from "@/utils/colors";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useQueryClient } from "@tanstack/react-query";
+import ProductImageGallery from "./ProductImageGallery";
 
 export default function Page() {
   const navigate = useNavigate();
@@ -36,7 +37,6 @@ export default function Page() {
   );
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
-  const [zoom, setZoom] = useState({ show: false, x: 0, y: 0 });
 
   const defaultVariant =
     productData?.variants.find((v: VariantEntity) => v.Stock > 0) ||
@@ -53,31 +53,15 @@ export default function Page() {
   );
   const productImages = variantImages.concat(productData.images);
   const addToCartMutation = useAddToCart();
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const { left, top, width, height } =
-      e.currentTarget.getBoundingClientRect();
-
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-
-    setZoom({ show: true, x, y });
-  };
-
   const handleVariantClick = (variant: VariantEntity) => {
     setSelectedVariant(variant);
     setSelectedImage(null);
   };
 
   const handleAddToCart = async () => {
-    const qty = Number(quantity);
-
-    if (isNaN(qty) || qty < 1) {
-      setQuantity(1); // Ép về 1
-      return;
-    }
     const addToCartPromise = addToCartMutation.mutateAsync({
       variantId: activeVariant.VariantID,
-      quantity: qty,
+      quantity,
     });
 
     toast.promise(addToCartPromise, {
@@ -108,55 +92,11 @@ export default function Page() {
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans">
       <section className="flex flex-col md:flex-row gap-10">
         <div className="md:w-1/2 p-3 md:p-0">
-          <div className="flex flex-col items-center justify-center">
-            <div className="w-full h-125 bg-gray-100 rounded-lg overflow-hidden mb-4">
-              <div
-                className="relative w-full h-full border-2 border-border rounded-xl overflow-hidden bg-gray-50 cursor-crosshair"
-                onMouseMove={handleMouseMove}
-                onMouseLeave={() => setZoom({ show: false, x: 0, y: 0 })}
-              >
-                <img
-                  src={mainImage!}
-                  alt="Main Product"
-                  className={`w-full h-full object-fill transition-opacity duration-600 ${
-                    zoom.show ? "opacity-80" : "opacity-100"
-                  }`}
-                />
-
-                {zoom.show && (
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      backgroundImage: `url(${mainImage})`,
-                      backgroundSize: "200%",
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: `${zoom.x}% ${zoom.y}%`,
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3 overflow-x-auto w-full py-2 px-1 scrollbar-hide snap-x justify-center">
-              {productImages.map((img, index) => (
-                <div
-                  key={index}
-                  className="snap-start shrink-0"
-                  onClick={() => setSelectedImage(img)}
-                >
-                  <img
-                    src={img}
-                    alt={`Thumbnail ${index}`}
-                    className={`w-20 h-20 md:w-24 md:h-24 object-cover rounded-md cursor-pointer border-2 transition-all ${
-                      mainImage === img
-                        ? "border-primary opacity-100"
-                        : "border-transparent opacity-60 hover:opacity-100 hover:border-gray-300"
-                    }`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          <ProductImageGallery
+            mainImage={mainImage}
+            images={productImages}
+            onImageSelect={setSelectedImage}
+          />
         </div>
 
         <div className="md:w-1/2 text-left">
