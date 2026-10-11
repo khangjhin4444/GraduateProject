@@ -161,7 +161,7 @@ export default function ProductTable({ type }: { type: string }) {
           open={editDialogOpen}
           onOpenChange={(open) => {
             setEditDialogOpen(open);
-            if (!open) setEditProductData(null);
+            setEditProductData(null);
           }}
           onSaved={(type: string) => {
             qc.invalidateQueries({ queryKey: ["admin-products", type] });
