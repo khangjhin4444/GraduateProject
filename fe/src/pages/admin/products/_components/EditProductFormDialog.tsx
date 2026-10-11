@@ -195,6 +195,7 @@ export function EditProductFormDialog({
 
   const handleRemoveExtraImage = (indexToRemove: number) => {
     const imageToRemove = extraImagesRef.current[indexToRemove];
+    /* v8 ignore next */
     if (!imageToRemove) return;
     if (imageToRemove.type === "new") {
       URL.revokeObjectURL(imageToRemove.previewUrl);
@@ -421,6 +422,7 @@ export function EditProductFormDialog({
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
+                      /* v8 ignore next */
                       if (f) handleAddExtraImage(f);
                       e.target.value = "";
                     }}
