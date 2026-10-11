@@ -41,7 +41,11 @@ export default function Page() {
   const defaultVariant =
     productData?.variants.find((v: VariantEntity) => v.Stock > 0) ||
     productData?.variants[0];
-
+  const isOutOfStock =
+    productData.variants.reduce(
+      (count, variant) => count + variant.Stock,
+      0,
+    ) === 0;
   const activeVariant = selectedVariant || defaultVariant;
   const mainImage =
     selectedImage || activeVariant?.MainImage || productData?.images[0];
@@ -66,11 +70,6 @@ export default function Page() {
   };
 
   const handleAddToCart = async () => {
-    if (!activeVariant) {
-      toast("Choose a variant");
-      return;
-    }
-
     const qty = Number(quantity);
 
     if (isNaN(qty) || qty < 1) {
@@ -95,11 +94,6 @@ export default function Page() {
     });
   };
   const handleBuyNow = () => {
-    if (!activeVariant) {
-      toast.error("Choose a variant");
-      return;
-    }
-
     const qty = Number(quantity);
 
     if (isNaN(qty) || qty < 1) {
@@ -116,8 +110,6 @@ export default function Page() {
     navigate("/checkout", {
       state: { checkoutItems: buyNowItem, isBuyNow: true },
     });
-    // sessionStorage.setItem("buy_now_session", JSON.stringify([buyNowItem]));
-    // router.push("/checkout");
   };
 
   return (
@@ -229,28 +221,37 @@ export default function Page() {
             </div>
           )}
 
-          <Quantity
-            quantity={quantity}
-            currentStock={activeVariant?.Stock}
-            setQuantity={setQuantity}
-          />
-
-          {/* Nút hành động */}
-          <div className="flex flex-col xl:flex-row gap-4">
+          {!isOutOfStock ? (
+            <>
+              <Quantity
+                quantity={quantity}
+                currentStock={activeVariant?.Stock}
+                setQuantity={setQuantity}
+              />
+              <div className="flex flex-col xl:flex-row gap-4">
+                <button
+                  onClick={() => handleAddToCart()}
+                  disabled={addToCartMutation.isPending}
+                  className="px-8 py-4 flex-1 rounded-lg font-bold cursor-pointer text-xl group relative isolate overflow-hidden bg-background border-primary border-2 text-primary hover:bg-background hover:text-primary-foreground before:absolute before:inset-0 before:-z-10 before:origin-left before:scale-x-0 before:bg-primary before:transition-transform before:duration-300 before:ease-out hover:before:scale-x-100"
+                >
+                  {addToCartMutation.isPending ? "ADDING..." : "ADD TO CART"}
+                </button>
+                <button
+                  onClick={handleBuyNow}
+                  className="flex-1 cursor-pointer bg-foreground text-primary-foreground px-8 py-4 rounded-lg font-bold text-xl hover:bg-primary transition-all"
+                >
+                  BUY NOW
+                </button>
+              </div>
+            </>
+          ) : (
             <button
-              onClick={() => handleAddToCart()}
-              disabled={addToCartMutation.isPending}
-              className="px-8 py-4 flex-1 rounded-lg font-bold cursor-pointer text-xl group relative isolate overflow-hidden bg-background border-primary border-2 text-primary hover:bg-background hover:text-primary-foreground before:absolute before:inset-0 before:-z-10 before:origin-left before:scale-x-0 before:bg-primary before:transition-transform before:duration-300 before:ease-out hover:before:scale-x-100"
+              className="mt-10 w-full px-8 py-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed bg-gray-400 text-gray-700"
+              disabled
             >
-              {addToCartMutation.isPending ? "ADDING..." : "ADD TO CART"}
+              Out of stock
             </button>
-            <button
-              onClick={handleBuyNow}
-              className="flex-1 cursor-pointer bg-foreground text-primary-foreground px-8 py-4 rounded-lg font-bold text-xl hover:bg-primary transition-all"
-            >
-              BUY NOW
-            </button>
-          </div>
+          )}
         </div>
       </section>
 
