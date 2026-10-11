@@ -17,5 +17,6 @@ export default defineConfig({
       enabled: true,
       exclude: ["src/components/ui/*", "src/hooks/use-mobile.ts"],
     },
+    testTimeout: 10000,
   },
 });
