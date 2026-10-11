@@ -1,6 +1,5 @@
 import {
   cleanup,
-  fireEvent,
   render,
   screen,
   waitFor,
@@ -114,12 +113,19 @@ function renderComponent(initType = "KeyboardKit") {
   return { ...view, onOpenChange, onSaved };
 }
 
-function setInputFile(input: HTMLInputElement, file: File) {
-  Object.defineProperty(input, "files", {
-    configurable: true,
-    value: [file],
-  });
-  fireEvent.change(input);
+async function setInputFile(
+  user: ReturnType<typeof userEvent.setup>,
+  input: HTMLInputElement,
+  file: File,
+) {
+  await user.upload(input, file);
+}
+
+async function submitForm(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByPlaceholderText("Product name"));
+  const form = screen.getByRole("button", { name: "Save" }).closest("form");
+  if (!form) throw new Error("Product form was not rendered");
+  form.requestSubmit();
 }
 
 describe("ProductFormDialog", () => {
@@ -237,13 +243,14 @@ describe("ProductFormDialog", () => {
     ).toBeDisabled();
   });
 
-  it("adds and removes extra images", () => {
+  it("adds and removes extra images", async () => {
+    const user = userEvent.setup();
     renderComponent();
     const fileInputs = document.querySelectorAll('input[type="file"]');
     const extraImageInput = fileInputs.item(fileInputs.length - 1);
     const file = new File(["extra"], "extra.jpg", { type: "image/jpeg" });
 
-    setInputFile(extraImageInput as HTMLInputElement, file);
+    await setInputFile(user, extraImageInput as HTMLInputElement, file);
 
     expect(screen.queryByText("No extra images yet.")).not.toBeInTheDocument();
     expect(screen.getByAltText("Extra image preview")).toBeVisible();
@@ -253,30 +260,32 @@ describe("ProductFormDialog", () => {
       .closest(".group");
     const removeButton = imageContainer?.querySelector("button");
     expect(removeButton).not.toBeNull();
-    fireEvent.click(removeButton!);
+    await user.click(removeButton!);
     expect(screen.getByText("No extra images yet.")).toBeVisible();
   });
 
-  it("ignores an extra-image change without a selected file", () => {
+  it("ignores an extra-image change after the selected file is cleared", async () => {
+    const user = userEvent.setup();
     renderComponent();
     const fileInputs = document.querySelectorAll('input[type="file"]');
     const extraImageInput = fileInputs.item(fileInputs.length - 1);
 
-    fireEvent.change(extraImageInput);
+    await user.upload(
+      extraImageInput as HTMLInputElement,
+      new File(["extra"], "extra.jpg", { type: "image/jpeg" }),
+    );
+    expect(screen.getByAltText("Extra image preview")).toBeVisible();
+    await user.upload(extraImageInput as HTMLInputElement, []);
 
-    expect(screen.getByText("No extra images yet.")).toBeVisible();
-    expect(
-      screen.queryByAltText("Extra image preview"),
-    ).not.toBeInTheDocument();
+    expect(screen.getByAltText("Extra image preview")).toBeVisible();
   });
 
   it("shows required-field validation and does not submit an invalid form", async () => {
+    const user = userEvent.setup();
     editorSave.mockResolvedValue({ blocks: [] });
     renderComponent();
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
 
     expect(await screen.findByText("Color is required")).toBeVisible();
     expect(await screen.findByText("Price must be at least 1")).toBeVisible();
@@ -292,23 +301,15 @@ describe("ProductFormDialog", () => {
     );
     expect(mutate).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByPlaceholderText("Product name"), {
-      target: {
-        value: `Lorem ipsum dolor, sit amet consectetur adipisicing elit. Non velit possimus in. Optio, dolor cum perferendis magni culpa at, placeat quidem eius ullam, minima ipsum recusandae dignissimos enim aspernatur repellat?
+    await user.click(screen.getByPlaceholderText("Product name"));
+    await user.paste(`Lorem ipsum dolor, sit amet consectetur adipisicing elit. Non velit possimus in. Optio, dolor cum perferendis magni culpa at, placeat quidem eius ullam, minima ipsum recusandae dignissimos enim aspernatur repellat?
       Hic maxime at esse explicabo corporis alias, fuga ipsum libero eaque deleniti ipsam et amet nihil vel ipsa officia iure, vitae voluptates dolores doloribus assumenda magnam qui animi. Aut, unde.
-      Possimus expedita, incidunt consequatur rem excepturi, modi dolores vitae adipisci amet natus corporis ut, soluta officiis ratione consectetur voluptatum tempore. Magnam at doloribus, architecto voluptates impedit error odit veniam tempora?`,
-      },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Black"), {
-      target: {
-        value: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
+      Possimus expedita, incidunt consequatur rem excepturi, modi dolores vitae adipisci amet natus corporis ut, soluta officiis ratione consectetur voluptatum tempore. Magnam at doloribus, architecto voluptates impedit error odit veniam tempora?`);
+    await user.click(screen.getByPlaceholderText("Black"));
+    await user.paste(`Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
       Necessitatibus omnis accusamus delectus impedit neque repellat eum distinctio aliquid, quis, ipsa doloribus illum eveniet est molestiae voluptate in sint a nulla dolore alias. Modi magnam saepe ducimus provident sapiente?
-      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`,
-      },
-    });
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`);
+    await submitForm(user);
     expect(
       await screen.findByText("Product's name must be at most 120 characters"),
     ).toBeVisible();
@@ -322,12 +323,11 @@ describe("ProductFormDialog", () => {
   });
 
   it("shows the object-level description validation message", async () => {
+    const user = userEvent.setup();
     editorSave.mockResolvedValueOnce("not editor data");
     renderComponent();
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
 
     expect(
       await screen.findByText(/expected object, received string/i),
@@ -335,12 +335,11 @@ describe("ProductFormDialog", () => {
   });
 
   it("uses the fallback description message when validation has no message", async () => {
+    const user = userEvent.setup();
     editorSave.mockResolvedValueOnce({ blocks: [null] });
     renderComponent();
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
 
     expect(
       await screen.findByText("Please enter a product description"),
@@ -348,12 +347,11 @@ describe("ProductFormDialog", () => {
   });
 
   it("clears the description error when other fields are invalid but description is valid", async () => {
+    const user = userEvent.setup();
     editorSave.mockResolvedValueOnce({ blocks: [] });
     renderComponent();
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
     expect(
       await screen.findByText("Please enter a product description"),
     ).toBeVisible();
@@ -361,9 +359,7 @@ describe("ProductFormDialog", () => {
     editorSave.mockResolvedValueOnce({
       blocks: [{ type: "paragraph", data: { text: "Valid description" } }],
     });
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
 
     await waitFor(() => {
       expect(
@@ -374,24 +370,22 @@ describe("ProductFormDialog", () => {
   });
 
   it("shows editor save errors and does not submit the form", async () => {
+    const user = userEvent.setup();
     editorSave.mockRejectedValueOnce(new Error("Editor could not save"));
     renderComponent();
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
 
     expect(await screen.findByText("Editor could not save")).toBeVisible();
     expect(mutate).not.toHaveBeenCalled();
   });
 
   it("shows a fallback message when the editor rejects with a non-Error value", async () => {
+    const user = userEvent.setup();
     editorSave.mockRejectedValueOnce("editor unavailable");
     renderComponent();
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
 
     expect(
       await screen.findByText("Unable to save the product description"),
@@ -400,12 +394,11 @@ describe("ProductFormDialog", () => {
   });
 
   it("does not replace the description when the editor returns no data", async () => {
+    const user = userEvent.setup();
     editorSave.mockResolvedValueOnce(undefined);
     renderComponent();
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
 
     expect(
       await screen.findByText("Please enter a product description"),
@@ -429,24 +422,23 @@ describe("ProductFormDialog", () => {
     await user.type(screen.getByPlaceholderText("Product name"), "New Switch");
     await user.type(screen.getByPlaceholderText("Black"), "Black");
     const numberInputs = screen.getAllByPlaceholderText("0");
-    fireEvent.change(numberInputs[0], { target: { value: "1" } });
-    fireEvent.change(numberInputs[1], { target: { value: "1" } });
-    fireEvent.change(numberInputs[0], { target: { value: "" } });
-    fireEvent.change(numberInputs[1], { target: { value: "" } });
-    fireEvent.change(numberInputs[0], { target: { value: "25" } });
-    fireEvent.change(numberInputs[1], { target: { value: "10" } });
+    await user.type(numberInputs[0], "1");
+    await user.type(numberInputs[1], "1");
+    await user.clear(numberInputs[0]);
+    await user.clear(numberInputs[1]);
+    await user.type(numberInputs[0], "25");
+    await user.type(numberInputs[1], "10");
 
     const variantImage = new File(["variant"], "switch.jpg", {
       type: "image/jpeg",
     });
-    setInputFile(
+    await setInputFile(
+      user,
       screen.getByLabelText("Variant image upload") as HTMLInputElement,
       variantImage,
     );
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save" }).closest("form")!,
-    );
+    await submitForm(user);
 
     await waitFor(() => expect(mutate).toHaveBeenCalledOnce());
     expect(editorSave).toHaveBeenCalledOnce();

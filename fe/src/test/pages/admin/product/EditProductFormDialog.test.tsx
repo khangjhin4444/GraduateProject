@@ -1,11 +1,4 @@
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -41,12 +34,21 @@ const validDescription = {
   blocks: [{ type: "paragraph", data: { text: "Updated description" } }],
 };
 
-function setInputFile(input: HTMLInputElement, file: File) {
-  Object.defineProperty(input, "files", {
-    configurable: true,
-    value: [file],
-  });
-  fireEvent.change(input);
+async function setInputFile(
+  user: ReturnType<typeof userEvent.setup>,
+  input: HTMLInputElement,
+  file: File,
+) {
+  await user.upload(input, file);
+}
+
+async function submitForm(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByPlaceholderText("Product name"));
+  const form = screen
+    .getByRole("button", { name: "Save Changes" })
+    .closest("form");
+  if (!form) throw new Error("Edit product form was not rendered");
+  form.requestSubmit();
 }
 
 function createProduct(
@@ -91,26 +93,31 @@ function renderDialog(productData: EditProductData) {
   return { ...view, onOpenChange, onSaved };
 }
 
-function uploadExtraImage(fileName: string) {
+async function uploadExtraImage(
+  user: ReturnType<typeof userEvent.setup>,
+  fileName: string,
+) {
   const fileInputs = document.querySelectorAll('input[type="file"]');
   const fileInput = fileInputs.item(fileInputs.length - 1);
   if (!(fileInput instanceof HTMLInputElement)) {
     throw new Error("Extra image upload input was not rendered");
   }
 
-  Object.defineProperty(fileInput, "files", {
-    configurable: true,
-    value: [new File(["image"], fileName, { type: "image/jpeg" })],
-  });
-  fireEvent.change(fileInput);
+  await user.upload(
+    fileInput,
+    new File(["image"], fileName, { type: "image/jpeg" }),
+  );
 }
 
-function removePreview(image: HTMLElement) {
+async function removePreview(
+  user: ReturnType<typeof userEvent.setup>,
+  image: HTMLElement,
+) {
   const removeButton = image.closest(".group")?.querySelector("button");
   if (!(removeButton instanceof HTMLButtonElement)) {
     throw new Error("Image remove button was not rendered");
   }
-  fireEvent.click(removeButton);
+  await user.click(removeButton);
 }
 
 function getPreviewByUrl(url: string) {
@@ -144,10 +151,11 @@ describe("EditProductFormDialog", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps preview URLs valid across renders and revokes them on removal and unmount", () => {
+  it("keeps preview URLs valid across renders and revokes them on removal and unmount", async () => {
+    const user = userEvent.setup();
     const { unmount } = renderDialog(createProduct());
 
-    uploadExtraImage("first.jpg");
+    await uploadExtraImage(user, "first.jpg");
     expect(createObjectURL).toHaveBeenCalledOnce();
     expect(
       screen
@@ -156,27 +164,32 @@ describe("EditProductFormDialog", () => {
     ).toContain("blob:preview-1");
     expect(getPreviewByUrl("blob:preview-1")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByPlaceholderText("Product name"), {
-      target: { value: "Edited locally" },
-    });
+    await user.clear(screen.getByPlaceholderText("Product name"));
+    await user.type(
+      screen.getByPlaceholderText("Product name"),
+      "Edited locally",
+    );
     expect(revokeObjectURL).not.toHaveBeenCalled();
 
-    removePreview(getPreviewByUrl("blob:preview-1"));
+    await removePreview(user, getPreviewByUrl("blob:preview-1"));
     expect(revokeObjectURL).toHaveBeenCalledTimes(1);
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
 
-    uploadExtraImage("second.jpg");
+    await uploadExtraImage(user, "second.jpg");
     unmount();
     expect(revokeObjectURL).toHaveBeenCalledTimes(2);
     expect(revokeObjectURL).toHaveBeenLastCalledWith("blob:preview-2");
   });
 
-  it("initializes values from the selected product after the dialog is remounted", () => {
+  it("initializes values from the selected product after the dialog is remounted", async () => {
+    const user = userEvent.setup();
     const firstDialog = renderDialog(createProduct());
-    uploadExtraImage("temporary.jpg");
-    fireEvent.change(screen.getByPlaceholderText("Product name"), {
-      target: { value: "Unsaved name" },
-    });
+    await uploadExtraImage(user, "temporary.jpg");
+    await user.clear(screen.getByPlaceholderText("Product name"));
+    await user.type(
+      screen.getByPlaceholderText("Product name"),
+      "Unsaved name",
+    );
     firstDialog.unmount();
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
 
@@ -213,7 +226,20 @@ describe("EditProductFormDialog", () => {
       screen.getByPlaceholderText("Product name"),
       "Updated Keyboard",
     );
-    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+    const [priceInput, stockInput] = screen.getAllByPlaceholderText("0");
+    await user.clear(priceInput);
+    await user.type(priceInput, "1250");
+    await user.clear(stockInput);
+    await user.type(stockInput, "8");
+    const variantInput = document.querySelector('input[type="file"]');
+    if (!(variantInput instanceof HTMLInputElement)) {
+      throw new Error("Variant image upload input was not rendered");
+    }
+    await user.upload(
+      variantInput,
+      new File(["variant"], "updated.jpg", { type: "image/jpeg" }),
+    );
+    await submitForm(user);
     await waitFor(() => expect(mutate).toHaveBeenCalledOnce());
     expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -223,6 +249,8 @@ describe("EditProductFormDialog", () => {
           expect.objectContaining({
             variantId: 101,
             color: "Black",
+            price: 1250,
+            stock: 8,
             existingImage: "/black.jpg",
           }),
         ],
@@ -233,12 +261,11 @@ describe("EditProductFormDialog", () => {
   });
 
   it("submits using the existing description when the editor returns no data", async () => {
+    const user = userEvent.setup();
     editorSave.mockResolvedValueOnce(undefined);
     renderDialog(createProduct());
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save Changes" }).closest("form")!,
-    );
+    await submitForm(user);
 
     await waitFor(() => expect(mutate).toHaveBeenCalledOnce());
     expect(mutate).toHaveBeenCalledWith(
@@ -254,12 +281,11 @@ describe("EditProductFormDialog", () => {
   ])(
     "shows editor save errors and does not submit the form",
     async (error, expectedMessage) => {
+      const user = userEvent.setup();
       editorSave.mockRejectedValueOnce(error);
       renderDialog(createProduct());
 
-      fireEvent.submit(
-        screen.getByRole("button", { name: "Save Changes" }).closest("form")!,
-      );
+      await submitForm(user);
 
       expect(await screen.findByText(expectedMessage)).toBeVisible();
       expect(mutate).not.toHaveBeenCalled();
@@ -267,12 +293,11 @@ describe("EditProductFormDialog", () => {
   );
 
   it("shows description validation errors returned by the editor", async () => {
+    const user = userEvent.setup();
     editorSave.mockResolvedValueOnce({ blocks: [] });
     renderDialog(createProduct());
 
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save Changes" }).closest("form")!,
-    );
+    await submitForm(user);
 
     expect(
       await screen.findByText("Please enter a product description"),
@@ -280,21 +305,8 @@ describe("EditProductFormDialog", () => {
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  // it("uses the fallback description message for a nested block error", async () => {
-  //   editorSave.mockResolvedValueOnce({ blocks: [null] });
-  //   renderDialog(createProduct());
-
-  //   fireEvent.submit(
-  //     screen.getByRole("button", { name: "Save Changes" }).closest("form")!,
-  //   );
-
-  //   expect(
-  //     await screen.findByText("Please enter a product description"),
-  //   ).toBeVisible();
-  //   expect(mutate).not.toHaveBeenCalled();
-  // });
-
   it("shows field validation errors when another field is invalid", async () => {
+    const user = userEvent.setup();
     renderDialog(
       createProduct({
         variants: [
@@ -309,12 +321,8 @@ describe("EditProductFormDialog", () => {
       }),
     );
 
-    fireEvent.change(screen.getByPlaceholderText("Product name"), {
-      target: { value: "" },
-    });
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save Changes" }).closest("form")!,
-    );
+    await user.clear(screen.getByPlaceholderText("Product name"));
+    await submitForm(user);
 
     expect(await screen.findByText("Please fill this field")).toBeVisible();
     expect(await screen.findByText("Color is required")).toBeVisible();
@@ -322,23 +330,15 @@ describe("EditProductFormDialog", () => {
     expect(await screen.findByText("Stock cannot be negative")).toBeVisible();
     expect(await screen.findByText("Image is required")).toBeVisible();
     expect(mutate).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByPlaceholderText("Product name"), {
-      target: {
-        value: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
+    await user.click(screen.getByPlaceholderText("Product name"));
+    await user.paste(`Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
       Necessitatibus omnis accusamus delectus impedit neque repellat eum distinctio aliquid, quis, ipsa doloribus illum eveniet est molestiae voluptate in sint a nulla dolore alias. Modi magnam saepe ducimus provident sapiente?
-      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`,
-      },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Black"), {
-      target: {
-        value: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
+      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`);
+    await user.click(screen.getByPlaceholderText("Black"));
+    await user.paste(`Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet id autem perspiciatis, obcaecati repellat quia rem minima temporibus, reprehenderit, dolorum ea doloremque alias libero nostrum distinctio deserunt suscipit laudantium. Quis.
       Necessitatibus omnis accusamus delectus impedit neque repellat eum distinctio aliquid, quis, ipsa doloribus illum eveniet est molestiae voluptate in sint a nulla dolore alias. Modi magnam saepe ducimus provident sapiente?
-      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`,
-      },
-    });
-    fireEvent.submit(
-      screen.getByRole("button", { name: "Save Changes" }).closest("form")!,
-    );
+      Quae laborum voluptates odio enim beatae iusto sapiente inventore commodi ullam dolor, ex sint assumenda quibusdam ab sed. Sit, iste? Repudiandae cupiditate corrupti quibusdam qui, exercitationem sint itaque deserunt quod.`);
+    await submitForm(user);
     expect(
       await screen.findByText("Product's name must be at most 120 characters"),
     ).toBeVisible();
@@ -397,7 +397,8 @@ describe("EditProductFormDialog", () => {
       'input[type="file"][accept="image/*"]',
     )[1];
 
-    setInputFile(
+    await setInputFile(
+      user,
       mainImageInput,
       new File(["variant"], "variant.jpg", { type: "image/jpeg" }),
     );
@@ -412,41 +413,45 @@ describe("EditProductFormDialog", () => {
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
   });
 
-  it("ignores a main-image input change without a selected file", () => {
+  it("ignores a main-image input change without a selected file", async () => {
+    const user = userEvent.setup();
     renderDialog(createProduct());
     const mainImageInput = document.querySelector<HTMLInputElement>(
       'input[type="file"][accept="image/*"]',
     );
     expect(mainImageInput).not.toBeNull();
 
-    fireEvent.change(mainImageInput!);
+    await user.upload(mainImageInput!, []);
 
     expect(createObjectURL).not.toHaveBeenCalled();
   });
 
-  it("ignores an additional-image input change without a selected file", () => {
+  it("ignores an additional-image input change without a selected file", async () => {
+    const user = userEvent.setup();
     renderDialog(createProduct());
     const extraImageInput = document.querySelectorAll<HTMLInputElement>(
       'input[type="file"][accept="image/*"]',
     )[1];
 
-    fireEvent.change(extraImageInput);
+    await user.upload(extraImageInput, []);
 
     expect(createObjectURL).not.toHaveBeenCalled();
   });
 
-  it("removes existing additional images without revoking their URLs", () => {
+  it("removes existing additional images without revoking their URLs", async () => {
+    const user = userEvent.setup();
     renderDialog(createProduct());
     const image = screen.getByAltText("Extra image preview");
     const removeButton = image.closest(".group")?.querySelector("button");
 
-    fireEvent.click(removeButton!);
+    await user.click(removeButton!);
 
     expect(screen.getByText("No extra images yet.")).toBeVisible();
     expect(revokeObjectURL).not.toHaveBeenCalled();
   });
 
-  it("ignores a repeated removal after an image has already been removed", () => {
+  it("ignores a repeated removal after an image has already been removed", async () => {
+    const user = userEvent.setup();
     renderDialog(createProduct());
     const removeButton = screen
       .getByAltText("Extra image preview")
@@ -454,18 +459,17 @@ describe("EditProductFormDialog", () => {
       ?.querySelector("button");
     expect(removeButton).not.toBeNull();
 
-    act(() => {
-      fireEvent.click(removeButton!);
-      fireEvent.click(removeButton!);
-    });
+    await user.click(removeButton!);
+    await user.click(removeButton!);
 
     expect(screen.getByText("No extra images yet.")).toBeVisible();
     expect(revokeObjectURL).not.toHaveBeenCalled();
   });
 
   it("cancels editing and disables saving while the update is pending", async () => {
+    const user = userEvent.setup();
     const { onOpenChange } = renderDialog(createProduct());
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
 
     cleanup();
