@@ -1,11 +1,10 @@
-/* eslint-disable react-refresh/only-export-components */
-
 import {
   createBrowserRouter,
   Outlet,
   redirect,
   ScrollRestoration,
   type LoaderFunction,
+  type RouteObject,
 } from "react-router";
 import Home from "./pages/HasHeader/home";
 import Service from "./pages/HasHeader/service";
@@ -18,10 +17,6 @@ import NotFoundPage from "./components/NotFound";
 import ForbiddenPage from "./components/Forbidden";
 import AdminLayout from "./pages/admin/layout";
 import LoadingPage from "./components/LoadingPage";
-// import ProductByCategory from "./pages/HasHeader/productByCategory";
-// import ProductByKeyword from "./pages/HasHeader/productByKeyword";
-// import Cart from "./pages/HasHeader/cart";
-// import Checkout from "./pages/checkout";
 import { GlobalErrorFallback } from "./components/GlobalErrorFallback";
 import { refreshAuth } from "./lib/authRefresh";
 import { store } from "./state/store";
@@ -89,7 +84,7 @@ function withAuth(
   };
 }
 
-export const router = createBrowserRouter([
+export const routeConfig: RouteObject[] = [
   {
     Component: RootLayout,
     loader: rootLoader,
@@ -222,4 +217,6 @@ export const router = createBrowserRouter([
       { path: "*", Component: NotFoundPage },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(routeConfig);
