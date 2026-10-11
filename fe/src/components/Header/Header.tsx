@@ -14,18 +14,15 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOutIcon, UserIcon } from "lucide-react";
+import { LogOutIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-// import EditProfileForm from "../edit-profile-form";
 import { useAppSelector } from "@/state/hooks";
 import { handleLogout } from "@/lib/handleLogout";
 import { NavLink, useNavigate } from "react-router";
@@ -172,22 +169,12 @@ export default function Header() {
             {isAuth ? (
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger>
+                  <DropdownMenuTrigger data-testid="profile-trigger">
                     <CircleUserRound className="text-text-foreground w-8 h-8 cursor-pointer" />
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent className="w-30">
                     <DropdownMenuGroup>
-                      <DialogTrigger>
-                        <DropdownMenuItem>
-                          <UserIcon
-                            aria-label="profile-btn"
-                            className="mr-2 h-4 w-4"
-                          />
-                          Profile
-                        </DropdownMenuItem>
-                      </DialogTrigger>
-
                       <DropdownMenuItem
                         className="flex md:hidden"
                         onClick={() => {
@@ -199,14 +186,13 @@ export default function Header() {
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
 
-                    <DropdownMenuSeparator />
-
                     <DropdownMenuGroup>
                       <DropdownMenuItem
                         variant="destructive"
                         onClick={() => {
                           handleLogout();
                         }}
+                        data-testid="logout-menuitem"
                       >
                         <LogOutIcon className="mr-2 h-4 w-4" />
                         Log out
