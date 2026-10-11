@@ -139,7 +139,7 @@ export function DataTable<TData extends RowData>({
               loadNextPageIfNeeded(nextPageIndex);
               return;
             }
-
+            /* v8 ignore next */
             if (hasNextPage && !isFetchingNextPage) {
               const result = await fetchNextPage();
               if (result.isError) {

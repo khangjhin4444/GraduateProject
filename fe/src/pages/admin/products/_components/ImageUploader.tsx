@@ -31,6 +31,7 @@ export function ImageUploader({
         accept="image/*"
         onChange={handleFileChange}
         className="cursor-pointer"
+        data-testid="image-input"
       />
 
       {previewUrl && (
