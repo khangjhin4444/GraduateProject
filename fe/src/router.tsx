@@ -58,10 +58,7 @@ function withAuth(
 
     if (store.getState().token.accessToken === "") {
       if (!refreshResult.shouldLogin) {
-        throw new Response("Authentication service temporarily unavailable", {
-          status: 503,
-          statusText: "Authentication service unavailable",
-        });
+        throw new Error("Authentication service temporarily unavailable");
       }
       throw redirect("/login");
     }
