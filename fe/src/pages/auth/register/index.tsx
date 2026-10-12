@@ -71,7 +71,7 @@ export default function Page() {
   const form = useForm<RegisterForm>({
     resolver: zodResolver(RegisterSchema),
     mode: "onChange",
-    reValidateMode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: {
       username: "",
       password: "",
@@ -211,9 +211,6 @@ export default function Page() {
                           type={!showConfirmPassword ? "password" : "text"}
                           onChange={(e) => {
                             field.onChange(e);
-                            if (fieldState.invalid) {
-                              form.clearErrors(field.name);
-                            }
                           }}
                           placeholder="Enter your password here"
                         />
