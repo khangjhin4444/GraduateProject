@@ -89,7 +89,10 @@ export default function Page() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 font-sans">
+    <div
+      data-testid="page-ready"
+      className="max-w-7xl mx-auto px-4 py-8 font-sans"
+    >
       <section className="flex flex-col md:flex-row gap-10">
         <div className="md:w-1/2 p-3 md:p-0">
           <ProductImageGallery
