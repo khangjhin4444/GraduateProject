@@ -95,7 +95,7 @@ export const routeConfig: RouteObject[] = [
           { path: "/service", Component: Service },
           { path: "/contact", Component: Contact },
           {
-            path: "/search/:keyword",
+            path: "/search/:keyword?",
             loader: ({ params }) => {
               const keyword = params.keyword;
               if (!keyword) return redirect("/home");
@@ -116,7 +116,7 @@ export const routeConfig: RouteObject[] = [
             lazy: lazyLoad(() => import("@/pages/HasHeader/product")),
           },
           {
-            path: "/collection/:type/:sub?",
+            path: "/collection/:type?/:sub?",
             loader: ({ params }) => {
               const type = params.type;
               const sub = params.sub;
