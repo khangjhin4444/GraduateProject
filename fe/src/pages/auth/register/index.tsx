@@ -71,7 +71,7 @@ export default function Page() {
   const form = useForm<RegisterForm>({
     resolver: zodResolver(RegisterSchema),
     mode: "onChange",
-    reValidateMode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: {
       username: "",
       password: "",
