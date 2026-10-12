@@ -58,10 +58,7 @@ function withAuth(
 
     if (store.getState().token.accessToken === "") {
       if (!refreshResult.shouldLogin) {
-        throw new Response("Authentication service temporarily unavailable", {
-          status: 503,
-          statusText: "Authentication service unavailable",
-        });
+        throw new Error("Authentication service temporarily unavailable");
       }
       throw redirect("/login");
     }
@@ -89,10 +86,6 @@ export const routeConfig: RouteObject[] = [
         element: null,
       },
       {
-        path: "/admin",
-        loader: () => redirect("/admin/dashboard"),
-      },
-      {
         Component: HasHeaderLayout,
         children: [
           {
@@ -102,7 +95,7 @@ export const routeConfig: RouteObject[] = [
           { path: "/service", Component: Service },
           { path: "/contact", Component: Contact },
           {
-            path: "/search/:keyword",
+            path: "/search/:keyword?",
             loader: ({ params }) => {
               const keyword = params.keyword;
               if (!keyword) return redirect("/home");
@@ -123,7 +116,7 @@ export const routeConfig: RouteObject[] = [
             lazy: lazyLoad(() => import("@/pages/HasHeader/product")),
           },
           {
-            path: "/collection/:type/:sub?",
+            path: "/collection/:type?/:sub?",
             loader: ({ params }) => {
               const type = params.type;
               const sub = params.sub;
