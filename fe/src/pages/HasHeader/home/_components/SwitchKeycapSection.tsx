@@ -35,7 +35,7 @@ export default function SwitchKeycapSection() {
             Switch
           </TabsTrigger>
           <TabsTrigger value="keycap" className="w-30 text-lg  cursor-pointer">
-            keycap
+            Keycap
           </TabsTrigger>
         </TabsList>
         <TabsContent value="switch">
@@ -44,7 +44,7 @@ export default function SwitchKeycapSection() {
             <p role="alert">
               {SwitchError instanceof Error
                 ? SwitchError.message
-                : "Cannot load Switch Kit products."}
+                : "Cannot load Switch products."}
             </p>
           )}
           {!isSwitchPending &&
@@ -65,13 +65,13 @@ export default function SwitchKeycapSection() {
             <p role="alert">
               {keycapError instanceof Error
                 ? keycapError.message
-                : "Cannot load keycap products."}
+                : "Cannot load Keycap products."}
             </p>
           )}
           {!iskeycapPending &&
             !iskeycapError &&
             keycap?.pages[0].data.length === 0 && (
-              <p>No keycap products found.</p>
+              <p>No Keycap products found.</p>
             )}
           {!iskeycapPending && !iskeycapError && (
             <ProductTab
