@@ -14,7 +14,8 @@ export const useAdminOrderAction = (order: OrderEntity) => {
       });
     },
     onError: (error) => {
-      if (error instanceof AxiosError) toast.error(error.message);
+      if (error instanceof AxiosError && error.response?.data?.message)
+        toast.error(error.response.data.message);
       else toast.error("Error hapended when cancel order, try again later.");
     },
   });
@@ -27,7 +28,8 @@ export const useAdminOrderAction = (order: OrderEntity) => {
       });
     },
     onError: (error) => {
-      if (error instanceof AxiosError) toast.error(error.message);
+      if (error instanceof AxiosError && error.response?.data?.message)
+        toast.error(error.response.data.message);
       else toast.error("Error hapended when confirm order, try again later.");
     },
   });
@@ -40,7 +42,8 @@ export const useAdminOrderAction = (order: OrderEntity) => {
       });
     },
     onError: (error) => {
-      if (error instanceof AxiosError) toast.error(error.message);
+      if (error instanceof AxiosError && error.response?.data?.message)
+        toast.error(error.response.data.message);
       else
         toast.error("Error hapended when set to delivered, try again later.");
     },
