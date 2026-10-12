@@ -211,9 +211,6 @@ export default function Page() {
                           type={!showConfirmPassword ? "password" : "text"}
                           onChange={(e) => {
                             field.onChange(e);
-                            if (fieldState.invalid) {
-                              form.clearErrors(field.name);
-                            }
                           }}
                           placeholder="Enter your password here"
                         />
