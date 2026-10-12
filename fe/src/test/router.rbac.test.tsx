@@ -44,6 +44,22 @@ function renderRoute(path: string) {
   return router;
 }
 
+const findLoaderByPath = (
+  routes: any[],
+  targetPath: string,
+): Function | undefined => {
+  for (const route of routes) {
+    if (route.path === targetPath && route.loader) {
+      return route.loader;
+    }
+    if (route.children) {
+      const found = findLoaderByPath(route.children, targetPath);
+      if (found) return found;
+    }
+  }
+  return undefined;
+};
+
 function setAuthenticatedRole(role: "admin" | "user") {
   store.dispatch(setToken("test-access-token"));
   store.dispatch(
@@ -173,5 +189,78 @@ describe("router role-based access control", () => {
     expect(
       await screen.findByRole("heading", { name: "Dashboard" }),
     ).toBeVisible();
+  });
+  it("show authentiaction service error", async () => {
+    vi.mocked(refreshAuth).mockResolvedValue({
+      success: false,
+      expiredSession: false,
+      shouldLogin: false,
+    });
+    const router = renderRoute("/product/1");
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/product/1");
+    });
+    expect(
+      await screen.findByText(/Authentication service temporarily unavailable/),
+    ).toBeVisible();
+  });
+  it("redirects administrators from /admin routes to the dashboard", async () => {
+    setAuthenticatedRole("admin");
+    const router = renderRoute("/admin");
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/admin");
+    });
+    expect(
+      await screen.findByRole("heading", { name: "Dashboard" }),
+    ).toBeVisible();
+  });
+  it("return valid keyword", () => {
+    const loader = findLoaderByPath(
+      routeConfig,
+      "/search/:keyword?",
+    ) as Function;
+    expect(loader).toBeDefined();
+
+    const result = loader({ params: { keyword: "switch" } });
+    expect(result).toEqual({ keyword: "switch" });
+  });
+
+  it("redirect /home if no keyword", () => {
+    const loader = findLoaderByPath(
+      routeConfig,
+      "/search/:keyword?",
+    ) as Function;
+    const result = loader({ params: {} });
+    expect(result.headers.get("Location")).toBe("/home");
+  });
+  it("redirect /home if no type after collection", () => {
+    const loader = findLoaderByPath(
+      routeConfig,
+      "/collection/:type?/:sub?",
+    ) as Function;
+    const result = loader({ params: {} });
+    expect(result.headers.get("Location")).toBe("/home");
+  });
+  it("redirect /not-found if type and/or sub invalid", () => {
+    const loader = findLoaderByPath(
+      routeConfig,
+      "/collection/:type?/:sub?",
+    ) as Function;
+    const result = loader({ params: { type: "invalid", sub: "invalid" } });
+    expect(result.headers.get("Location")).toBe("/not-found");
+    const result2 = loader({ params: { type: "keyboardkit", sub: "invalid" } });
+    expect(result2.headers.get("Location")).toBe("/not-found");
+  });
+  it("return valid type and sub", () => {
+    const loader = findLoaderByPath(
+      routeConfig,
+      "/collection/:type?/:sub?",
+    ) as Function;
+
+    expect(loader).toBeDefined();
+
+    const result = loader({ params: { type: "keyboardkit", sub: "tkl" } });
+    expect(result).toEqual({ type: "keyboardkit", sub: "tkl" });
   });
 });
