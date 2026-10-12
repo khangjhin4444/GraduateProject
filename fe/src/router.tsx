@@ -86,10 +86,6 @@ export const routeConfig: RouteObject[] = [
         element: null,
       },
       {
-        path: "/admin",
-        loader: () => redirect("/admin/dashboard"),
-      },
-      {
         Component: HasHeaderLayout,
         children: [
           {
