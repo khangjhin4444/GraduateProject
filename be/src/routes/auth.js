@@ -94,27 +94,20 @@ router.post("/register", async (req, res) => {
 // API ĐĂNG NHẬP
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-  console.time("total");
   try {
-    console.time("query-user");
     const user = await sql`SELECT * FROM "user" WHERE "Username" = ${username}`;
-    console.timeEnd("query-user");
     if (user.length === 0)
       return res.status(400).json({ message: "Wrong Username or Password" });
 
     const currentUser = user[0];
     const role = currentUser.Username === "admin" ? "admin" : "user";
-    console.time("query-cart");
     const cartQuantityResult =
       await sql`SELECT COALESCE(SUM(ci."Quantity"), 0) AS total_quantity
                               FROM "cart" c
                               LEFT JOIN "cart_items" ci ON c."CartID" = ci."CartID"
                               WHERE c."UserID" = ${currentUser.UserID};`;
-    console.timeEnd("query-cart");
     const cartQuantity = cartQuantityResult[0]?.total_quantity ?? 0;
-    console.time("bcrypt-compare");
     const isMatch = await bcrypt.compare(password, currentUser.Password);
-    console.timeEnd("bcrypt-compare");
     if (!isMatch)
       return res
         .status(400)
@@ -144,7 +137,6 @@ router.post("/login", async (req, res) => {
       INSERT INTO "refresh_tokens" ("user_id", "token", "expires_at")
       VALUES (${currentUser.UserID}, ${refreshToken}, ${sessionExpiresAt})
     `;
-    console.timeEnd("total");
     res.cookie(
       "refreshToken",
       refreshToken,
