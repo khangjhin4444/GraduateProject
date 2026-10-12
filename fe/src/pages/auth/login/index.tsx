@@ -76,7 +76,10 @@ export default function Page() {
   return (
     <>
       <title>JK Keyboard - Login</title>
-      <Card className="w-full md:w-2/3 lg:w-3/4 shadow-2xl py-10 px-5 rounded-[60px]">
+      <Card
+        data-testid="page-ready"
+        className="w-full md:w-2/3 lg:w-3/4 shadow-2xl py-10 px-5 rounded-[60px]"
+      >
         <CardHeader>
           <CardTitle className="text-2xl bg-linear-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">
             Login Account

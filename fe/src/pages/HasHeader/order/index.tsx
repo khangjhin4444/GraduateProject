@@ -4,7 +4,7 @@ import OrderList from "./_component/OrderList";
 
 export default function Page() {
   return (
-    <main className="px-8 mb-10 min-h-screen">
+    <main data-testid="page-ready" className="px-8 mb-10 min-h-screen">
       <h1 className="text-foreground font-bold text-2xl ">My Orders</h1>
       <p className="text-muted-foreground ">
         Here is a summary of your current and past orders.

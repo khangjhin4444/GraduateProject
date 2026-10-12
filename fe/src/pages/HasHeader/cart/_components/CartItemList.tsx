@@ -55,7 +55,10 @@ export default function CartItemList() {
           </div>
         </div>
       ) : (
-        <section className="mt-8 block xl:flex items-start gap-10 mb-10">
+        <section
+          data-testid="page-ready"
+          className="mt-8 block xl:flex items-start gap-10 mb-10"
+        >
           <div className="block xl:flex-2">
             {selectedItems.map((item) => (
               <CartItem

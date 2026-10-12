@@ -56,7 +56,10 @@ export default function CheckoutPage({
           </Button>
         </div>
       ) : (
-        <section className="xl:flex xl:gap-10 mt-5 ">
+        <section
+          data-testid="checkout-ready"
+          className="xl:flex xl:gap-10 mt-5 "
+        >
           <div className="xl:flex-2">
             {data.warnings > 0 && (
               <p

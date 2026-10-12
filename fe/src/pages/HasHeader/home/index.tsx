@@ -4,7 +4,7 @@ import SwitchKeycapSection from "./_components/SwitchKeycapSection";
 
 export default function Page() {
   return (
-    <div className="flex gap-3 flex-col px-6 w-full">
+    <div data-testid="page-ready" className="flex gap-3 flex-col px-6 w-full">
       <title>JK Keyboard-Home Page</title>
       <Carosel></Carosel>
 
