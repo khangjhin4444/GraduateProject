@@ -71,12 +71,12 @@ export default function Page() {
           <div className="flex  items-center flex-col lg:flex-row gap-5 justify-center">
             <img
               src={assemImg2}
-              alt="Assemble image"
+              alt="Stab tunning image"
               className="object-cover mt-4 rounded-lg w-full lg:w-1/2"
             />
             <img
               src={assemImg3}
-              alt="Assemble image"
+              alt="Stab tunning image"
               className="object-cover mt-4 rounded-lg w-full lg:w-1/2"
             />
           </div>
@@ -107,12 +107,12 @@ export default function Page() {
           <div className="flex  items-center flex-col lg:flex-row gap-5 justify-center">
             <img
               src={assemImg4}
-              alt="Assemble image"
+              alt="Switch modding image"
               className="object-cover mt-4 rounded-lg w-full lg:w-1/2"
             />
             <img
               src={assemImg5}
-              alt="Assemble image"
+              alt="Switch modding image"
               className="object-cover mt-4 rounded-lg w-full lg:w-1/2"
             />
           </div>
