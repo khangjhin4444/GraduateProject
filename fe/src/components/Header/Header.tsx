@@ -306,7 +306,7 @@ export default function Header() {
               </AccordionItem>
             </Accordion>
 
-            <MobileNavigationLink href="/about">About</MobileNavigationLink>
+            <MobileNavigationLink href="/service">Service</MobileNavigationLink>
             <MobileNavigationLink href="/contact">Contact</MobileNavigationLink>
           </SidebarContent>
         </Sidebar>

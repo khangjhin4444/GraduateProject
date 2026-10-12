@@ -280,4 +280,23 @@ describe("Header Component", () => {
 
     expect(productsMenu).toHaveClass("invisible", "opacity-0");
   });
+  it("navigates to the service page", async () => {
+    vi.mocked(useAppSelector).mockReturnValue(true);
+    vi.mocked(useQuery).mockReturnValue({ data: { cartQuantity: 5 } } as any);
+
+    render(
+      <MemoryRouter>
+        <Header />
+      </MemoryRouter>,
+    );
+
+    const serviceLinks = screen.getAllByRole("link", { name: "Service" });
+    serviceLinks.forEach((link) => {
+      expect(link).toHaveAttribute("href", "/service");
+    });
+    const contactLink = screen.getAllByRole("link", { name: "Contact" });
+    contactLink.forEach((link) => {
+      expect(link).toHaveAttribute("href", "/contact");
+    });
+  });
 });
