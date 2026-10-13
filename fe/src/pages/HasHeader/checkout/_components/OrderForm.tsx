@@ -19,19 +19,31 @@ import { HandCoins, MapPinHouse, Truck } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import ShippingAddress from "./ShippingAddress";
 
 const OrderFormSchema = z.object({
   name: z.string().min(1, { message: "Please fill this field" }),
   phone: z.string().regex(/^\d{10}$/, {
     message: "Phone number must contains 10 numbers",
   }),
-  address: z.string().min(1, { message: "Please fill this field" }),
+  street: z.string().min(1, { message: "Please fill this field" }),
+  addressProvince: z.string().min(1, { message: "Please select Province" }),
+  addressWard: z.string().min(1, { message: "Please select Ward" }),
   request: z.string().optional(),
   shipping: z.literal("Normal").or(z.literal("Fast")),
   payment: z.literal("COD").or(z.literal("Banking")),
   save: z.boolean(),
 });
 export type OrderForm = z.infer<typeof OrderFormSchema>;
+export type OrderFormEntity = {
+  name: string;
+  phone: string;
+  address: string;
+  request: string | undefined;
+  shipping: "Normal" | "Fast";
+  payment: "COD" | "Banking";
+  save: boolean;
+};
 
 const ShippingCost = {
   Normal: {
@@ -69,16 +81,18 @@ export default function OrderForm({
   const profile = useAppSelector((state) => state.profile);
   const form = useForm<OrderForm>({
     resolver: zodResolver(OrderFormSchema),
-    mode: "onBlur",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: {
       name: profile.fullName,
       phone: profile.phoneNumber,
-      address: profile.address,
+      addressProvince: profile.provinceName,
+      addressWard: profile.wardName,
+      street: profile.street,
       request: "",
       shipping: "Normal",
       payment: "COD",
-      save: true,
+      save: false,
     },
   });
 
@@ -87,14 +101,36 @@ export default function OrderForm({
   async function onSubmit(data: OrderForm) {
     const payload = isBuyNow
       ? {
-          ...data,
+          name: data.name,
+          phone: data.phone,
+          request: data.request,
+          shipping: data.shipping,
+          payment: data.payment,
+          save: data.save,
+          address: JSON.stringify({
+            street: data.street,
+            wardName: data.addressWard,
+            provinceName: data.addressProvince,
+            fullAddress: `${data.street}, ${data.addressWard}, ${data.addressProvince}`,
+          }),
           buyNow: {
             id: items[0].VariantID,
             qty: items[0].Quantity,
           },
         }
       : {
-          ...data,
+          name: data.name,
+          phone: data.phone,
+          request: data.request,
+          shipping: data.shipping,
+          payment: data.payment,
+          save: data.save,
+          address: JSON.stringify({
+            street: data.street,
+            wardName: data.addressWard,
+            provinceName: data.addressProvince,
+            fullAddress: `${data.street}, ${data.addressWard}, ${data.addressProvince}`,
+          }),
           variantIds: items.map((item) => item.VariantID),
         };
     await placeOrderMutation.mutateAsync(payload);
@@ -121,7 +157,10 @@ export default function OrderForm({
             render={({ field, fieldState }) => {
               return (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="name">Full Name</FieldLabel>
+                  <FieldLabel htmlFor="name">
+                    Full Name{" "}
+                    <span className="text-destructive text-lg">*</span>
+                  </FieldLabel>
                   <Input
                     id="name"
                     aria-invalid={fieldState.invalid}
@@ -146,7 +185,10 @@ export default function OrderForm({
             render={({ field, fieldState }) => {
               return (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
+                  <FieldLabel htmlFor="phone">
+                    Phone Number{" "}
+                    <span className="text-destructive text-lg">*</span>
+                  </FieldLabel>
                   <Input
                     id="phone"
                     aria-invalid={fieldState.invalid}
