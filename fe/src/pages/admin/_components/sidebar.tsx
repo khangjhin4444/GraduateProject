@@ -59,7 +59,10 @@ export function AdminSidebar() {
                     isActive={pathname.startsWith(item.url)}
                     className="font-medium transition-all"
                   >
-                    <Link to={item.url} className="flex items-center gap-3">
+                    <Link
+                      to={item.url}
+                      className="flex items-center gap-3 w-full"
+                    >
                       <item.icon className="w-5 h-5 shrink-0" />
                       <span className="group-data-[collapsible=icon]:hidden">
                         {item.title}
