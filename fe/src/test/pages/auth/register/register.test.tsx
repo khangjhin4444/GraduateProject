@@ -43,7 +43,7 @@ describe("Register Page", () => {
     expect(
       screen.getByLabelText(/Full Name \(Optional\)/i),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/Address \(Optional\)/i)).toBeInTheDocument();
+
     expect(
       screen.getByLabelText(/Phone Number \(Optional\)/i),
     ).toBeInTheDocument();
@@ -179,7 +179,7 @@ describe("Register Page", () => {
       "StrongPass123",
     );
     await user.type(screen.getByLabelText(/Full Name/i), "Nguyen Le Duy Khang");
-    await user.type(screen.getByLabelText(/Address/i), "497");
+
     await user.type(screen.getByLabelText(/Phone Number/i), "0987654321");
 
     await user.click(screen.getByRole("button", { name: "Register" }));
@@ -190,7 +190,6 @@ describe("Register Page", () => {
         password: "StrongPass123",
         confirmPassword: "StrongPass123",
         fullName: "Nguyen Le Duy Khang",
-        address: "497",
         phoneNumber: "0987654321",
       });
       expect(mockNavigate).toHaveBeenCalledWith("/login");
