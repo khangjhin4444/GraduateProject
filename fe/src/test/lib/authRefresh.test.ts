@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LoginResponseEntity } from "@/features/auth/schema/auth.schema";
+import {
+  LoginSchema,
+  type LoginResponseEntity,
+} from "@/features/auth/schema/auth.schema";
 import { store } from "@/state/store";
 import { deleteInfo } from "@/state/profile/profileSlice";
 import { deleteToken, setToken } from "@/state/token/tokenSlice";
 import { beginLogout, completeLogin } from "@/lib/authLifecycle";
 
 const mocks = vi.hoisted(() => ({
-  post: vi.fn(),
+  request: vi.fn(),
 }));
 
 vi.mock("@/api/axios.instance", () => ({
-  authApi: { post: mocks.post },
+  authApi: { request: mocks.request },
 }));
 
 import { refreshAuth } from "@/lib/authRefresh";
@@ -23,7 +26,9 @@ const loginResponse: LoginResponseEntity = {
     cartQuantity: "2",
     Name: "Keyboard User",
     Phone: "123456789",
-    Address: "Keyboard Street",
+    provinceName: "Thành phố Hồ Chí Minh",
+    street: "123 Lý Thường Kiệt",
+    wardName: "Phường Hòa Bình",
     role: "admin",
   },
 };
@@ -52,7 +57,7 @@ describe("refreshAuth", () => {
   });
 
   it("requests a refresh and stores the returned token and profile", async () => {
-    mocks.post.mockResolvedValueOnce({ data: loginResponse });
+    mocks.request.mockResolvedValueOnce({ data: loginResponse });
 
     await expect(refreshAuth()).resolves.toEqual({
       success: true,
@@ -60,11 +65,12 @@ describe("refreshAuth", () => {
       shouldLogin: false,
     });
 
-    expect(mocks.post).toHaveBeenCalledExactlyOnceWith(
-      "/api/auth/refresh",
-      {},
-      { withCredentials: true },
-    );
+    expect(mocks.request).toHaveBeenCalledExactlyOnceWith({
+      method: "POST",
+      url: "/api/auth/refresh",
+      withCredentials: true,
+      responseSchema: LoginSchema,
+    });
     expect(store.getState().token).toEqual({
       accessToken: "refreshed-token",
       authChecked: true,
@@ -73,16 +79,27 @@ describe("refreshAuth", () => {
       id: 12,
       fullName: "Keyboard User",
       phoneNumber: "123456789",
-      address: "Keyboard Street",
+      provinceName: "Thành phố Hồ Chí Minh",
+      street: "123 Lý Thường Kiệt",
+      wardName: "Phường Hòa Bình",
       role: "admin",
     });
   });
 
   it("uses empty strings when optional profile fields are null", async () => {
-    mocks.post.mockResolvedValueOnce({
+    mocks.request.mockResolvedValueOnce({
       data: {
         ...loginResponse,
-        user: { ...loginResponse.user, Name: null, Phone: null, Address: null },
+        user: {
+          ...loginResponse.user,
+          Name: null,
+          Phone: null,
+          provinceCode: null,
+          provinceName: null,
+          street: null,
+          wardCode: null,
+          wardName: null,
+        },
       },
     });
 
@@ -92,14 +109,16 @@ describe("refreshAuth", () => {
       id: 12,
       fullName: "",
       phoneNumber: "",
-      address: "",
+      provinceName: "",
+      street: "",
+      wardName: "",
       role: "admin",
     });
   });
 
   it("shares one in-flight refresh promise across concurrent callers", async () => {
     let resolveRequest!: (value: { data: LoginResponseEntity }) => void;
-    mocks.post.mockImplementation(
+    mocks.request.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveRequest = resolve;
@@ -109,7 +128,7 @@ describe("refreshAuth", () => {
     const firstRefresh = refreshAuth();
     const secondRefresh = refreshAuth();
     expect(secondRefresh).toBe(firstRefresh);
-    expect(mocks.post).toHaveBeenCalledOnce();
+    expect(mocks.request).toHaveBeenCalledOnce();
 
     resolveRequest({ data: loginResponse });
 
@@ -122,7 +141,7 @@ describe("refreshAuth", () => {
 
   it("does not restore credentials when an in-flight refresh resolves after logout", async () => {
     let resolveRequest!: (value: { data: LoginResponseEntity }) => void;
-    mocks.post.mockImplementation(
+    mocks.request.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveRequest = resolve;
@@ -153,12 +172,12 @@ describe("refreshAuth", () => {
       shouldLogin: true,
     });
 
-    expect(mocks.post).not.toHaveBeenCalled();
+    expect(mocks.request).not.toHaveBeenCalled();
   });
 
   it("does not let an old refresh overwrite a successful login", async () => {
     let resolveRequest!: (value: { data: LoginResponseEntity }) => void;
-    mocks.post.mockImplementation(
+    mocks.request.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveRequest = resolve;
@@ -182,7 +201,7 @@ describe("refreshAuth", () => {
   it("keeps a newer in-flight refresh when an older operation settles", async () => {
     let resolveFirstRequest!: (value: { data: LoginResponseEntity }) => void;
     let resolveSecondRequest!: (value: { data: LoginResponseEntity }) => void;
-    mocks.post
+    mocks.request
       .mockImplementationOnce(
         () =>
           new Promise((resolve) => {
@@ -204,7 +223,7 @@ describe("refreshAuth", () => {
     const secondRefresh = refreshAuth();
 
     expect(secondRefresh).not.toBe(firstRefresh);
-    expect(mocks.post).toHaveBeenCalledTimes(2);
+    expect(mocks.request).toHaveBeenCalledTimes(2);
 
     resolveFirstRequest({ data: loginResponse });
     await expect(firstRefresh).resolves.toEqual({
@@ -216,7 +235,7 @@ describe("refreshAuth", () => {
 
     const repeatedRefresh = refreshAuth();
     expect(repeatedRefresh).toBe(secondRefresh);
-    expect(mocks.post).toHaveBeenCalledTimes(2);
+    expect(mocks.request).toHaveBeenCalledTimes(2);
 
     resolveSecondRequest({ data: loginResponse });
     await expect(secondRefresh).resolves.toEqual({
@@ -229,7 +248,7 @@ describe("refreshAuth", () => {
 
   it("retries a refresh request after a 409 response", async () => {
     vi.useFakeTimers();
-    mocks.post
+    mocks.request
       .mockRejectedValueOnce(errorWithStatus(409))
       .mockResolvedValueOnce({ data: loginResponse });
 
@@ -241,15 +260,15 @@ describe("refreshAuth", () => {
       expiredSession: false,
       shouldLogin: false,
     });
-    expect(mocks.post).toHaveBeenCalledTimes(2);
+    expect(mocks.request).toHaveBeenCalledTimes(2);
   });
 
   it("does not retry a refresh after logout starts during the 409 backoff", async () => {
     vi.useFakeTimers();
-    mocks.post.mockRejectedValueOnce(errorWithStatus(409));
+    mocks.request.mockRejectedValueOnce(errorWithStatus(409));
 
     const resultPromise = refreshAuth();
-    await vi.waitFor(() => expect(mocks.post).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(mocks.request).toHaveBeenCalledOnce());
     beginLogout();
     await vi.runAllTimersAsync();
 
@@ -258,12 +277,12 @@ describe("refreshAuth", () => {
       expiredSession: false,
       shouldLogin: true,
     });
-    expect(mocks.post).toHaveBeenCalledOnce();
+    expect(mocks.request).toHaveBeenCalledOnce();
   });
 
   it("stops retrying after the maximum number of 409 responses", async () => {
     vi.useFakeTimers();
-    mocks.post.mockRejectedValue(errorWithStatus(409));
+    mocks.request.mockRejectedValue(errorWithStatus(409));
 
     const resultPromise = refreshAuth();
     await vi.runAllTimersAsync();
@@ -273,13 +292,13 @@ describe("refreshAuth", () => {
       expiredSession: false,
       shouldLogin: false,
     });
-    expect(mocks.post).toHaveBeenCalledTimes(6);
+    expect(mocks.request).toHaveBeenCalledTimes(6);
     expect(consoleLog).toHaveBeenCalledOnce();
   });
 
   it("clears token and profile after a 401 response", async () => {
     store.dispatch(setToken("old-token"));
-    mocks.post.mockRejectedValueOnce(errorWithStatus(401));
+    mocks.request.mockRejectedValueOnce(errorWithStatus(401));
 
     await expect(refreshAuth()).resolves.toEqual({
       success: false,
@@ -292,14 +311,16 @@ describe("refreshAuth", () => {
       id: 0,
       fullName: "",
       phoneNumber: "",
-      address: "",
+      provinceName: "",
+      street: "",
+      wardName: "",
       role: "user",
     });
   });
 
   it("clears credentials and requests login after a 403 response", async () => {
     store.dispatch(setToken("old-token"));
-    mocks.post.mockRejectedValueOnce(errorWithStatus(403));
+    mocks.request.mockRejectedValueOnce(errorWithStatus(403));
 
     await expect(refreshAuth()).resolves.toEqual({
       success: false,
@@ -316,7 +337,7 @@ describe("refreshAuth", () => {
     ["non-object", "unexpected failure"],
   ])("keeps current credentials on a %s error", async (_, error) => {
     store.dispatch(setToken("old-token"));
-    mocks.post.mockRejectedValueOnce(error);
+    mocks.request.mockRejectedValueOnce(error);
 
     await expect(refreshAuth()).resolves.toEqual({
       success: false,
@@ -329,7 +350,7 @@ describe("refreshAuth", () => {
 
   it("Keeps credentials for other HTTP errors without requesting login", async () => {
     store.dispatch(setToken("old-token"));
-    mocks.post.mockRejectedValueOnce(errorWithStatus(500));
+    mocks.request.mockRejectedValueOnce(errorWithStatus(500));
 
     await expect(refreshAuth()).resolves.toEqual({
       success: false,
