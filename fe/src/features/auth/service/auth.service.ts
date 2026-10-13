@@ -11,7 +11,6 @@ export type RegisterPayload = {
   password: string;
   fullName?: string;
   phoneNumber?: string;
-  address?: string;
 };
 
 export type LoginPayload = {
@@ -37,7 +36,6 @@ export const authService: AuthService = {
         password: payload.password,
         fullName: payload.fullName,
         phone: payload.phoneNumber,
-        address: payload.address,
       },
       responseSchema: RegisterSchema,
     });
