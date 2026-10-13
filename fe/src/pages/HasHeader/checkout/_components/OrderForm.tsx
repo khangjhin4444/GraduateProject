@@ -208,7 +208,7 @@ export default function OrderForm({
           />
         </div>
         <div className="mb-5">
-          <Controller
+          {/* <Controller
             name="address"
             control={form.control}
             render={({ field, fieldState }) => {
@@ -231,7 +231,8 @@ export default function OrderForm({
                 </Field>
               );
             }}
-          />
+          /> */}
+          <ShippingAddress form={form} />
         </div>
         <div>
           <Controller
