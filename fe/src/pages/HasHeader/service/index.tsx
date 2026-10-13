@@ -6,10 +6,10 @@ import assemImg4 from "@/assets/assem-5.webp";
 import assemImg5 from "@/assets/assem-6.webp";
 export default function Page() {
   return (
-    <main className="px-8">
+    <main className="px-8 md:px-10 mt-10">
       <h1 className="text-2xl font-medium">Keyboard Modding Service</h1>
       <div className="flex flex-col items-center justify-center w-full">
-        <section className="w-full md:w-2/3 lg:w-2/3 mt-10">
+        <section className="w-full md:w-2/3 mt-10">
           <p>
             Each custom mechanical keyboard is not just a tool for work or
             entertainment, but also an item that expresses your personal style.
@@ -23,13 +23,13 @@ export default function Page() {
             <Link
               to={"https://www.facebook.com/profile.php?id=61575185811123"}
               target="blank"
-              className="text-center font-medium w-2/3 md:w-1/2 bg-accent text-accent-foreground px-4 py-3 rounded-lg cursor-pointer"
+              className="text-center font-medium w-2/3 md:w-1/2 xl:w-1/3 bg-accent text-accent-foreground px-4 py-3 rounded-lg cursor-pointer text-sm  sm:text-md"
             >
               CONTACT FOR CONSULTATION
             </Link>
           </div>
           <h2 className="mt-10 text-lg font-semibold">Keyboard Assembling</h2>
-          <p className="mt-4">
+          <p className="mt-4 ">
             JK Keyboard's assembly service is not simply putting components
             together, but also a process of consulting and tuning to create a
             keyboard with the sound and typing feel that suits you. Every step
@@ -41,7 +41,7 @@ export default function Page() {
           <img
             src={assemImg1}
             alt="Assemble image"
-            className="object-cover mt-4 rounded-lg"
+            className="object-cover mt-4 rounded-lg w-full"
           />
           <h2 className="mt-10 text-lg font-semibold">Stabilizer Tuning</h2>
           <div className="mt-4">
@@ -68,16 +68,16 @@ export default function Page() {
             </ul>
           </div>
           The result is a solid, firm, smooth typing experience and clear sound.
-          <div className="flex  items-center flex-col lg:flex-row gap-5 justify-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
             <img
               src={assemImg2}
               alt="Stab tunning image"
-              className="object-cover mt-4 rounded-lg w-full lg:w-1/2"
+              className="object-cover mt-4 rounded-lg w-full"
             />
             <img
               src={assemImg3}
               alt="Stab tunning image"
-              className="object-cover mt-4 rounded-lg w-full lg:w-1/2"
+              className="object-cover mt-4 rounded-lg w-full"
             />
           </div>
           <h2 className="mt-10 text-lg font-semibold">Switch Modding</h2>
@@ -104,16 +104,16 @@ export default function Page() {
               </li>
             </ul>
           </div>
-          <div className="flex  items-center flex-col lg:flex-row gap-5 justify-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
             <img
               src={assemImg4}
               alt="Switch modding image"
-              className="object-cover mt-4 rounded-lg w-full lg:w-1/2"
+              className="object-cover mt-4 rounded-lg w-full"
             />
             <img
               src={assemImg5}
               alt="Switch modding image"
-              className="object-cover mt-4 rounded-lg w-full lg:w-1/2"
+              className="object-cover mt-4 rounded-lg w-full"
             />
           </div>
           <h2 className="mt-10 text-lg font-semibold">Process & Notes</h2>
@@ -149,7 +149,7 @@ export default function Page() {
             <Link
               to={"https://www.facebook.com/profile.php?id=61575185811123"}
               target="blank"
-              className="text-center font-medium w-2/3 md:w-1/2 bg-accent text-accent-foreground px-4 py-3 rounded-lg cursor-pointer"
+              className="text-center font-medium w-2/3 md:w-1/2 xl:w-1/3 bg-accent text-accent-foreground px-4 py-3 rounded-lg cursor-pointer text-sm  sm:text-md"
             >
               CONTACT FOR CONSULTATION
             </Link>
