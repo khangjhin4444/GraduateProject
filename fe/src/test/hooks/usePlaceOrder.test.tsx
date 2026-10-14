@@ -63,6 +63,7 @@ describe("usePlaceOrder", () => {
       },
     });
     vi.spyOn(queryClient, "invalidateQueries");
+    vi.spyOn(store, "dispatch");
     navigate = vi.fn(() => undefined);
     vi.mocked(useNavigate).mockReturnValue(navigate);
   });
@@ -78,6 +79,11 @@ describe("usePlaceOrder", () => {
       success: true,
       message: "Order placed",
       orderId: 501,
+      newAddress: {
+        street: "123 Ly Thuong Kiet",
+        provinceName: "TP HCM",
+        wardName: "Phuong Dien Hong",
+      },
     };
     vi.mocked(OrderUsecase.placeOrder).mockResolvedValue(response);
 
@@ -98,12 +104,25 @@ describe("usePlaceOrder", () => {
     expect(toast.success).toHaveBeenCalledWith("Order Placed!", {
       id: "toast-id",
     });
+    expect(store.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "profile/setInfo",
+        payload: {
+          ...response.newAddress,
+          fullName: "",
+          id: 0,
+          phoneNumber: "",
+          role: "user",
+        },
+      }),
+    );
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["orders", "Pending"],
     });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["cart"],
     });
+
     expect(navigate).toHaveBeenCalledWith("/order", { replace: true });
   });
 
