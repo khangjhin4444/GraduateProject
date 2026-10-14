@@ -29,7 +29,7 @@ describe("OrderService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "GET",
-        url: "/api/orders",
+        url: "/orders",
         params: { status: "pending", page: 2 },
       }),
     );
@@ -55,7 +55,7 @@ describe("OrderService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "POST",
-        url: "/api/orders/prepare",
+        url: "/orders/prepare",
         data: { items: payload },
       }),
     );
@@ -80,7 +80,7 @@ describe("OrderService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "POST",
-        url: "/api/cart/checkout",
+        url: "/cart/checkout",
         data: payload,
       }),
     );
@@ -94,7 +94,7 @@ describe("OrderService", () => {
 
     expect(request).toHaveBeenCalledWith({
       method: "PUT",
-      url: "/api/orders/cancel",
+      url: "/orders/cancel",
       data: { orderID: 99 },
     });
   });

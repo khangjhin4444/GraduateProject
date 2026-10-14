@@ -23,7 +23,7 @@ describe("authService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "POST",
-        url: "/api/auth/register",
+        url: "/auth/register",
         data: {
           username: "user",
           password: "password",
@@ -76,7 +76,7 @@ describe("authService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "POST",
-        url: "/api/auth/login",
+        url: "/auth/login",
         data: { username: "user", password: "password" },
         withCredentials: true,
       }),

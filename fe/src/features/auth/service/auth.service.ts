@@ -30,7 +30,7 @@ export const authService: AuthService = {
   register: async (payload: RegisterPayload) => {
     const response = await publicApi.request({
       method: "POST",
-      url: `/api/auth/register`,
+      url: `/auth/register`,
       data: {
         username: payload.username,
         password: payload.password,
@@ -44,7 +44,7 @@ export const authService: AuthService = {
   login: async (payload: LoginPayload) => {
     const response = await publicApi.request({
       method: "POST",
-      url: `/api/auth/login`,
+      url: `/auth/login`,
       data: {
         username: payload.username,
         password: payload.password,

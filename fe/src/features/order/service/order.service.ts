@@ -47,7 +47,7 @@ export const OrderService: OrderService = {
   getOrders: async ({ status, page }) => {
     const response = await privateApi.request({
       method: "GET",
-      url: "/api/orders",
+      url: "/orders",
       params: { status, page },
       responseSchema: GetOrdersResponseSchema,
     });
@@ -56,7 +56,7 @@ export const OrderService: OrderService = {
   prepareOrder: async (payload: PrepareOrderProps[]) => {
     const response = await privateApi.request({
       method: "POST",
-      url: "/api/orders/prepare",
+      url: "/orders/prepare",
       data: {
         items: payload,
       },
@@ -67,7 +67,7 @@ export const OrderService: OrderService = {
   placeOrder: async (payload: PlaceOrderProps) => {
     const response = await privateApi.request({
       method: "POST",
-      url: "/api/cart/checkout",
+      url: "/cart/checkout",
       data: {
         ...payload,
       },
@@ -78,7 +78,7 @@ export const OrderService: OrderService = {
   cancelOrder: async (orderId: number) => {
     const response = await privateApi.request({
       method: "PUT",
-      url: "/api/orders/cancel",
+      url: "/orders/cancel",
       data: {
         orderID: orderId,
       },

@@ -50,7 +50,7 @@ export const CartService: CartService = {
   }) => {
     const response = await privateApi.request({
       method: "POST",
-      url: "/api/cart/add",
+      url: "/cart/add",
       data: {
         VariantID: variantId,
         Quantity: quantity,
@@ -61,7 +61,7 @@ export const CartService: CartService = {
   getCart: async () => {
     const response = await privateApi.request({
       method: "GET",
-      url: "/api/cart",
+      url: "/cart",
       responseSchema: GetCartResponseSchema,
     });
     return response.data as GetCartResponseEntity;
@@ -75,7 +75,7 @@ export const CartService: CartService = {
   }) => {
     const response = await privateApi.request({
       method: "PUT",
-      url: "/api/cart/change",
+      url: "/cart/change",
       data: {
         VariantID: variantId,
         Quantity: quantity,
@@ -87,7 +87,7 @@ export const CartService: CartService = {
   deleteCartItem: async ({ variantId }: { variantId: number }) => {
     const response = await privateApi.request({
       method: "DELETE",
-      url: "/api/cart/delete",
+      url: "/cart/delete",
       data: {
         VariantID: variantId,
       },

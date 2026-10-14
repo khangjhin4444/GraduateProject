@@ -17,7 +17,7 @@ describe("ProductService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "GET",
-        url: "/api/products/5",
+        url: "/products/5",
       }),
     );
   });
@@ -41,7 +41,7 @@ describe("ProductService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "GET",
-        url: "/api/products?type=Keyboard Kit&page=1&limit=20&sort=default&sub=undefined",
+        url: "/products?type=Keyboard Kit&page=1&limit=20&sort=default&sub=undefined",
       }),
     );
   });
@@ -61,7 +61,7 @@ describe("ProductService", () => {
 
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "/api/products?type=KeyboardKit&page=3&limit=12&sort=price-asc&sub=75%",
+        url: "/products?type=KeyboardKit&page=3&limit=12&sort=price-asc&sub=75%",
       }),
     );
   });
@@ -89,7 +89,7 @@ describe("ProductService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "GET",
-        url: "/api/products/search",
+        url: "/products/search",
         params: {
           keyword: "red&blue 100%",
           page: 2,
@@ -112,7 +112,7 @@ describe("ProductService", () => {
 
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "/api/products/search",
+        url: "/products/search",
         params: {
           keyword: "red&blue 100%",
           page: 2,
@@ -132,7 +132,7 @@ describe("ProductService", () => {
 
     expect(request).toHaveBeenCalledWith({
       method: "GET",
-      url: "/api/products/relevant",
+      url: "/products/relevant",
       params: { type: "Keycap", id: 5 },
     });
   });

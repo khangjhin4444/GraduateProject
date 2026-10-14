@@ -51,7 +51,7 @@ export const ProductService: ProductService = {
   getProductById: async (id: number) => {
     const response = await privateApi.request({
       method: "GET",
-      url: `/api/products/${id}`,
+      url: `/products/${id}`,
       responseSchema: ProductDetailResponseSchema,
     });
     return response.data as ProductDetailResponseEntity;
@@ -71,7 +71,7 @@ export const ProductService: ProductService = {
   }) => {
     const response = await publicApi.request({
       method: "GET",
-      url: `/api/products?type=${type}&page=${page}&limit=${limit}&sort=${sort}&sub=${sub}`,
+      url: `/products?type=${type}&page=${page}&limit=${limit}&sort=${sort}&sub=${sub}`,
       responseSchema: ProductResponseSchema,
     });
     return response.data as ProductResponseEntity;
@@ -87,7 +87,7 @@ export const ProductService: ProductService = {
   }) => {
     const response = await publicApi.request({
       method: "GET",
-      url: "/api/products/search",
+      url: "/products/search",
       params: { keyword, page, sort },
       responseSchema: SearchProductResponseSchema,
     });
@@ -96,7 +96,7 @@ export const ProductService: ProductService = {
   getRelevantProducts: async ({ type, id }: { type: string; id: number }) => {
     const response = await privateApi.request({
       method: "GET",
-      url: "/api/products/relevant",
+      url: "/products/relevant",
       params: {
         type,
         id,

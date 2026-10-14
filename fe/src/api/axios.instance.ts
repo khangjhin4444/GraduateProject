@@ -8,7 +8,8 @@ import axios, {
 } from "axios";
 import { type ZodSchema } from "zod";
 import * as z from "zod";
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+const BASE_URL =
+  import.meta.env.VITE_PROD === "true" ? "/api" : "http://localhost:8000/api";
 
 declare module "axios" {
   export interface AxiosRequestConfig {

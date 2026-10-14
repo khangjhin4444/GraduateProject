@@ -22,7 +22,7 @@ const REFRESH_REPLAY_TTL_MS = 5000;
 const getRefreshCookieOptions = (maxAge) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "None",
+  sameSite: "Lax",
   path: "/",
   maxAge,
 });
