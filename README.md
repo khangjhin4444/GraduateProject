@@ -29,6 +29,10 @@ KeyboardShop is a web application for browsing and purchasing keyboards. The pro
 
 ## Configuration
 
+Init database:
+
+Open Neon SQL Editor, copy all content from `be/database/init.sql` and press Run to create ENUMs and Tables
+
 The backend needs database credentials and authentication secrets. From the project root, create its environment file:
 
 ```powershell
