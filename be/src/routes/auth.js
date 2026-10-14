@@ -308,7 +308,7 @@ router.post("/refresh", async (req, res) => {
         cartQuantity: cartQuantity,
         Name: currentUser.Name,
         Phone: currentUser.Phone,
-        Address: currentUser.Address,
+        Address: JSON.stringify(currentUser.Address),
         role: role,
       },
     };
