@@ -75,7 +75,7 @@ export const AdminService: AdminServiceType = {
   }) {
     const response = await privateApi.request({
       method: "GET",
-      url: "api/products/admin",
+      url: "/products/admin",
       params: {
         type,
         page,
@@ -87,7 +87,7 @@ export const AdminService: AdminServiceType = {
   addProduct: async (formData: FormData) => {
     const response = await privateApi.request({
       method: "POST",
-      url: "/api/products/admin/new",
+      url: "/products/admin/new",
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -100,7 +100,7 @@ export const AdminService: AdminServiceType = {
   editProduct: async (productId: number, formData: FormData) => {
     const response = await privateApi.request({
       method: "PUT",
-      url: `/api/products/admin/edit/${productId}`,
+      url: `/products/admin/edit/${productId}`,
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -113,7 +113,7 @@ export const AdminService: AdminServiceType = {
   deleteProduct: async (variantId: number) => {
     const response = await privateApi.request({
       method: "DELETE",
-      url: `/api/products/admin/${variantId}`,
+      url: `/products/admin/${variantId}`,
       responseSchema: DeleteProductAdminResponseSchema,
     });
     return response.data as DeleteProductAdminResponseEntity;
@@ -121,7 +121,7 @@ export const AdminService: AdminServiceType = {
   getAdminOrders: async ({ status, page }) => {
     const response = await privateApi.request({
       method: "GET",
-      url: "/api/orders/admin",
+      url: "/orders/admin",
       params: {
         status,
         page,
@@ -133,7 +133,7 @@ export const AdminService: AdminServiceType = {
   adminCancelOrder: async (orderId: number) => {
     const response = await privateApi.request({
       method: "PUT",
-      url: "/api/orders/admin/cancel",
+      url: "/orders/admin/cancel",
       data: {
         orderID: orderId,
       },
@@ -144,7 +144,7 @@ export const AdminService: AdminServiceType = {
   adminProceedOrder: async (orderId: number) => {
     const response = await privateApi.request({
       method: "PUT",
-      url: "/api/orders/admin/proceed",
+      url: "/orders/admin/proceed",
       data: {
         orderID: orderId,
       },
@@ -155,7 +155,7 @@ export const AdminService: AdminServiceType = {
   adminDeliverOrder: async (orderId: number) => {
     const response = await privateApi.request({
       method: "PUT",
-      url: "/api/orders/admin/deliver",
+      url: "/orders/admin/deliver",
       data: {
         orderID: orderId,
       },

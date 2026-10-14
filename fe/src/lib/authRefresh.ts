@@ -48,7 +48,7 @@ async function requestRefresh(
     return (
       await authApi.request<LoginResponseEntity>({
         method: "POST",
-        url: "/api/auth/refresh",
+        url: "/auth/refresh",
         withCredentials: true,
         responseSchema: LoginSchema,
       })
