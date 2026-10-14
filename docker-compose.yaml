@@ -9,7 +9,7 @@ services:
     build:
       context: ./fe
       args:
-        - VITE_BASE_URL=http://localhost:8000
+        - VITE_PROD=false
     ports:
       - "4173:4173"
     env_file:
