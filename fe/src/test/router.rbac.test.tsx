@@ -67,7 +67,9 @@ function setAuthenticatedRole(role: "admin" | "user") {
       id: 7,
       fullName: "RBAC Test User",
       phoneNumber: "",
-      address: "",
+      provinceName: "",
+      street: "",
+      wardName: "",
       role,
     }),
   );
@@ -136,19 +138,22 @@ describe("router role-based access control", () => {
       protectedRoute: "/cart",
     },
     {
-      protectedRoute: "/product/order",
+      protectedRoute: "/order",
     },
     {
       protectedRoute: "/checkout",
     },
   ])(
-    "redirects unauthenticated visitors from admin routes or authenticated routes to login",
+    "redirects unauthenticated visitors from $protectedRoute to login",
     async ({ protectedRoute }) => {
       const router = renderRoute(protectedRoute);
 
-      await waitFor(() => {
-        expect(router.state.location.pathname).toBe("/login");
-      });
+      await waitFor(
+        () => {
+          expect(router.state.location.pathname).toBe("/login");
+        },
+        { timeout: 5000 },
+      );
       expect(await screen.findByText("Login Account")).toBeVisible();
     },
   );

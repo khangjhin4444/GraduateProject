@@ -298,6 +298,7 @@ const placeOrder = async (req, res) => {
         message: "Please fill shipping information",
       });
     }
+    const parsedAddress = JSON.parse(address);
 
     const isBuyNow = buyNow !== undefined;
     const validShipping = ["Normal", "Fast"].includes(shipping);
@@ -423,7 +424,16 @@ const placeOrder = async (req, res) => {
         )
         RETURNING "OrderID"
       `,
-        [userId, shipping, payment, name, phone, address, total, request],
+        [
+          userId,
+          shipping,
+          payment,
+          name,
+          phone,
+          parsedAddress.fullAddress,
+          total,
+          request,
+        ],
       );
 
       const orderId = orderRes.rows[0].OrderID;
@@ -461,7 +471,7 @@ const placeOrder = async (req, res) => {
           `UPDATE "user"
            SET "Name" = $1, "Phone" = $2, "Address" = $3
            WHERE "UserID" = $4`,
-          [name, phone, address, userId],
+          [name, phone, parsedAddress, userId],
         );
       }
 
@@ -469,6 +479,14 @@ const placeOrder = async (req, res) => {
       await client.query("COMMIT");
 
       // Trả về kết quả
+      if (save === true) {
+        return res.status(200).json({
+          success: true,
+          message: "Place Order Complete",
+          orderId: orderId,
+          newAddress: address,
+        });
+      }
       return res.status(200).json({
         success: true,
         message: "Place Order Complete",

@@ -57,7 +57,6 @@ const RegisterSchema = z.object({
       message: "Phone number must contains 10 numbers",
     })
     .or(z.literal("")),
-  address: z.string().or(z.literal("")),
 });
 
 type RegisterForm = z.infer<typeof RegisterSchema>;
@@ -77,7 +76,6 @@ export default function Page() {
       password: "",
       confirmPassword: "",
       fullName: "",
-      address: "",
       phoneNumber: "",
     },
   });
@@ -248,28 +246,6 @@ export default function Page() {
                         type="text"
                         id="full-name-input"
                         placeholder="Your Full Name"
-                        onChange={(e) => {
-                          field.onChange(e);
-                        }}
-                      />
-                    </div>
-                  </Field>
-                )}
-              ></Controller>
-              <Controller
-                name="address"
-                control={form.control}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel htmlFor="address-input">
-                      Address (Optional)
-                    </FieldLabel>
-                    <div className="px-2">
-                      <Input
-                        {...field}
-                        type="text"
-                        id="address-input"
-                        placeholder="Your Shipping Address"
                         onChange={(e) => {
                           field.onChange(e);
                         }}

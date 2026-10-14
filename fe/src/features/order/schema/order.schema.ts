@@ -1,3 +1,4 @@
+import { AddressSchema } from "@/features/auth/schema/auth.schema";
 import { z } from "zod";
 
 export const OrderProductSchema = z.object({
@@ -24,6 +25,7 @@ export const PlaceOrderResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
   orderId: z.number(),
+  newAddress: AddressSchema.optional(),
 });
 
 const OrderItemSchema = z.object({

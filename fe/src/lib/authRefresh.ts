@@ -1,6 +1,9 @@
 import { store } from "@/state/store";
 import { authApi } from "@/api/axios.instance";
-import type { LoginResponseEntity } from "@/features/auth/schema/auth.schema";
+import {
+  LoginSchema,
+  type LoginResponseEntity,
+} from "@/features/auth/schema/auth.schema";
 import { deleteToken, setToken } from "@/state/token/tokenSlice";
 import { deleteInfo, setInfo } from "@/state/profile/profileSlice";
 import {
@@ -43,11 +46,12 @@ async function requestRefresh(
 ): Promise<LoginResponseEntity> {
   try {
     return (
-      await authApi.post<LoginResponseEntity>(
-        "/api/auth/refresh",
-        {},
-        { withCredentials: true },
-      )
+      await authApi.request<LoginResponseEntity>({
+        method: "POST",
+        url: "/api/auth/refresh",
+        withCredentials: true,
+        responseSchema: LoginSchema,
+      })
     ).data;
   } catch (error) {
     const status = getErrorStatus(error);
@@ -85,7 +89,9 @@ export function refreshAuth(): Promise<RefreshResult> {
           id: data.user.id,
           fullName: data.user.Name ?? "",
           phoneNumber: data.user.Phone ?? "",
-          address: data.user.Address ?? "",
+          wardName: data.user.wardName ?? "",
+          provinceName: data.user.provinceName ?? "",
+          street: data.user.street ?? "",
           role: data.user.role,
         }),
       );

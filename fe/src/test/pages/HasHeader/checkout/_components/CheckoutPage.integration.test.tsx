@@ -52,7 +52,9 @@ describe("Checkout integration", () => {
         id: 7,
         fullName: "Keyboard Buyer",
         phoneNumber: "0123456789",
-        address: "123 Keyboard Street",
+        provinceName: "Thành phố Hồ Chí Minh",
+        street: "123 Lý Thường Kiệt",
+        wardName: "Phường Hòa Bình",
         role: "user",
       }),
     );
@@ -86,13 +88,13 @@ describe("Checkout integration", () => {
               <Route
                 path="/checkout"
                 element={
-                  <CheckoutPage checkoutItems={checkoutItems} isBuyNow={false} />
+                  <CheckoutPage
+                    checkoutItems={checkoutItems}
+                    isBuyNow={false}
+                  />
                 }
               />
-              <Route
-                path="/order"
-                element={<h1>Order history</h1>}
-              />
+              <Route path="/order" element={<h1>Order history</h1>} />
             </Routes>
           </MemoryRouter>
         </QueryClientProvider>
@@ -118,14 +120,22 @@ describe("Checkout integration", () => {
       expect(OrderUsecase.placeOrder).toHaveBeenCalledWith({
         name: "Keyboard Buyer",
         phone: "0123456789",
-        address: "123 Keyboard Street",
+        address: JSON.stringify({
+          street: "123 Lý Thường Kiệt",
+          wardName: "Phường Hòa Bình",
+          provinceName: "Thành phố Hồ Chí Minh",
+          fullAddress:
+            "123 Lý Thường Kiệt, Phường Hòa Bình, Thành phố Hồ Chí Minh",
+        }),
         request: "Call on arrival",
         shipping: "Fast",
         payment: "Banking",
-        save: true,
+        save: false,
         variantIds: [42],
       }),
     );
-    expect(await screen.findByRole("heading", { name: "Order history" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Order history" }),
+    ).toBeInTheDocument();
   });
 });

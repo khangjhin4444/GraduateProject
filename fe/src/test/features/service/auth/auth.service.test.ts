@@ -17,7 +17,6 @@ describe("authService", () => {
         password: "password",
         fullName: "Keyboard User",
         phoneNumber: "123456789",
-        address: "Keyboard Street",
       }),
     ).resolves.toEqual(data);
 
@@ -30,7 +29,6 @@ describe("authService", () => {
           password: "password",
           fullName: "Keyboard User",
           phone: "123456789",
-          address: "Keyboard Street",
         },
       }),
     );

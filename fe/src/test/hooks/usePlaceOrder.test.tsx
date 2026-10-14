@@ -7,6 +7,8 @@ import { OrderUsecase } from "@/features/order/usecase/order.usecase";
 import { usePlaceOrder } from "@/hooks/usePlaceOrder";
 import { toast } from "sonner";
 import { useNavigate, type NavigateFunction } from "react-router";
+import { store } from "@/state/store";
+import { Provider } from "react-redux";
 
 vi.mock("@/features/order/usecase/order.usecase", () => ({
   OrderUsecase: {
@@ -44,9 +46,11 @@ describe("usePlaceOrder", () => {
   function createWrapper() {
     return function Wrapper({ children }: { children: ReactNode }) {
       return (
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </Provider>
       );
     };
   }
@@ -104,13 +108,19 @@ describe("usePlaceOrder", () => {
   });
 
   it("shows the server message on an Axios error and invalidates the cart", async () => {
-    const error = new AxiosError("Request failed", undefined, undefined, undefined, {
-      data: { message: "Out of stock" },
-      status: 400,
-      statusText: "Bad Request",
-      headers: {},
-      config: { headers: new AxiosHeaders() },
-    });
+    const error = new AxiosError(
+      "Request failed",
+      undefined,
+      undefined,
+      undefined,
+      {
+        data: { message: "Out of stock" },
+        status: 400,
+        statusText: "Bad Request",
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      },
+    );
     vi.mocked(OrderUsecase.placeOrder).mockRejectedValue(error);
 
     const { result } = renderHook(() => usePlaceOrder(), {

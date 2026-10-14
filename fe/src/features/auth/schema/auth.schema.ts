@@ -5,19 +5,57 @@ export const RegisterSchema = z.object({
   message: z.string(),
 });
 
-export const LoginSchema = z.object({
-  success: z.boolean(),
-  accessToken: z.string(),
-  user: z.object({
-    id: z.number(),
-    cartQuantity: z.string(),
-    Name: z.string().nullable(),
-    Phone: z.string().nullable(),
-    Address: z.string().nullable(),
-    role: z.enum(["user", "admin"]),
-  }),
-});
+export const AddressSchema = z.preprocess(
+  (val) => {
+    if (!val || val === "null") return null;
+    if (typeof val === "string") {
+      try {
+        return JSON.parse(val);
+      } catch {
+        return null;
+      }
+    }
+    return val;
+  },
+  z
+    .object({
+      street: z.string(),
+      wardName: z.string(),
+      provinceName: z.string(),
+    })
+    .nullable(),
+);
 
+export const LoginSchema = z
+  .object({
+    success: z.boolean(),
+    accessToken: z.string(),
+    user: z.object({
+      id: z.number(),
+      cartQuantity: z.string(),
+      Name: z.string().nullable(),
+      Phone: z.string().nullable(),
+      Address: AddressSchema,
+
+      role: z.enum(["user", "admin"]),
+    }),
+  })
+  .transform((data) => {
+    return {
+      success: data.success,
+      accessToken: data.accessToken,
+      user: {
+        id: data.user.id,
+        cartQuantity: data.user.cartQuantity,
+        Name: data.user.Name,
+        Phone: data.user.Phone,
+        role: data.user.role,
+        street: data.user.Address?.street || "",
+        wardName: data.user.Address?.wardName || "",
+        provinceName: data.user.Address?.provinceName || "",
+      },
+    };
+  });
 export type LoginErrorResponse = {
   success: boolean;
   message: string;

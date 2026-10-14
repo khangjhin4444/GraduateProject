@@ -1,4 +1,4 @@
-import type { OrderForm } from "@/pages/HasHeader/checkout/_components/OrderForm";
+import type { OrderFormEntity } from "@/pages/HasHeader/checkout/_components/OrderForm";
 import {
   PlaceOrderResponseSchema,
   PrepareOrderResponseSchema,
@@ -18,7 +18,7 @@ type PrepareOrder = (
   payload: PrepareOrderProps[],
 ) => Promise<PrepareOrderResponseEntity>;
 
-export interface PlaceOrderProps extends OrderForm {
+export interface PlaceOrderProps extends OrderFormEntity {
   variantIds?: number[];
   buyNow?: {
     id: number;

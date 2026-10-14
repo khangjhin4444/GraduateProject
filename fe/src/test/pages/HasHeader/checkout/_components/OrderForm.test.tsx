@@ -67,7 +67,9 @@ describe("OrderForm", () => {
         id: 7,
         fullName: "Keyboard Buyer",
         phoneNumber: "0123456789",
-        address: "123 Keyboard Street",
+        provinceName: "Thành phố Hồ Chí Minh",
+        street: "123 Lý Thường Kiệt",
+        wardName: "Phường Hòa Bình",
         role: "user",
       }),
     );
@@ -93,14 +95,18 @@ describe("OrderForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    expect(screen.getByLabelText("Full Name")).toHaveValue("Keyboard Buyer");
-    expect(screen.getByLabelText("Phone Number")).toHaveValue("0123456789");
-    expect(screen.getByLabelText("Delivery Address")).toHaveValue(
-      "123 Keyboard Street",
+    expect(screen.getByLabelText(/Full Name/)).toHaveValue("Keyboard Buyer");
+    expect(screen.getByLabelText(/Phone Number/)).toHaveValue("0123456789");
+    expect(screen.getByLabelText(/Detail Address/)).toHaveValue(
+      "123 Lý Thường Kiệt",
     );
+    expect(screen.getByLabelText(/Province/)).toHaveValue(
+      "Thành phố Hồ Chí Minh",
+    );
+    expect(screen.getByLabelText(/Ward/)).toHaveValue("Phường Hòa Bình");
 
-    await user.clear(screen.getByLabelText("Phone Number"));
-    await user.type(screen.getByLabelText("Phone Number"), "123");
+    await user.clear(screen.getByLabelText(/Phone Number/));
+    await user.type(screen.getByLabelText(/Phone Number/), "123");
     fireEvent.submit(document.getElementById("checkout-form")!);
 
     expect(
@@ -134,11 +140,18 @@ describe("OrderForm", () => {
       expect(mutateAsync).toHaveBeenCalledWith({
         name: "Keyboard Buyer",
         phone: "0123456789",
-        address: "123 Keyboard Street",
         request: "Leave at reception",
         shipping: "Normal",
         payment: "COD",
-        save: false,
+        address: JSON.stringify({
+          street: "123 Lý Thường Kiệt",
+          wardName: "Phường Hòa Bình",
+          provinceName: "Thành phố Hồ Chí Minh",
+          fullAddress:
+            "123 Lý Thường Kiệt, Phường Hòa Bình, Thành phố Hồ Chí Minh",
+        }),
+
+        save: true,
         variantIds: [42, 43],
       }),
     );

@@ -43,7 +43,9 @@ describe("useLogin", () => {
         cartQuantity: "2",
         Name: "Keyboard User",
         Phone: null,
-        Address: null,
+        street: "",
+        wardName: "",
+        provinceName: "",
         role: "user" as const,
       },
     };

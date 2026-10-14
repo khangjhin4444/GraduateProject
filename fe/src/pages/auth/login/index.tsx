@@ -57,7 +57,9 @@ export default function Page() {
           id: response.user.id,
           fullName: response.user.Name ?? "",
           phoneNumber: response.user.Phone ?? "",
-          address: response.user.Address ?? "",
+          wardName: response.user.wardName ?? "",
+          provinceName: response.user.provinceName ?? "",
+          street: response.user.street ?? "",
           role: response.user.role,
         }),
       );

@@ -59,7 +59,7 @@ const getPersistedReplay = async (refreshToken) => {
 
 // API ĐĂNG KÝ
 router.post("/register", async (req, res) => {
-  const { username, password, fullName, phone, address } = req.body;
+  const { username, password, fullName, phone } = req.body;
   try {
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,20}$/;
     if (!passwordRegex.test(password)) {
@@ -81,8 +81,8 @@ router.post("/register", async (req, res) => {
 
     // 3. Lưu vào Neon
     await sql`
-      INSERT INTO "user" ("Name", "Phone", "Address", "Username", "Password") 
-      VALUES (${fullName}, ${phone}, ${address}, ${username}, ${hashedPassword})
+      INSERT INTO "user" ("Name", "Phone", "Username", "Password") 
+      VALUES (${fullName}, ${phone}, ${username}, ${hashedPassword})
     `;
     res.status(200).json({ success: true, message: "Register Success!" });
   } catch (error) {
@@ -151,7 +151,7 @@ router.post("/login", async (req, res) => {
         cartQuantity: cartQuantity,
         Name: currentUser.Name,
         Phone: currentUser.Phone,
-        Address: currentUser.Address,
+        Address: JSON.stringify(currentUser.Address),
         role: role,
       },
     });
@@ -308,7 +308,7 @@ router.post("/refresh", async (req, res) => {
         cartQuantity: cartQuantity,
         Name: currentUser.Name,
         Phone: currentUser.Phone,
-        Address: currentUser.Address,
+        Address: JSON.stringify(currentUser.Address),
         role: role,
       },
     };

@@ -17,7 +17,6 @@ const registerPayload: RegisterPayload = {
   password: "strong-password",
   fullName: "New User",
   phoneNumber: "0123456789",
-  address: "Hanoi",
 };
 
 function createWrapper() {
