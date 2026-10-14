@@ -151,7 +151,7 @@ describe("OrderForm", () => {
             "123 Lý Thường Kiệt, Phường Hòa Bình, Thành phố Hồ Chí Minh",
         }),
 
-        save: false,
+        save: true,
         variantIds: [42, 43],
       }),
     );

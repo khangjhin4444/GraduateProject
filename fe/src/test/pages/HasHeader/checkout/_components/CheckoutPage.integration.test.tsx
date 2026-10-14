@@ -130,7 +130,7 @@ describe("Checkout integration", () => {
         request: "Call on arrival",
         shipping: "Fast",
         payment: "Banking",
-        save: true,
+        save: false,
         variantIds: [42],
       }),
     );
