@@ -171,7 +171,6 @@ const getAdminOrders = async (req, res) => {
         OFFSET ${offset};`;
     const hasNextPage = orders.length > limit;
     const data = hasNextPage ? orders.slice(0, limit) : orders;
-    data.Address = JSON.stringify(data.Address);
     return res.status(200).json({
       success: true,
       page,
