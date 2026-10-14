@@ -25,7 +25,7 @@ describe("AdminService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "GET",
-        url: "api/products/admin",
+        url: "/products/admin",
         params: { type: "KeyboardKit", page: 1 },
       }),
     );
@@ -40,7 +40,7 @@ describe("AdminService", () => {
 
     expect(request).toHaveBeenCalledWith({
       method: "POST",
-      url: "/api/products/admin/new",
+      url: "/products/admin/new",
       headers: { "Content-Type": "multipart/form-data" },
       data: formData,
       timeout: 120000,
@@ -58,7 +58,7 @@ describe("AdminService", () => {
 
     expect(request).toHaveBeenCalledWith({
       method: "PUT",
-      url: "/api/products/admin/edit/25",
+      url: "/products/admin/edit/25",
       headers: { "Content-Type": "multipart/form-data" },
       data: formData,
       timeout: 120000,
@@ -74,7 +74,7 @@ describe("AdminService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "DELETE",
-        url: "/api/products/admin/17",
+        url: "/products/admin/17",
         responseSchema: expect.anything(),
       }),
     );
@@ -99,7 +99,7 @@ describe("AdminService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "GET",
-        url: "/api/orders/admin",
+        url: "/orders/admin",
         params: { status: "pending", page: 1 },
         responseSchema: expect.anything(),
       }),
@@ -107,9 +107,9 @@ describe("AdminService", () => {
   });
 
   it.each([
-    ["cancel", AdminService.adminCancelOrder, "/api/orders/admin/cancel"],
-    ["proceed", AdminService.adminProceedOrder, "/api/orders/admin/proceed"],
-    ["deliver", AdminService.adminDeliverOrder, "/api/orders/admin/deliver"],
+    ["cancel", AdminService.adminCancelOrder, "/orders/admin/cancel"],
+    ["proceed", AdminService.adminProceedOrder, "/orders/admin/proceed"],
+    ["deliver", AdminService.adminDeliverOrder, "/orders/admin/deliver"],
   ] as const)(
     "%s an order with the expected endpoint and response schema",
     async (_, action, url) => {

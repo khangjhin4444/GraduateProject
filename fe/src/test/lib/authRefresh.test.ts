@@ -67,7 +67,7 @@ describe("refreshAuth", () => {
 
     expect(mocks.request).toHaveBeenCalledExactlyOnceWith({
       method: "POST",
-      url: "/api/auth/refresh",
+      url: "/auth/refresh",
       withCredentials: true,
       responseSchema: LoginSchema,
     });

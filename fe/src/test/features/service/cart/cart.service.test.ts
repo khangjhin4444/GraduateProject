@@ -17,7 +17,7 @@ describe("CartService", () => {
 
     expect(request).toHaveBeenCalledWith({
       method: "POST",
-      url: "/api/cart/add",
+      url: "/cart/add",
       data: { VariantID: 42, Quantity: 2 },
     });
   });
@@ -37,7 +37,7 @@ describe("CartService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "GET",
-        url: "/api/cart",
+        url: "/cart",
       }),
     );
   });
@@ -53,7 +53,7 @@ describe("CartService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "PUT",
-        url: "/api/cart/change",
+        url: "/cart/change",
         data: { VariantID: 42, Quantity: 3 },
       }),
     );
@@ -70,7 +70,7 @@ describe("CartService", () => {
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "DELETE",
-        url: "/api/cart/delete",
+        url: "/cart/delete",
         data: { VariantID: 42 },
       }),
     );
